@@ -1,0 +1,30 @@
+{
+  "nav": {
+    "dashboard": "แดชบอร์ด",
+    "accounts": "บัญชีลูกค้า",
+    "leads": "ลีด",
+    "opportunities": "โอกาสการขาย",
+    "quotations": "ใบเสนอราคา",
+    "settings": "ตั้งค่า"
+  },
+  "common": {
+    "search": "ค้นหา",
+    "save": "บันทึก",
+    "cancel": "ยกเลิก",
+    "delete": "ลบ",
+    "edit": "แก้ไข",
+    "create": "สร้าง",
+    "loading": "กำลังโหลด..."
+  },
+  "auth": {
+    "login": "เข้าสู่ระบบ",
+    "logout": "ออกจากระบบ",
+    "email": "อีเมล",
+    "password": "รหัสผ่าน"
+  },
+  "dashboard": {
+    "title": "ภาพรวม",
+    "revenue": "รายได้",
+    "pipeline": "ไปป์ไลน์"
+  }
+}

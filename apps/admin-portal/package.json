@@ -1,0 +1,16 @@
+{
+  "name": "@thai-smb-crm/admin-portal",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'admin-portal dev placeholder'",
+    "build": "echo 'admin-portal build placeholder'",
+    "lint": "echo 'admin-portal lint placeholder'",
+    "test": "echo 'admin-portal test placeholder'"
+  },
+  "dependencies": {
+    "@thai-smb-crm/ui-components": "*",
+    "@thai-smb-crm/shared-types": "*",
+    "@thai-smb-crm/utils": "*"
+  }
+}

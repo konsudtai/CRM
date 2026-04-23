@@ -1,0 +1,10 @@
+export { Account } from './account.entity';
+export { Contact } from './contact.entity';
+export { Note } from './note.entity';
+export { Attachment } from './attachment.entity';
+export { Tag } from './tag.entity';
+export { AccountTag } from './account-tag.entity';
+export { Activity } from './activity.entity';
+export { AuditLog } from './audit-log.entity';
+export { Task } from './task.entity';
+export { ConsentRecord } from './consent-record.entity';

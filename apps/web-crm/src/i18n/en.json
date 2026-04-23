@@ -1,0 +1,30 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "accounts": "Accounts",
+    "leads": "Leads",
+    "opportunities": "Opportunities",
+    "quotations": "Quotations",
+    "settings": "Settings"
+  },
+  "common": {
+    "search": "Search",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "loading": "Loading..."
+  },
+  "auth": {
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "email": "Email",
+    "password": "Password"
+  },
+  "dashboard": {
+    "title": "Overview",
+    "revenue": "Revenue",
+    "pipeline": "Pipeline"
+  }
+}
