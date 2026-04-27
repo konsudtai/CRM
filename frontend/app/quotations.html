@@ -64,7 +64,7 @@
       <button class="filter-btn" onclick="filterQt('sent',this)">Sent</button>
       <button class="filter-btn" onclick="filterQt('accepted',this)">Accepted</button>
     </div>
-    <div class="card"><div class="table-wrap"><table><thead><tr><th>Number</th><th>Customer</th><th>Status</th><th>Subtotal</th><th>VAT</th><th>WHT</th><th>Total</th><th>Date</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>Number</th><th>Customer</th><th>Status</th><th>Subtotal</th><th>VAT</th><th>WHT</th><th>Total</th><th>Date</th><th style="width:140px">Actions</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
   </div>
 
   <!-- Create Form -->
@@ -124,10 +124,17 @@
           <div class="qt-summary-row total"><span style="color:var(--sf-blue)">Grand Total</span><span style="color:var(--sf-blue)" id="sum-grand">&#3647;0</span></div>
           <div style="display:flex;flex-direction:column;gap:8px;margin-top:20px">
             <button class="btn btn-primary" onclick="saveQuotation('draft')" style="width:100%;justify-content:center">Save as Draft</button>
-            <button class="btn btn-secondary" onclick="previewQuotation()" style="width:100%;justify-content:center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              Preview & Download PDF
+            <button class="btn btn-secondary" onclick="submitForApproval()" style="width:100%;justify-content:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Submit for Approval
             </button>
+          </div>
+          <div style="margin-top:12px;padding:10px;border-radius:8px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1)">
+            <div style="font-size:10px;font-weight:600;color:var(--sf-blue);margin-bottom:4px">APPROVAL WORKFLOW</div>
+            <div style="font-size:11px;color:var(--text2);line-height:1.5">
+              Draft &rarr; Pending Approval &rarr; Approved &rarr; Print/PDF<br/>
+              <span style="font-size:10px;color:var(--text3)">Sales Manager approval required before printing</span>
+            </div>
           </div>
         </div>
       </div>
@@ -160,7 +167,14 @@ let qtFilter='all',lineCounter=0,companyLogo='';
 function filterQt(f,btn){qtFilter=f;document.querySelectorAll('#qt-filter .filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTable()}
 function renderTable(){
   const f=qtFilter==='all'?QUOTATIONS:QUOTATIONS.filter(q=>q.status===qtFilter);
-  document.getElementById('tbody').innerHTML=f.map(q=>`<tr><td><a href="#" class="table-link">${q.number}</a></td><td style="color:var(--text2);font-size:12px">${q.account}</td><td><span class="status-badge" style="background:${STATUS_COLORS[q.status]}18;color:${STATUS_COLORS[q.status]}">${STATUS_LABELS[q.status]||q.status}</span></td><td>${fmt(q.subtotal)}</td><td>${fmt(q.vat)}</td><td style="color:var(--red)">-${fmt(q.wht)}</td><td style="font-weight:600;color:var(--sf-blue)">${fmt(q.grand)}</td><td style="color:var(--text2)">${q.date}</td></tr>`).join('')||'<tr><td colspan="8" class="empty-state">No quotations</td></tr>';
+  document.getElementById('tbody').innerHTML=f.map(q=>{
+    var actions='';
+    if(q.status==='draft') actions='<button class="btn btn-secondary" style="padding:3px 10px;font-size:11px" onclick="event.stopPropagation()">Submit</button>';
+    else if(q.status==='pending_approval') actions='<span style="font-size:11px;color:#DD7A01;font-weight:600">Awaiting</span>';
+    else if(q.status==='sent'||q.status==='accepted') actions='<span style="font-size:11px;color:#2E844A;font-weight:600">Approved</span>';
+    else if(q.status==='rejected') actions='<span style="font-size:11px;color:#C23934;font-weight:600">Rejected</span>';
+    return '<tr><td><a href="quotation-detail.html?id='+q.id+'" class="table-link">'+q.number+'</a></td><td style="color:var(--text2);font-size:12px">'+q.account+'</td><td><span class="status-badge" style="background:'+STATUS_COLORS[q.status]+'18;color:'+STATUS_COLORS[q.status]+'">'+(STATUS_LABELS[q.status]||q.status)+'</span></td><td>'+fmt(q.subtotal)+'</td><td>'+fmt(q.vat)+'</td><td style="color:var(--red)">-'+fmt(q.wht)+'</td><td style="font-weight:600;color:var(--sf-blue)">'+fmt(q.grand)+'</td><td style="color:var(--text2)">'+q.date+'</td><td>'+actions+'</td></tr>';
+  }).join('')||'<tr><td colspan="9" class="empty-state">No quotations</td></tr>';
 }
 
 function handleLogo(e){
