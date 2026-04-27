@@ -105,8 +105,8 @@ const SV=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 function setP(p,b){P=p;document.querySelectorAll('#pb .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderAll()}
 
 function renderQA(){
-  const items=[{l:'New Lead',c:'#0176D3',bg:'rgba(1,118,211,.06)',i:'lead'},{l:'Add Customer',c:'#2E844A',bg:'rgba(46,132,74,.06)',i:'users'},{l:'Opportunity',c:'#0B827C',bg:'rgba(11,130,124,.06)',i:'target'},{l:'Quotation',c:'#DD7A01',bg:'rgba(221,122,1,.06)',i:'doc'},{l:'Log Call',c:'#7F56D9',bg:'rgba(127,86,217,.06)',i:'phone'},{l:'Add Note',c:'#C23934',bg:'rgba(194,57,52,.06)',i:'note'}];
-  document.getElementById('qa').innerHTML=items.map(q=>`<button class="qa-btn"><div class="qa-icon" style="background:${q.bg};color:${q.c}">${SV(q.i)}</div><span style="color:${q.c}">${q.l}</span></button>`).join('');
+  const items=[{l:'New Lead',c:'#0176D3',bg:'rgba(1,118,211,.06)',i:'lead',href:'leads.html'},{l:'Add Customer',c:'#2E844A',bg:'rgba(46,132,74,.06)',i:'users',href:'accounts.html'},{l:'Quotation',c:'#DD7A01',bg:'rgba(221,122,1,.06)',i:'doc',href:'quotations.html'},{l:'Log Call',c:'#7F56D9',bg:'rgba(127,86,217,.06)',i:'phone',href:'tasks.html'},{l:'Calendar',c:'#0B827C',bg:'rgba(11,130,124,.06)',i:'target',href:'calendar.html'},{l:'Products',c:'#C23934',bg:'rgba(194,57,52,.06)',i:'note',href:'products.html'}];
+  document.getElementById('qa').innerHTML=items.map(q=>`<a href="${q.href}" class="qa-btn" style="text-decoration:none"><div class="qa-icon" style="background:${q.bg};color:${q.c}">${SV(q.i)}</div><span style="color:${q.c}">${q.l}</span></a>`).join('');
 }
 
 function renderKPIs(){

@@ -1,14 +1,77 @@
-<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — ลีด</title><link rel="stylesheet" href="../css/app.css"/></head><body>
+<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — Pipeline</title><link rel="stylesheet" href="../css/app.css"/></head><body>
 <div class="bg-pattern"></div><div id="nav"></div>
 <div class="page anim">
-  <div class="page-header"><div><div class="page-title">ลีด</div><div class="page-subtitle">จัดการลีดและติดตามสถานะ</div></div>
-    <div class="page-actions"><button class="btn btn-secondary">นำเข้า CSV</button><button class="btn btn-primary">+ สร้างลีด</button></div></div>
+  <div class="page-header"><div><div class="page-title" data-i18n="nav_pipeline">Pipeline</div><div class="page-subtitle">Manage leads and deals through every stage</div></div>
+    <div class="page-actions"><button class="btn btn-secondary">Import CSV</button><button class="btn btn-primary" onclick="openCreate()">+ New Lead</button></div></div>
   <div class="kanban" id="kanban"></div>
+
+  <!-- Create Lead Form (hidden) -->
+  <div id="lead-form" style="display:none">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> <span data-i18n="btn_back">Back</span></button>
+      <div class="page-title">New Lead</div>
+    </div>
+    <form onsubmit="saveLead(event)">
+      <div class="card" style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Lead Information</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="sf7-form-group"><label class="sf7-form-label">Name *</label><input class="sf7-form-input" id="fl-name" required placeholder="Khun ..."/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Company</label><input class="sf7-form-input" id="fl-company" placeholder="Company name"/></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+          <div class="sf7-form-group"><label class="sf7-form-label">Email</label><input class="sf7-form-input" id="fl-email" type="email"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Phone</label><input class="sf7-form-input" id="fl-phone"/></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+          <div class="sf7-form-group"><label class="sf7-form-label">Source</label><select class="sf7-form-input" id="fl-source"><option>Website</option><option>Referral</option><option>Facebook</option><option>LINE</option><option>Event</option><option>Walk-in</option><option>Cold Call</option></select></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Budget (THB)</label><input class="sf7-form-input" id="fl-budget" type="number"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Assigned To</label><select class="sf7-form-input" id="fl-assigned"><option value="">-- Auto --</option></select></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeForm()" data-i18n="btn_cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" data-i18n="btn_save">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
 </div>
 <script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
 <script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('leads');
 function sc(s){return s>=70?'ai-high':s>=40?'ai-mid':'ai-low'}
-document.getElementById('kanban').innerHTML=STAGES_ORDER.map(stage=>{const leads=LEADS_DATA[stage]||[];return`<div class="kanban-col"><div class="kanban-col-header"><div class="kanban-col-title"><span style="width:7px;height:7px;border-radius:50%;background:${STAGE_COLORS[stage]}"></span>${stage}</div><span class="kanban-badge">${leads.length}</span></div>${leads.length===0?'<div class="empty-state" style="padding:20px;font-size:12px">ว่าง</div>':leads.map(l=>`<div class="kanban-card"><div class="kanban-card-name">${l.name}</div>${l.company?`<div class="kanban-card-sub">${l.company}</div>`:''}<div class="kanban-card-footer"><span style="font-size:10px;color:var(--text3)">${l.source}</span>${l.score?`<span class="ai-badge ${sc(l.score)}">${l.score}</span>`:''}</div>${l.assigned?`<div style="font-size:10px;color:var(--text3);margin-top:6px">${l.assigned}</div>`:''}</div>`).join('')}</div>`}).join('');
+
+function renderKanban(){
+  document.getElementById('kanban').innerHTML=STAGES_ORDER.map(stage=>{const leads=LEADS_DATA[stage]||[];return`<div class="kanban-col"><div class="kanban-col-header"><div class="kanban-col-title"><span style="width:7px;height:7px;border-radius:50%;background:${STAGE_COLORS[stage]}"></span>${stage}</div><span class="kanban-badge">${leads.length}</span></div>${leads.length===0?'<div class="empty-state" style="padding:20px;font-size:12px">Empty</div>':leads.map(l=>`<div class="kanban-card"><div class="kanban-card-name">${l.name}</div>${l.company?`<div class="kanban-card-sub">${l.company}</div>`:''}<div class="kanban-card-footer"><span style="font-size:10px;color:var(--text3)">${l.source}</span>${l.score?`<span class="ai-badge ${sc(l.score)}">${l.score}</span>`:''}</div>${l.assigned?`<div style="font-size:10px;color:var(--text3);margin-top:6px">${l.assigned}</div>`:''}</div>`).join('')}</div>`}).join('');
+}
+
+function openCreate(){
+  document.getElementById('kanban').style.display='none';
+  document.getElementById('lead-form').style.display='block';
+  document.getElementById('fl-name').value='';
+  document.getElementById('fl-company').value='';
+  document.getElementById('fl-email').value='';
+  document.getElementById('fl-phone').value='';
+  document.getElementById('fl-budget').value='';
+  document.getElementById('fl-assigned').innerHTML='<option value="">-- Auto --</option>'+REPS.map(r=>'<option>'+r.name+'</option>').join('');
+  window.scrollTo(0,0);
+}
+function closeForm(){
+  document.getElementById('lead-form').style.display='none';
+  document.getElementById('kanban').style.display='flex';
+}
+function saveLead(e){
+  e.preventDefault();
+  var name=document.getElementById('fl-name').value;
+  var company=document.getElementById('fl-company').value;
+  var source=document.getElementById('fl-source').value;
+  var assigned=document.getElementById('fl-assigned').value;
+  if(!LEADS_DATA['New'])LEADS_DATA['New']=[];
+  LEADS_DATA['New'].unshift({id:Date.now(),name:name,company:company,source:source,score:Math.floor(Math.random()*40+40),assigned:assigned||''});
+  closeForm();
+  renderKanban();
+}
+
+renderKanban();
 </script></body></html>
