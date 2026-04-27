@@ -147,7 +147,7 @@ function renderTable() {
   document.getElementById('count').textContent = f.length;
   document.getElementById('tbody').innerHTML = f.map(a => `
     <tr>
-      <td><a href="#" class="table-link" onclick="event.preventDefault()">${a.name}</a></td>
+      <td><a href="account-detail.html?id=${a.id}" class="table-link">${a.name}</a></td>
       <td style="color:var(--text2);font-size:12px;font-family:monospace">${a.taxId || '-'}</td>
       <td style="color:var(--text2)">${a.industry}</td>
       <td style="color:var(--text2);font-size:12px">${a.phone}</td>

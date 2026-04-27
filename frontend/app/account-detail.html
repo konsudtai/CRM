@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SalesFAST 7 — Account Detail</title>
+<link rel="stylesheet" href="../css/app.css"/>
+<style>
+.detail-grid{display:grid;grid-template-columns:1fr 340px;gap:20px}
+.info-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.info-row:last-child{border-bottom:none}
+.info-label{font-size:12px;color:var(--text3);min-width:120px}
+.info-value{font-size:13px;font-weight:500;color:var(--text);text-align:right}
+.tab-bar{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:20px}
+.tab-btn{padding:10px 20px;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;cursor:pointer;font-family:inherit;position:relative;transition:color .15s}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--sf-blue);font-weight:600}
+.tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:var(--sf-blue)}
+.tab-content{display:none}.tab-content.active{display:block}
+.contact-card{display:flex;gap:12px;padding:14px;border-radius:10px;background:var(--surface2);margin-bottom:8px}
+.contact-avatar{width:36px;height:36px;border-radius:50%;background:var(--sf-blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.timeline-item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)}
+.timeline-item:last-child{border-bottom:none}
+.timeline-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.stat-mini{text-align:center;padding:16px}
+.stat-mini-val{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.stat-mini-label{font-size:11px;color:var(--text3);margin-top:2px}
+@media(max-width:768px){.detail-grid{grid-template-columns:1fr}.tab-bar{overflow-x:auto;flex-wrap:nowrap}.tab-btn{white-space:nowrap;flex-shrink:0}}
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+<div id="nav"></div>
+<div class="page anim" id="page-content"></div>
+
+<script src="../js/helpers.js"></script>
+<script src="../js/nav.js"></script>
+<script src="../js/data.js"></script>
+<script>
+document.getElementById('nav').innerHTML = renderNav('accounts');
+
+// Get account ID from URL
+const params = new URLSearchParams(window.location.search);
+const accountId = parseInt(params.get('id') || '1', 10);
+const account = ACCOUNTS.find(a => a.id === accountId);
+
+if (!account) {
+  document.getElementById('page-content').innerHTML = '<div class="empty-state">Account not found</div>';
+} else {
+  const contacts = CONTACTS.filter(c => c.accountId === accountId);
+  const opps = OPPS.filter(o => o.account === account.name);
+  const tasks = TASKS.filter(t => t.account === account.name);
+  const quotes = QUOTATIONS.filter(q => q.account === account.name);
+
+  document.getElementById('page-content').innerHTML = `
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <a href="accounts.html" class="btn btn-secondary" style="padding:6px 12px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back
+      </a>
+    </div>
+    <div class="page-header" style="margin-bottom:16px">
+      <div>
+        <div class="page-title" style="display:flex;align-items:center;gap:10px">
+          ${account.name}
+          <span class="status-badge" style="background:${account.status==='Active'?'rgba(46,132,74,.1);color:#2E844A':'rgba(147,147,147,.12);color:var(--text3)'};font-size:11px">${account.status||'Active'}</span>
+          <span class="tag">${account.tier||'Standard'}</span>
+        </div>
+        <div class="page-subtitle">${account.industry} &middot; ${account.phone}</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-secondary">Edit</button>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div class="card stat-mini"><div class="stat-mini-val" style="color:var(--sf-blue)">${fmt(account.revenue)}</div><div class="stat-mini-label">Total Revenue</div></div>
+      <div class="card stat-mini"><div class="stat-mini-val">${opps.length}</div><div class="stat-mini-label">Opportunities</div></div>
+      <div class="card stat-mini"><div class="stat-mini-val">${quotes.length}</div><div class="stat-mini-label">Quotations</div></div>
+      <div class="card stat-mini"><div class="stat-mini-val">${contacts.length}</div><div class="stat-mini-label">Contacts</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="showTab('info',this)">Company Info</button>
+      <button class="tab-btn" onclick="showTab('contacts',this)">Contacts (${contacts.length})</button>
+      <button class="tab-btn" onclick="showTab('deals',this)">Deals (${opps.length})</button>
+      <button class="tab-btn" onclick="showTab('quotes',this)">Quotations (${quotes.length})</button>
+      <button class="tab-btn" onclick="showTab('tasks',this)">Tasks (${tasks.length})</button>
+      <button class="tab-btn" onclick="showTab('timeline',this)">Timeline</button>
+    </div>
+
+    <!-- Tab: Company Info -->
+    <div class="tab-content active" id="tab-info">
+      <div class="detail-grid">
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="form-section-title" style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Company Information</div>
+            <div class="info-row"><span class="info-label">Company Name (TH)</span><span class="info-value">${account.name}</span></div>
+            <div class="info-row"><span class="info-label">Industry</span><span class="info-value">${account.industry}</span></div>
+            <div class="info-row"><span class="info-label">Tax ID</span><span class="info-value" style="font-family:monospace">${account.taxId||'-'}</span></div>
+            <div class="info-row"><span class="info-label">Status</span><span class="info-value">${account.status||'Active'}</span></div>
+            <div class="info-row"><span class="info-label">Tier</span><span class="info-value">${account.tier||'Standard'}</span></div>
+          </div>
+          <div class="card">
+            <div class="form-section-title" style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Contact Information</div>
+            <div class="info-row"><span class="info-label">Phone</span><span class="info-value">${account.phone}</span></div>
+            <div class="info-row"><span class="info-label">Email</span><span class="info-value">${account.email||'-'}</span></div>
+            <div class="info-row"><span class="info-label">Website</span><span class="info-value">${account.website||'-'}</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="form-section-title" style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Tags</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">${account.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+          </div>
+          <div class="card">
+            <div class="form-section-title" style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Primary Contact</div>
+            ${contacts.length > 0 ? `
+              <div class="contact-card">
+                <div class="contact-avatar">${contacts[0].name[0]}</div>
+                <div>
+                  <div style="font-size:13px;font-weight:600">${contacts[0].name}</div>
+                  <div style="font-size:12px;color:var(--text2)">${contacts[0].title} &middot; ${contacts[0].phone}</div>
+                  <div style="font-size:12px;color:var(--text2)">${contacts[0].email}</div>
+                </div>
+              </div>
+            ` : '<div style="font-size:13px;color:var(--text3)">No contacts yet</div>'}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Contacts -->
+    <div class="tab-content" id="tab-contacts">
+      <div class="card">
+        ${contacts.length === 0 ? '<div class="empty-state">No contacts for this account</div>' :
+          contacts.map(c => `
+            <div class="contact-card">
+              <div class="contact-avatar">${c.name[0]}</div>
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:600">${c.name}</div>
+                <div style="font-size:12px;color:var(--text2)">${c.title} &middot; ${c.account}</div>
+                <div style="font-size:12px;color:var(--text2);margin-top:4px">
+                  ${c.phone} &middot; ${c.email} ${c.line ? '&middot; LINE: '+c.line : ''}
+                </div>
+              </div>
+            </div>
+          `).join('')
+        }
+      </div>
+    </div>
+
+    <!-- Tab: Deals -->
+    <div class="tab-content" id="tab-deals">
+      <div class="card">
+        ${opps.length === 0 ? '<div class="empty-state">No opportunities for this account</div>' : `
+          <div class="table-wrap"><table>
+            <thead><tr><th>Deal Name</th><th>Stage</th><th>Value</th><th>AI %</th><th>Close Date</th><th>Assigned</th></tr></thead>
+            <tbody>${opps.map(o => `
+              <tr>
+                <td style="font-weight:500">${o.name}</td>
+                <td><span class="status-badge" style="background:${STAGE_COLORS[o.stage]||'var(--sf-blue)'}18;color:${STAGE_COLORS[o.stage]||'var(--sf-blue)'}">${o.stage}</span></td>
+                <td style="font-weight:600;color:var(--sf-blue)">${fmt(o.value)}</td>
+                <td><span class="ai-badge ${o.prob>=70?'ai-high':o.prob>=40?'ai-mid':'ai-low'}">${o.prob}%</span></td>
+                <td style="color:var(--text2);font-size:12px">${o.close}</td>
+                <td style="color:var(--text2)">${o.assigned}</td>
+              </tr>
+            `).join('')}</tbody>
+          </table></div>
+        `}
+      </div>
+    </div>
+
+    <!-- Tab: Quotations -->
+    <div class="tab-content" id="tab-quotes">
+      <div class="card">
+        ${quotes.length === 0 ? '<div class="empty-state">No quotations for this account</div>' : `
+          <div class="table-wrap"><table>
+            <thead><tr><th>Number</th><th>Status</th><th>Subtotal</th><th>VAT</th><th>Total</th><th>Date</th></tr></thead>
+            <tbody>${quotes.map(q => `
+              <tr>
+                <td style="font-weight:500">${q.number}</td>
+                <td><span class="status-badge" style="background:${STATUS_COLORS[q.status]}18;color:${STATUS_COLORS[q.status]}">${STATUS_LABELS[q.status]||q.status}</span></td>
+                <td>${fmt(q.subtotal)}</td>
+                <td>${fmt(q.vat)}</td>
+                <td style="font-weight:600;color:var(--sf-blue)">${fmt(q.grand)}</td>
+                <td style="color:var(--text2)">${q.date}</td>
+              </tr>
+            `).join('')}</tbody>
+          </table></div>
+        `}
+      </div>
+    </div>
+
+    <!-- Tab: Tasks -->
+    <div class="tab-content" id="tab-tasks">
+      <div class="card">
+        ${tasks.length === 0 ? '<div class="empty-state">No tasks for this account</div>' : `
+          <div class="table-wrap"><table>
+            <thead><tr><th>Task</th><th>Due Date</th><th>Priority</th><th>Status</th></tr></thead>
+            <tbody>${tasks.map(t => `
+              <tr style="${t.status==='Overdue'?'background:rgba(194,57,52,.04)':''}">
+                <td style="font-weight:500;${t.status==='Overdue'?'color:var(--red)':''}">${t.title}</td>
+                <td style="color:var(--text2);font-size:12px">${t.due}</td>
+                <td><span class="status-badge" style="background:${PRI_COLORS[t.priority]}18;color:${PRI_COLORS[t.priority]}">${t.priority}</span></td>
+                <td><span class="status-badge" style="background:${TASK_COLORS[t.status]}18;color:${TASK_COLORS[t.status]}">${t.status}</span></td>
+              </tr>
+            `).join('')}</tbody>
+          </table></div>
+        `}
+      </div>
+    </div>
+
+    <!-- Tab: Timeline -->
+    <div class="tab-content" id="tab-timeline">
+      <div class="card">
+        <div class="timeline-item"><div class="timeline-dot" style="background:var(--sf-blue)"></div><div><div style="font-size:13px;font-weight:500">Account created</div><div style="font-size:12px;color:var(--text3);margin-top:2px">System &middot; Jan 2026</div></div></div>
+        ${opps.map(o => `<div class="timeline-item"><div class="timeline-dot" style="background:${STAGE_COLORS[o.stage]||'var(--sf-blue)'}"></div><div><div style="font-size:13px;font-weight:500">Deal: ${o.name} &mdash; ${o.stage}</div><div style="font-size:12px;color:var(--text3);margin-top:2px">${o.assigned} &middot; ${fmt(o.value)}</div></div></div>`).join('')}
+        ${tasks.map(t => `<div class="timeline-item"><div class="timeline-dot" style="background:${TASK_COLORS[t.status]}"></div><div><div style="font-size:13px;font-weight:500">Task: ${t.title}</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Due: ${t.due} &middot; ${t.status}</div></div></div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function showTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
