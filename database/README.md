@@ -1,14 +1,13 @@
-# SalesFAST 7 — Database & Auth Setup
+# SalesFAST 7 — Database & Auth
+
+## Region: ap-southeast-7 (Thailand)
 
 ## PostgreSQL Schema
 
 Single database, multi-tenant with Row-Level Security (RLS).
 
 ```bash
-# Create database
 createdb salesfast7
-
-# Run schema
 psql salesfast7 < database/schema.sql
 ```
 
@@ -24,75 +23,76 @@ psql salesfast7 < database/schema.sql
 | Compliance | audit_logs, consent_records |
 | Integration | email_syncs, calendar_syncs |
 
-### Multi-Tenant Isolation
+### Multi-Tenant Isolation (RLS)
 
-Every request sets `app.current_tenant` via NestJS middleware:
+Every request sets `app.current_tenant` via NestJS TenantGuard:
 ```sql
 SET app.current_tenant = '<tenant-uuid>';
 ```
-RLS policies on all tables ensure queries only return rows for the current tenant.
 
----
+### Auth Flow (DB-based)
 
-## AWS Cognito User Pool
+```
+1. Admin creates user via Admin Portal
+   POST /users { email, password, firstName, lastName, ... }
+   -> password hashed with bcrypt (cost 12)
+   -> stored in users.password_hash
 
-Users are authenticated via Cognito. No passwords stored in PostgreSQL.
+2. User logs in
+   POST /auth/login { email, password }
+   -> bcrypt.compare(password, password_hash)
+   -> if MFA enabled: return mfaRequired + mfaToken
+   -> else: return JWT (accessToken + refreshToken)
+
+3. API requests
+   Authorization: Bearer <jwt-access-token>
+   -> GatewayAuthGuard verifies JWT signature
+   -> TenantGuard sets RLS context (SET app.current_tenant)
+   -> PermissionGuard checks RBAC permissions
+
+4. Account lockout
+   -> 5 failed attempts = 15 min lockout (Redis counter)
+```
 
 ### Environment Variables
 
 ```env
-COGNITO_REGION=ap-southeast-1
-COGNITO_USER_POOL_ID=ap-southeast-1_XXXXXXXXX
-COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+DB_NAME=salesfast7
+
+# JWT
+JWT_SECRET=your-secret-key-change-in-production
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# AWS (ap-southeast-7)
+AWS_REGION=ap-southeast-7
+
+# S3
+S3_BUCKET=salesfast7-files
+
+# SQS
+SQS_QUEUE_URL=https://sqs.ap-southeast-7.amazonaws.com/xxx/salesfast7-events
+
+# OpenSearch
+OPENSEARCH_ENDPOINT=https://search-salesfast7-xxx.ap-southeast-7.es.amazonaws.com
+
+# Bedrock (AI)
+BEDROCK_MODEL_ID=anthropic.claude-3-haiku-20240307-v1:0
 ```
 
-### Auth Flow
+### Security
 
-```
-1. Admin creates user via Admin Portal
-   → POST /users (backend)
-   → CognitoService.createUser() (creates in Cognito with temp password)
-   → Save user record in PostgreSQL (with cognito_sub)
-
-2. User logs in
-   → Frontend sends email + password to Cognito
-   → Cognito returns JWT tokens (IdToken, AccessToken, RefreshToken)
-   → If first login: NEW_PASSWORD_REQUIRED challenge → user sets new password
-   → Frontend stores tokens, sends AccessToken in Authorization header
-
-3. API requests
-   → Authorization: Bearer <cognito-access-token>
-   → CognitoAuthGuard decodes JWT, looks up user by cognito_sub
-   → TenantGuard sets RLS context
-   → PermissionGuard checks RBAC
-```
-
-### Cognito User Pool Settings
-
-| Setting | Value |
-|---------|-------|
-| Sign-in | Email only |
-| Self-registration | Disabled (admin creates users) |
-| MFA | Optional (TOTP) |
-| Password policy | Min 8 chars, uppercase, lowercase, number |
-| Token validity | Access: 1h, Refresh: 30d |
-| Advanced security | Enabled |
-
-### User Attributes
-
-| Attribute | Cognito | PostgreSQL |
-|-----------|---------|------------|
-| sub | Auto-generated | users.cognito_sub |
-| email | Required | users.email |
-| given_name | Optional | users.first_name |
-| family_name | Optional | users.last_name |
-| phone_number | Optional | users.phone |
-
-### Admin Operations (via CognitoService)
-
-- `createUser()` — Create user with temporary password
-- `setPassword()` — Set permanent password
-- `disableUser()` — Deactivate user
-- `enableUser()` — Reactivate user
-- `resetPassword()` — Admin reset password
-- `deleteUser()` — Permanently delete user
+- Passwords: bcrypt cost 12
+- JWT: HS256, 1h access / 30d refresh
+- MFA: TOTP (optional, per user)
+- Rate limit: 1,000 req/min per tenant (Redis)
+- Brute force: 5 attempts = 15 min lockout
+- RLS: All tables isolated by tenant_id
+- Audit: Immutable audit_logs table

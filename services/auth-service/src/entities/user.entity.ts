@@ -23,11 +23,8 @@ export class User {
   @Column({ type: 'varchar', length: 255 })
   email!: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true, unique: true, name: 'cognito_sub' })
-  cognitoSub!: string | null;
-
-  @Column({ type: 'varchar', length: 255, nullable: true, name: 'password_hash' })
-  passwordHash!: string | null;
+  @Column({ type: 'varchar', length: 255, name: 'password_hash' })
+  passwordHash!: string;
 
   @Column({ type: 'varchar', length: 255, name: 'first_name' })
   firstName!: string;

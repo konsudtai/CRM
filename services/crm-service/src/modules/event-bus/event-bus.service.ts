@@ -19,7 +19,7 @@ export class EventBusService {
 
   constructor() {
     this.client = new SQSClient({
-      region: process.env.AWS_REGION || 'ap-southeast-1',
+      region: process.env.AWS_REGION || 'ap-southeast-7',
       ...(process.env.SQS_ENDPOINT
         ? { endpoint: process.env.SQS_ENDPOINT }
         : {}),

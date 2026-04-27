@@ -46,7 +46,6 @@ function makeUser(overrides: Partial<User> = {}): User {
     id: 'user-1',
     tenantId: 'tenant-1',
     email: 'test@example.com',
-    cognitoSub: 'cognito-sub-123',
     passwordHash: bcrypt.hashSync('correct-password', 12),
     firstName: 'Test',
     lastName: 'User',

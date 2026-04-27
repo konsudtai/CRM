@@ -14,7 +14,7 @@ export class BedrockProvider {
 
   constructor() {
     this.client = new BedrockRuntimeClient({
-      region: process.env.AWS_REGION || 'ap-southeast-1',
+      region: process.env.AWS_REGION || 'ap-southeast-7',
     });
     this.modelId =
       process.env.BEDROCK_MODEL_ID ||

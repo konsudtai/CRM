@@ -22,16 +22,18 @@ CREATE TABLE tenants (
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Users: password_hash removed, cognito_sub is the primary auth identifier
+-- Users: password stored as bcrypt hash in DB
 CREATE TABLE users (
   id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   tenant_id           UUID NOT NULL REFERENCES tenants(id),
-  cognito_sub         VARCHAR(255) UNIQUE,          -- Cognito User Pool sub (unique ID)
   email               VARCHAR(255) NOT NULL,
+  password_hash       VARCHAR(255) NOT NULL,        -- bcrypt, cost 12
   first_name          VARCHAR(255),
   last_name           VARCHAR(255),
   phone               VARCHAR(50),
   line_id             VARCHAR(255),
+  mfa_enabled         BOOLEAN DEFAULT false,
+  mfa_secret          VARCHAR(255),                 -- TOTP secret
   preferred_language  VARCHAR(5) DEFAULT 'th',
   preferred_calendar  VARCHAR(20) DEFAULT 'buddhist',
   is_active           BOOLEAN DEFAULT true,
@@ -531,7 +533,6 @@ CREATE POLICY rls_webhook_deliveries ON webhook_deliveries USING (
 -- ============================================================
 
 CREATE INDEX idx_users_tenant ON users(tenant_id);
-CREATE INDEX idx_users_cognito ON users(cognito_sub);
 CREATE INDEX idx_users_email ON users(tenant_id, email);
 CREATE INDEX idx_accounts_tenant ON accounts(tenant_id);
 CREATE INDEX idx_accounts_name ON accounts(tenant_id, company_name);

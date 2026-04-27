@@ -7,7 +7,7 @@ export const S3Provider: Provider = {
   provide: S3_CLIENT,
   useFactory: () => {
     const client = new S3Client({
-      region: process.env.AWS_REGION || 'ap-southeast-1',
+      region: process.env.AWS_REGION || 'ap-southeast-7',
       ...(process.env.S3_ENDPOINT
         ? {
             endpoint: process.env.S3_ENDPOINT,
