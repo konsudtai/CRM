@@ -62,7 +62,7 @@ export class AuthService {
     }
 
     // Validate password
-    const valid = await bcrypt.compare(password, user.passwordHash);
+    const valid = await bcrypt.compare(password, user.passwordHash || '');
     if (!valid) {
       const newCount = await this.redis.incr(lockoutKey);
       if (newCount === 1) {
