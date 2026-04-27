@@ -6,82 +6,63 @@
 <title>SalesFAST 7 — Dashboard</title>
 <link rel="stylesheet" href="../css/app.css"/>
 <style>
-/* BI Dashboard — Salesforce Lightning */
-.bi-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
-.bi-kpi{background:var(--surface);border-radius:12px;padding:18px 20px;border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
-.bi-kpi:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.08)}
-.bi-kpi-stripe{position:absolute;top:0;left:0;right:0;height:3px}
-.bi-kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.bi-kpi-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center}
-.bi-kpi-icon svg{width:18px;height:18px}
-.bi-kpi-trend{font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;display:flex;align-items:center;gap:2px}
-.bi-kpi-trend.up{color:#2E844A;background:rgba(46,132,74,.08)}.bi-kpi-trend.down{color:#C23934;background:rgba(194,57,52,.08)}
-.bi-kpi-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
-.bi-kpi-value{font-size:26px;font-weight:800;letter-spacing:-.8px;margin-top:2px;line-height:1}
-.bi-kpi-sub{font-size:11px;color:var(--text3);margin-top:6px}
-.bi-kpi-bar{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-top:8px}
-.bi-kpi-fill{height:100%;border-radius:2px;transition:width 1.4s ease}
-
-.bi-row{display:grid;gap:14px;margin-bottom:14px}
-.bi-row-2{grid-template-columns:1fr 1fr}
-.bi-row-3{grid-template-columns:2fr 1fr}
-.bi-row-3e{grid-template-columns:1fr 1fr 1fr}
-.bi-card{background:var(--surface);border-radius:12px;padding:18px 20px;border:1px solid var(--border)}
-.bi-card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.bi-card-title{font-size:13px;font-weight:700;letter-spacing:-.1px;color:var(--text)}
-.bi-card-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(1,118,211,.06);color:var(--sf-blue)}
-
-/* Stage rows */
-.st-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}.st-row:last-child{border-bottom:none}
-.st-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.st-name{font-size:12px;font-weight:500;flex:1;color:var(--text)}
-.st-bar{width:90px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;flex-shrink:0}
-.st-bar-fill{height:100%;border-radius:2px;transition:width 1.2s ease}
-.st-val{font-size:12px;font-weight:600;min-width:60px;text-align:right;color:var(--text)}
-.st-cnt{font-size:11px;color:var(--text3);min-width:36px;text-align:right}
-
-/* Donut */
-.donut-wrap{display:flex;align-items:center;gap:16px}
-.donut-legend{display:flex;flex-direction:column;gap:6px;flex:1}
-.dl-item{display:flex;align-items:center;gap:7px;font-size:11px}
-.dl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.dl-label{flex:1;color:var(--text2)}.dl-val{font-weight:600;color:var(--text)}
-
-/* Funnel */
-.fn-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-.fn-label{font-size:11px;color:var(--text2);width:80px;flex-shrink:0}
-.fn-track{flex:1;height:24px;background:var(--surface3);border-radius:5px;overflow:hidden}
-.fn-fill{height:100%;border-radius:5px;display:flex;align-items:center;padding:0 10px;font-size:10px;font-weight:700;color:#fff;transition:width 1.3s ease}
-.fn-pct{font-size:10px;color:var(--text3);min-width:32px;text-align:right}
-
-/* Reps */
-.rp-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}.rp-row:last-child{border-bottom:none}
-.rp-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
-.rp-info{flex:1}.rp-name{font-size:12px;font-weight:600}.rp-meta{font-size:10px;color:var(--text3);margin-top:1px}
-.rp-bar{width:70px;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-top:3px}
-.rp-bar-fill{height:100%;border-radius:2px;transition:width 1s ease}
-.rp-rev{font-size:12px;font-weight:700;min-width:60px;text-align:right}
-
-/* Bar chart */
-.bar-chart{display:flex;align-items:flex-end;gap:6px;height:110px}
-.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
-.bar-rect{width:100%;border-radius:4px 4px 0 0;transition:height 1.2s ease;min-height:2px;cursor:default}
-.bar-rect:hover{filter:brightness(1.1)}
-.bar-lbl{font-size:9px;color:var(--text3)}
-.bar-v{font-size:9px;font-weight:600;color:var(--text2)}
-
-/* Activity */
-.act-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}.act-row:last-child{border-bottom:none}
-.act-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.act-icon svg{width:14px;height:14px}
-.act-body{flex:1;min-width:0}.act-text{font-size:12px;font-weight:500}.act-meta{font-size:10px;color:var(--text3);margin-top:1px}
-.act-badge{font-size:9px;font-weight:600;padding:1px 6px;border-radius:20px;align-self:flex-start;margin-top:2px}
-
-/* Gauge */
-.gauge-center{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 0}
-
-@media(max-width:1024px){.bi-kpi-grid{grid-template-columns:1fr 1fr}.bi-row-3,.bi-row-3e{grid-template-columns:1fr}}
-@media(max-width:640px){.bi-kpi-grid{grid-template-columns:1fr 1fr}.bi-row-2{grid-template-columns:1fr}.bi-kpi-value{font-size:20px}}
+/* Quick Actions */
+.qa-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:18px}
+.qa-btn{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s;font-family:inherit;font-size:12px;font-weight:600;color:var(--text2)}
+.qa-btn:hover{border-color:var(--sf-blue);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.qa-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.qa-icon svg{width:14px;height:14px}
+/* KPI */
+.kpi5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.kc{background:var(--surface);border-radius:12px;padding:16px 18px;border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s}
+.kc:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.07)}
+.kc-stripe{position:absolute;top:0;left:0;right:0;height:3px}
+.kc-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;margin-top:4px}
+.kc-icon svg{width:15px;height:15px}
+.kc-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
+.kc-value{font-size:22px;font-weight:800;letter-spacing:-.7px;margin-top:2px;line-height:1}
+.kc-foot{display:flex;align-items:center;gap:5px;margin-top:6px;flex-wrap:wrap}
+.kc-trend{font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px}
+.kc-trend.up{color:#2E844A;background:rgba(46,132,74,.08)}.kc-trend.down{color:#C23934;background:rgba(194,57,52,.08)}
+.kc-sub{font-size:10px;color:var(--text3)}
+.kc-bar{height:2px;background:var(--surface3);border-radius:1px;overflow:hidden;margin-top:7px}
+.kc-fill{height:100%;border-radius:1px;transition:width 1.3s ease}
+/* Grid */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g32{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
+.cd{background:var(--surface);border-radius:12px;padding:16px 18px;border:1px solid var(--border)}
+.cd-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cd-title{font-size:13px;font-weight:700;color:var(--text)}
+.cd-more{font-size:11px;font-weight:500;color:var(--sf-blue);cursor:pointer;background:none;border:none;font-family:inherit}
+.cd-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(1,118,211,.06);color:var(--sf-blue)}
+/* Pipeline bars */
+.pb-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.pb-label{width:90px;font-size:11px;font-weight:500;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pb-track{flex:1;height:20px;background:var(--surface3);border-radius:5px;overflow:hidden}
+.pb-fill{height:100%;border-radius:5px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:700;color:#fff;transition:width 1.2s ease;min-width:40px}
+.pb-cnt{width:18px;font-size:10px;color:var(--text3);text-align:right}
+/* Revenue chart */
+.rev-chart{width:100%;height:100px}
+/* Kanban mini */
+.kk-wrap{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px}
+.kk-col{min-width:180px;flex-shrink:0;background:var(--surface2);border-radius:10px;padding:10px}
+.kk-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.kk-title{font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px}
+.kk-cnt{font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;background:var(--surface3);color:var(--text3)}
+.kk-total{font-size:10px;color:var(--text3);margin-bottom:8px}
+.kk-card{background:var(--surface);border-radius:8px;padding:10px;margin-bottom:6px;border:1px solid var(--border);cursor:grab;transition:transform .15s,box-shadow .15s}
+.kk-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.kk-name{font-size:12px;font-weight:600}.kk-company{font-size:10px;color:var(--text3);margin-top:1px}
+.kk-foot{display:flex;justify-content:space-between;margin-top:8px;font-size:11px}
+.kk-amt{font-weight:700;color:var(--sf-blue)}.kk-date{color:var(--text3)}
+/* Customer table */
+.ct-name{font-size:13px;font-weight:600}.ct-contact{font-size:11px;color:var(--text2)}
+/* Activity timeline */
+.tl-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}.tl-item:last-child{border-bottom:none}
+.tl-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;font-weight:800}
+.tl-body{flex:1}.tl-title{font-size:12px;font-weight:500}.tl-meta{font-size:10px;color:var(--text3);margin-top:1px}
+@media(max-width:1024px){.qa-grid{grid-template-columns:repeat(3,1fr)}.kpi5{grid-template-columns:repeat(3,1fr)}.g2,.g32{grid-template-columns:1fr}}
+@media(max-width:640px){.qa-grid{grid-template-columns:1fr 1fr}.kpi5{grid-template-columns:1fr 1fr}.kk-col{min-width:160px}}
 </style>
 </head>
 <body>
@@ -90,12 +71,13 @@
 <div class="page anim">
   <div class="page-header">
     <div><div class="page-title" data-i18n="dash_title">Dashboard</div><div class="page-subtitle" data-i18n="dash_sub">Sales overview — Updated today</div></div>
-    <div class="filter-bar" id="pb"><button class="filter-btn active" onclick="setP('month',this)" data-i18n="dash_month">Month</button><button class="filter-btn" onclick="setP('quarter',this)" data-i18n="dash_quarter">Quarter</button><button class="filter-btn" onclick="setP('year',this)" data-i18n="dash_year">Year</button></div>
+    <div style="display:flex;gap:8px"><div class="filter-bar" id="pb"><button class="filter-btn active" onclick="setP('month',this)" data-i18n="dash_month">Month</button><button class="filter-btn" onclick="setP('quarter',this)" data-i18n="dash_quarter">Quarter</button><button class="filter-btn" onclick="setP('year',this)" data-i18n="dash_year">Year</button></div></div>
   </div>
-  <div class="bi-kpi-grid" id="kpis"></div>
-  <div class="bi-row bi-row-3"><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title" data-i18n="pipe_by_stage">Pipeline by Stage</span><span class="bi-card-badge" id="pipe-total"></span></div><div id="stages"></div></div><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title">Deal Mix</span></div><div class="donut-wrap" id="donut"></div></div></div>
-  <div class="bi-row bi-row-2"><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title" data-i18n="funnel_title">Lead Conversion Funnel</span></div><div id="funnel"></div></div><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title" data-i18n="reps_title">Sales Team</span></div><div id="reps"></div></div></div>
-  <div class="bi-row bi-row-3e"><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title">Monthly Revenue</span><span class="bi-card-badge">2026</span></div><div class="bar-chart" id="bars"></div></div><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title">Recent Activity</span></div><div id="acts"></div></div><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title">Target</span></div><div class="gauge-center" id="gauge"></div></div></div>
+  <div class="qa-grid" id="qa"></div>
+  <div class="kpi5" id="kpis"></div>
+  <div class="g2"><div class="cd"><div class="cd-hd"><span class="cd-title" data-i18n="pipe_by_stage">Pipeline by Stage</span><span class="cd-badge" id="pipe-total"></span></div><div id="pipeline"></div></div><div class="cd"><div class="cd-hd"><span class="cd-title">Monthly Revenue</span><span class="cd-badge">2026</span></div><svg class="rev-chart" id="rev-chart" viewBox="0 0 420 100"></svg><div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:10px;color:var(--text3)">Jan</span><span style="font-size:10px;font-weight:700;color:var(--sf-blue)" id="ytd-label"></span><span style="font-size:10px;color:var(--text3)">Dec</span></div></div></div>
+  <div class="cd" style="margin-bottom:14px"><div class="cd-hd"><span class="cd-title">Opportunity Pipeline</span><span class="cd-more">View Kanban</span></div><div class="kk-wrap" id="kanban"></div></div>
+  <div class="g32"><div class="cd"><div class="cd-hd"><span class="cd-title">Customers & Revenue</span><span class="cd-more">View All</span></div><div class="table-wrap"><table><thead><tr><th>Company</th><th>Status</th><th>Revenue</th><th>Last Contact</th></tr></thead><tbody id="cust-table"></tbody></table></div></div><div class="cd"><div class="cd-hd"><span class="cd-title">Recent Activity</span></div><div id="timeline"></div></div></div>
 </div>
 <script src="../js/helpers.js"></script><script src="../js/i18n.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
@@ -103,84 +85,75 @@ document.getElementById('nav').innerHTML=renderNav('dashboard');
 let P='month';
 const MD=[2.1,2.8,3.2,2.9,3.8,4.1,3.5,4.6,5.2,4.8,5.9,4.3];
 const ML=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-// SVG icon helpers
-const IC={
-  revenue:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
-  leads:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
-  conv:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
-  deals:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>',
-  won:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
-  lead:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-  quote:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-  call:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>',
-  task:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>',
-};
+const OC={'New Lead':'#64748B','Qualification':'#0176D3','Needs Analysis':'#0B827C','Proposal':'#DD7A01','Negotiation':'#C23934','Closed Won':'#2E844A','Closed Lost':'#9CA3AF'};
+const OPPS_K={'New Lead':[{n:'CRM — Pornchai',c:'Pornchai Materials',a:320000,d:'30 Jun',o:'Manee'}],'Qualification':[{n:'Cloud POS — Thai Foods',c:'Thai Foods Group',a:680000,d:'15 May',o:'Wilai'},{n:'AI Platform — EL',c:'Eastern Logistics',a:950000,d:'20 May',o:'Arun'}],'Needs Analysis':[{n:'CRM+Support — Sukjai',c:'Sukjai Hospital',a:1200000,d:'31 May',o:'Arun'}],'Proposal':[{n:'CRM — ProClinic',c:'ProClinic Group',a:850000,d:'30 May',o:'Somchai'},{n:'ERP+CRM — Unique',c:'Unique Mfg',a:1800000,d:'10 Jun',o:'Somchai'}],'Negotiation':[{n:'Enterprise CRM — Srisomboon',c:'Srisomboon Group',a:2500000,d:'05 May',o:'Wilai'}],'Closed Won':[{n:'CRM — Petdee',c:'Petdee Intl',a:1800000,d:'25 Apr',o:'Somchai'}]};
+const CUSTS=[{n:'Srisomboon Group',c:'Khun Nattaya',s:'Active',r:6100000,l:'25 Apr'},{n:'Petdee International',c:'Khun Tanit',s:'Active',r:5400000,l:'22 Apr'},{n:'ProClinic Group',c:'Khun Nicha',s:'Active',r:4200000,l:'25 Apr'},{n:'Eastern Logistics',c:'Khun Apinya',s:'Renewal',r:3600000,l:'23 Apr'},{n:'Thai Foods Group',c:'Khun Somkit',s:'Active',r:2800000,l:'24 Apr'}];
+const ACTS=[{bg:'rgba(1,118,211,.08)',c:'#0176D3',lbl:'CL',title:'Call follow-up — ProClinic Group',who:'Somchai',when:'Today 10:30'},{bg:'rgba(11,130,124,.08)',c:'#0B827C',lbl:'EM',title:'Sent revised quotation — Unique Mfg',who:'Somchai',when:'Today 09:15'},{bg:'rgba(46,132,74,.08)',c:'#2E844A',lbl:'MT',title:'Meeting — Eastern Logistics',who:'Arun',when:'Yesterday 14:00'},{bg:'rgba(221,122,1,.08)',c:'#DD7A01',lbl:'NT',title:'Negotiation notes — Srisomboon',who:'Wilai',when:'Yesterday 11:30'},{bg:'rgba(194,57,52,.08)',c:'#C23934',lbl:'TK',title:'Urgent ticket — Eastern Logistics',who:'Support',when:'Yesterday 09:00'}];
+const SV=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${{
+  target:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  dollar:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  users:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
+  ticket:'<path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 002 2 2 2 0 010 4 2 2 0 00-2 2v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 00-2-2 2 2 0 010-4 2 2 0 002-2V7a2 2 0 00-2-2H5z"/>',
+  chart:'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+  lead:'<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  doc:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+  phone:'<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.11 2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>',
+  note:'<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+}[k]}</svg>`;
 
 function setP(p,b){P=p;document.querySelectorAll('#pb .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderAll()}
 
+function renderQA(){
+  const items=[{l:'New Lead',c:'#0176D3',bg:'rgba(1,118,211,.06)',i:'lead'},{l:'Add Customer',c:'#2E844A',bg:'rgba(46,132,74,.06)',i:'users'},{l:'Opportunity',c:'#0B827C',bg:'rgba(11,130,124,.06)',i:'target'},{l:'Quotation',c:'#DD7A01',bg:'rgba(221,122,1,.06)',i:'doc'},{l:'Log Call',c:'#7F56D9',bg:'rgba(127,86,217,.06)',i:'phone'},{l:'Add Note',c:'#C23934',bg:'rgba(194,57,52,.06)',i:'note'}];
+  document.getElementById('qa').innerHTML=items.map(q=>`<button class="qa-btn"><div class="qa-icon" style="background:${q.bg};color:${q.c}">${SV(q.i)}</div><span style="color:${q.c}">${q.l}</span></button>`).join('');
+}
+
 function renderKPIs(){
   const k=MOCK_KPI[P],pct=Math.min((k.closed/k.target)*100,100);
+  const totalPipe=Object.values(OPPS_K).flat().reduce((s,o)=>s+o.a,0);
   const items=[
-    {label:t('kpi_closed'),value:fmt(k.closed),icon:IC.revenue,color:'#0176D3',bg:'rgba(1,118,211,.08)',trend:'+18%',dir:'up',sub:t('kpi_of_target')+' '+fmt(k.target),bar:pct},
-    {label:t('kpi_leads'),value:k.leads,icon:IC.leads,color:'#DD7A01',bg:'rgba(221,122,1,.08)',trend:'+12',dir:'up',sub:'vs last period',bar:76},
-    {label:t('kpi_conv'),value:k.conv+'%',icon:IC.conv,color:'#7F56D9',bg:'rgba(127,86,217,.08)',trend:'+2.1pt',dir:'up',sub:t('kpi_benchmark'),bar:k.conv},
-    {label:'Active Deals',value:OPPS.length,icon:IC.deals,color:'#0B827C',bg:'rgba(11,130,124,.08)',trend:'+3',dir:'up',sub:'in pipeline',bar:60},
+    {l:'Pipeline Value',v:fmt(totalPipe),c:'#0176D3',bg:'rgba(1,118,211,.06)',i:'target',tr:'+18%',d:'up',sub:'All stages',bar:72},
+    {l:'Closed Won',v:fmt(k.closed),c:'#2E844A',bg:'rgba(46,132,74,.06)',i:'dollar',tr:'+24%',d:'up',sub:'vs last period',bar:pct},
+    {l:'Active Customers',v:'6',c:'#0B827C',bg:'rgba(11,130,124,.06)',i:'users',tr:'+3',d:'up',sub:'of 8 accounts',bar:75},
+    {l:'Open Tickets',v:'3',c:'#C23934',bg:'rgba(194,57,52,.06)',i:'ticket',tr:'1 breach',d:'down',sub:'Needs attention',bar:30},
+    {l:'Conversion',v:k.conv+'%',c:'#DD7A01',bg:'rgba(221,122,1,.06)',i:'chart',tr:'+2.4pt',d:'up',sub:'Benchmark 22%',bar:k.conv},
   ];
-  document.getElementById('kpis').innerHTML=items.map(i=>`<div class="bi-kpi"><div class="bi-kpi-stripe" style="background:${i.color}"></div><div class="bi-kpi-top"><div class="bi-kpi-icon" style="background:${i.bg};color:${i.color}">${i.icon}</div><span class="bi-kpi-trend ${i.dir}">${i.dir==='up'?'&#9650;':'&#9660;'} ${i.trend}</span></div><div class="bi-kpi-label">${i.label}</div><div class="bi-kpi-value">${i.value}</div><div class="bi-kpi-sub">${i.sub}</div><div class="bi-kpi-bar"><div class="bi-kpi-fill" style="width:${i.bar}%;background:${i.color}"></div></div></div>`).join('');
+  document.getElementById('kpis').innerHTML=items.map(i=>`<div class="kc"><div class="kc-stripe" style="background:${i.c}"></div><div class="kc-icon" style="background:${i.bg};color:${i.c}">${SV(i.i)}</div><div class="kc-label">${i.l}</div><div class="kc-value">${i.v}</div><div class="kc-foot"><span class="kc-trend ${i.d}">${i.d==='up'?'&#9650;':'&#9660;'} ${i.tr}</span><span class="kc-sub">${i.sub}</span></div><div class="kc-bar"><div class="kc-fill" style="width:${i.bar}%;background:${i.c}"></div></div></div>`).join('');
 }
 
-function renderStages(){
-  const tot=STAGES.reduce((s,x)=>s+x.total,0),mx=Math.max(...STAGES.map(s=>s.total));
-  document.getElementById('pipe-total').textContent=fmt(tot);
-  document.getElementById('stages').innerHTML=STAGES.map(s=>`<div class="st-row"><div class="st-dot" style="background:${s.color}"></div><div class="st-name">${s.name}</div><div class="st-bar"><div class="st-bar-fill" style="width:${(s.total/mx)*100}%;background:${s.color}"></div></div><div class="st-val">${fmt(s.total)}</div><div class="st-cnt">${s.deals}</div></div>`).join('');
+function renderPipeline(){
+  const stages=Object.entries(OPPS_K).map(([k,v])=>({name:k,total:v.reduce((s,o)=>s+o.a,0),count:v.length,color:OC[k]}));
+  const max=Math.max(...stages.map(s=>s.total));
+  const total=stages.reduce((s,x)=>s+x.total,0);
+  document.getElementById('pipe-total').textContent=fmt(total);
+  document.getElementById('pipeline').innerHTML=stages.map(s=>`<div class="pb-row"><div class="pb-label">${s.name}</div><div class="pb-track">${s.total>0?`<div class="pb-fill" style="width:${(s.total/max)*100}%;background:${s.color}">${fmt(s.total)}</div>`:''}</div><div class="pb-cnt">${s.count}</div></div>`).join('');
 }
 
-function renderDonut(){
-  const tot=STAGES.reduce((s,x)=>s+x.deals,0),cx=55,cy=55,r=42,sw=14,C=2*Math.PI*r;
-  let off=0;
-  const arcs=STAGES.map(s=>{const d=(s.deals/tot)*C,g=C-d,a=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${sw}" stroke-dasharray="${d} ${g}" stroke-dashoffset="${-off+C*.25}"/>`;off+=d;return a}).join('');
-  const leg=STAGES.map(s=>`<div class="dl-item"><div class="dl-dot" style="background:${s.color}"></div><span class="dl-label">${s.name}</span><span class="dl-val">${s.deals}</span></div>`).join('');
-  document.getElementById('donut').innerHTML=`<svg width="110" height="110" viewBox="0 0 110 110"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--surface3)" stroke-width="${sw}"/>${arcs}<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="16" font-weight="800" fill="var(--text)">${tot}</text><text x="${cx}" y="${cy+11}" text-anchor="middle" font-size="8" fill="var(--text3)">deals</text></svg><div class="donut-legend">${leg}</div>`;
+function renderRevChart(){
+  const W=420,H=100,P=16,max=Math.max(...MD);
+  const pts=MD.map((v,i)=>[P+(i/(MD.length-1))*(W-P*2),H-P-(v/max)*(H-P*2)]);
+  const line=pts.map((p,i)=>`${i===0?'M':'L'}${p[0]},${p[1]}`).join(' ');
+  const area=`${line} L${pts[pts.length-1][0]},${H-P} L${pts[0][0]},${H-P} Z`;
+  const ytd=MD.slice(0,new Date().getMonth()+1).reduce((s,v)=>+(s+v).toFixed(1),0);
+  document.getElementById('ytd-label').textContent='YTD '+String.fromCharCode(3647)+ytd+'M';
+  document.getElementById('rev-chart').innerHTML=`<defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0176D3" stop-opacity=".18"/><stop offset="100%" stop-color="#0176D3" stop-opacity="0"/></linearGradient><linearGradient id="rs" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0176D3"/><stop offset="100%" stop-color="#2E844A"/></linearGradient></defs><path d="${area}" fill="url(#rg)"/><path d="${line}" fill="none" stroke="url(#rs)" stroke-width="2" stroke-linecap="round"/>${pts.map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="${i===MD.length-1?3.5:2}" fill="${i===MD.length-1?'#2E844A':'#0176D3'}" opacity="${i===MD.length-1?1:.35}"/>`).join('')}${MD.map((_,i)=>{const x=P+(i/(MD.length-1))*(W-P*2);return`<text x="${x}" y="${H-1}" text-anchor="middle" font-size="7" fill="var(--text3)" font-family="Inter">${ML[i]}</text>`}).join('')}`;
 }
 
-function renderFunnel(){
-  const rows=[{l:'New Leads',c:120,cl:'#1B96FF'},{l:'Contacted',c:78,cl:'#7F56D9'},{l:'Qualified',c:45,cl:'#0B827C'},{l:'Proposal',c:28,cl:'#DD7A01'},{l:'Won',c:12,cl:'#2E844A'}];
-  document.getElementById('funnel').innerHTML=rows.map((r,i)=>`<div class="fn-row"><div class="fn-label">${r.l}</div><div class="fn-track"><div class="fn-fill" style="width:${(r.c/120)*100}%;background:${r.cl}">${r.c}</div></div><div class="fn-pct">${i===0?'100%':Math.round((r.c/120)*100)+'%'}</div></div>`).join('');
+function renderKanban(){
+  document.getElementById('kanban').innerHTML=Object.entries(OPPS_K).slice(0,6).map(([stage,opps])=>`<div class="kk-col"><div class="kk-head"><div class="kk-title"><span style="width:6px;height:6px;border-radius:50%;background:${OC[stage]}"></span>${stage}</div><span class="kk-cnt">${opps.length}</span></div><div class="kk-total">${fmt(opps.reduce((s,o)=>s+o.a,0))}</div>${opps.map(o=>`<div class="kk-card"><div class="kk-name">${o.n}</div><div class="kk-company">${o.c}</div><div class="kk-foot"><span class="kk-amt">${fmt(o.a)}</span><span class="kk-date">${o.d}</span></div></div>`).join('')}${opps.length===0?'<div style="text-align:center;padding:12px;color:var(--text3);font-size:11px">Empty</div>':''}</div>`).join('');
 }
 
-function renderReps(){
-  const mx=Math.max(...REPS.map(r=>r.revenue));
-  document.getElementById('reps').innerHTML=REPS.map(r=>`<div class="rp-row"><div class="rp-av" style="background:${r.color}">${r.initials}</div><div class="rp-info"><div class="rp-name">${r.name}</div><div class="rp-bar"><div class="rp-bar-fill" style="width:${(r.revenue/mx)*100}%;background:${r.color}"></div></div><div class="rp-meta">${r.deals} deals / ${r.acts} activities</div></div><div class="rp-rev">${fmt(r.revenue)}</div></div>`).join('');
+function renderCustomers(){
+  const bc={'Active':'rgba(46,132,74,.08);color:#2E844A','Renewal':'rgba(127,86,217,.08);color:#7F56D9','At Risk':'rgba(194,57,52,.08);color:#C23934'};
+  document.getElementById('cust-table').innerHTML=CUSTS.map(c=>`<tr><td><div class="ct-name">${c.n}</div><div class="ct-contact">${c.c}</div></td><td><span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:${bc[c.s]||bc.Active}">${c.s}</span></td><td style="font-weight:700;color:var(--sf-blue)">${fmt(c.r)}</td><td style="font-size:11px;color:var(--text3)">${c.l}</td></tr>`).join('');
 }
 
-function renderBars(){
-  const mx=Math.max(...MD),now=new Date().getMonth();
-  document.getElementById('bars').innerHTML=MD.map((v,i)=>`<div class="bar-col"><div class="bar-v">${v}M</div><div class="bar-rect" style="height:${(v/mx)*100}%;background:${i===now?'var(--sf-blue)':'rgba(1,118,211,.2)'}"></div><div class="bar-lbl">${ML[i]}</div></div>`).join('');
+function renderTimeline(){
+  document.getElementById('timeline').innerHTML=ACTS.map(a=>`<div class="tl-item"><div class="tl-icon" style="background:${a.bg};color:${a.c}">${a.lbl}</div><div class="tl-body"><div class="tl-title">${a.title}</div><div class="tl-meta">${a.who} / ${a.when}</div></div></div>`).join('');
 }
 
-function renderActs(){
-  const items=[
-    {icon:IC.won,bg:'rgba(46,132,74,.08)',color:'#2E844A',text:'Deal closed: POS Srisomboon',meta:'Somchai / 2h ago',badge:'Won',bBg:'rgba(46,132,74,.08)',bC:'#2E844A'},
-    {icon:IC.lead,bg:'rgba(1,118,211,.08)',color:'#0176D3',text:'New lead: Thanakij Trading',meta:'System / 3h ago',badge:'New',bBg:'rgba(1,118,211,.06)',bC:'#0176D3'},
-    {icon:IC.quote,bg:'rgba(221,122,1,.08)',color:'#DD7A01',text:'Quotation sent: QT-2569-0005',meta:'Wilai / 5h ago',badge:'Sent',bBg:'rgba(221,122,1,.06)',bC:'#DD7A01'},
-    {icon:IC.call,bg:'rgba(127,86,217,.08)',color:'#7F56D9',text:'Call logged: Eastern Logistics',meta:'Arun / 1d ago',badge:'Call',bBg:'rgba(127,86,217,.06)',bC:'#7F56D9'},
-    {icon:IC.task,bg:'rgba(11,130,124,.08)',color:'#0B827C',text:'Task done: Send follow-up',meta:'Manee / 1d ago',badge:'Done',bBg:'rgba(11,130,124,.06)',bC:'#0B827C'},
-  ];
-  document.getElementById('acts').innerHTML=items.map(a=>`<div class="act-row"><div class="act-icon" style="background:${a.bg};color:${a.color}">${a.icon}</div><div class="act-body"><div class="act-text">${a.text}</div><div class="act-meta">${a.meta}</div></div><span class="act-badge" style="background:${a.bBg};color:${a.bC}">${a.badge}</span></div>`).join('');
-}
-
-function renderGauge(){
-  const k=MOCK_KPI[P],pct=Math.min((k.closed/k.target)*100,100);
-  const r=50,cx=65,cy=65,sA=-210,eA=30,tA=eA-sA,fA=(pct/100)*tA;
-  function pol(a,R){const rd=(a-90)*Math.PI/180;return{x:cx+R*Math.cos(rd),y:cy+R*Math.sin(rd)}}
-  function arc(s,e,R){const p1=pol(s,R),p2=pol(e,R);return`M ${p1.x} ${p1.y} A ${R} ${R} 0 ${(e-s)>180?1:0} 1 ${p2.x} ${p2.y}`}
-  const cl=pct>=80?'#2E844A':pct>=50?'#0176D3':'#DD7A01';
-  const st=pct>=80?'On Track':pct>=50?'In Progress':'Needs Attention';
-  document.getElementById('gauge').innerHTML=`<svg width="130" height="90" viewBox="0 0 130 90"><path d="${arc(sA,eA,r)}" fill="none" stroke="var(--surface3)" stroke-width="10" stroke-linecap="round"/><path d="${arc(sA,sA+fA,r)}" fill="none" stroke="${cl}" stroke-width="10" stroke-linecap="round"/><text x="${cx}" y="62" text-anchor="middle" font-size="20" font-weight="900" fill="var(--text)">${Math.round(pct)}%</text><text x="${cx}" y="76" text-anchor="middle" font-size="8" fill="var(--text3)">of target</text></svg><div style="font-size:12px;font-weight:600;color:${cl};margin-top:2px">${st}</div><div style="font-size:10px;color:var(--text3);margin-top:1px">${fmt(k.closed)} / ${fmt(k.target)}</div>`;
-}
-
-function renderAll(){renderKPIs();renderStages();renderDonut();renderFunnel();renderReps();renderBars();renderActs();renderGauge()}
+function renderAll(){renderQA();renderKPIs();renderPipeline();renderRevChart();renderKanban();renderCustomers();renderTimeline()}
 renderAll();
 </script>
 </body>
