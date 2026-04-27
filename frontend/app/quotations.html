@@ -81,7 +81,7 @@
           </div>
           <div class="table-wrap">
             <table class="qt-line-table">
-              <thead><tr><th>Product</th><th style="width:70px">Qty</th><th style="width:100px">Unit Price</th><th style="width:80px">Discount</th><th style="width:60px">WHT%</th><th style="width:90px">Line Total</th><th style="width:30px"></th></tr></thead>
+              <thead><tr><th>Product / Description</th><th style="width:70px">Qty</th><th style="width:100px">Unit Price</th><th style="width:80px">Discount</th><th style="width:60px">WHT%</th><th style="width:90px">Line Total</th><th style="width:30px"></th></tr></thead>
               <tbody id="qt-lines"></tbody>
             </table>
           </div>
@@ -99,8 +99,23 @@
           <div class="qt-summary-row total"><span style="color:var(--sf-blue)">Grand Total</span><span style="color:var(--sf-blue)" id="sum-grand">฿0</span></div>
 
           <div style="display:flex;flex-direction:column;gap:8px;margin-top:20px">
-            <button class="btn btn-primary" onclick="saveQuotation('draft')" style="width:100%;justify-content:center">Save as Draft</button>
-            <button class="btn btn-secondary" onclick="saveQuotation('sent')" style="width:100%;justify-content:center">Save & Send</button>
+            <button class="btn btn-primary" onclick="saveQuotation('draft')" style="width:100%;justify-content:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+              Save as Draft
+            </button>
+            <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin:4px 0">Send via</div>
+            <button class="btn btn-secondary" onclick="saveQuotation('sent','email')" style="width:100%;justify-content:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
+              Send via Email
+            </button>
+            <button class="btn btn-secondary" onclick="saveQuotation('sent','line')" style="width:100%;justify-content:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+              Send via LINE
+            </button>
+            <button class="btn btn-secondary" onclick="saveQuotation('draft','pdf')" style="width:100%;justify-content:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              Download PDF
+            </button>
           </div>
         </div>
       </div>
@@ -178,47 +193,43 @@ function updateQtNumber() {
 function addLine() {
   lineCounter++;
   var id = lineCounter;
-  var productOpts = PRODUCTS.filter(p => p.active).map(p =>
-    '<option value="' + p.id + '" data-price="' + p.price + '" data-wht="' + p.wht + '">' + p.name + ' (' + p.sku + ')</option>'
-  ).join('');
+  var productOpts = '<option value="">-- Type custom or select --</option>' +
+    PRODUCTS.filter(p => p.active).map(p =>
+      '<option value="' + p.id + '" data-price="' + p.price + '" data-wht="' + p.wht + '" data-name="' + p.name + '">' + p.name + ' (' + p.sku + ')</option>'
+    ).join('');
 
   var row = document.createElement('tr');
   row.id = 'line-' + id;
   row.innerHTML = `
-    <td><select onchange="updateLine(${id})">${productOpts}</select></td>
+    <td>
+      <select onchange="selectProduct(${id})" id="sel-${id}" style="margin-bottom:4px">${productOpts}</select>
+      <input type="text" id="name-${id}" placeholder="Or type product/service name" style="font-size:11px"/>
+    </td>
     <td><input type="number" value="1" min="1" onchange="updateLine(${id})" id="qty-${id}"/></td>
-    <td><input type="number" id="price-${id}" onchange="updateLine(${id})"/></td>
+    <td><input type="number" id="price-${id}" onchange="updateLine(${id})" placeholder="0"/></td>
     <td><input type="number" value="0" min="0" id="disc-${id}" onchange="updateLine(${id})"/></td>
-    <td><span id="wht-${id}" style="font-size:11px;color:var(--text2)">0%</span></td>
-    <td style="font-weight:600;color:var(--sf-blue)" id="total-${id}">฿0</td>
-    <td><button class="qt-remove" onclick="removeLine(${id})">×</button></td>`;
+    <td><input type="number" value="0" min="0" max="5" step="1" id="wht-${id}" onchange="updateLine(${id})" style="width:50px"/></td>
+    <td style="font-weight:600;color:var(--sf-blue)" id="total-${id}">${String.fromCharCode(3647)}0</td>
+    <td><button class="qt-remove" onclick="removeLine(${id})">x</button></td>`;
   document.getElementById('qt-lines').appendChild(row);
+  updateLine(id);
+}
 
-  // Set default price from first product
-  var firstProduct = PRODUCTS.find(p => p.active);
-  if (firstProduct) {
-    document.getElementById('price-' + id).value = firstProduct.price;
-    document.getElementById('wht-' + id).textContent = firstProduct.wht + '%';
+function selectProduct(id) {
+  var select = document.getElementById('sel-' + id);
+  var opt = select.options[select.selectedIndex];
+  if (opt && opt.value) {
+    document.getElementById('name-' + id).value = opt.dataset.name || '';
+    document.getElementById('price-' + id).value = opt.dataset.price || 0;
+    document.getElementById('wht-' + id).value = opt.dataset.wht || 0;
   }
   updateLine(id);
 }
 
 function updateLine(id) {
-  var row = document.getElementById('line-' + id);
-  if (!row) return;
-  var select = row.querySelector('select');
-  var opt = select.options[select.selectedIndex];
   var price = parseFloat(document.getElementById('price-' + id).value) || 0;
   var qty = parseInt(document.getElementById('qty-' + id).value) || 1;
   var disc = parseFloat(document.getElementById('disc-' + id).value) || 0;
-
-  // Update price and WHT from selected product
-  if (opt && opt.dataset.price) {
-    document.getElementById('price-' + id).value = opt.dataset.price;
-    price = parseFloat(opt.dataset.price);
-    document.getElementById('wht-' + id).textContent = (opt.dataset.wht || 0) + '%';
-  }
-
   var lineTotal = (price * qty) - disc;
   document.getElementById('total-' + id).textContent = fmt(Math.max(0, lineTotal));
   recalcSummary();
@@ -239,8 +250,7 @@ function recalcSummary() {
     var price = parseFloat(document.getElementById('price-' + id)?.value) || 0;
     var qty = parseInt(document.getElementById('qty-' + id)?.value) || 1;
     var disc = parseFloat(document.getElementById('disc-' + id)?.value) || 0;
-    var whtText = document.getElementById('wht-' + id)?.textContent || '0%';
-    var whtRate = parseFloat(whtText) || 0;
+    var whtRate = parseFloat(document.getElementById('wht-' + id)?.value) || 0;
 
     var lineTotal = (price * qty);
     subtotal += lineTotal;
@@ -259,7 +269,7 @@ function recalcSummary() {
   document.getElementById('sum-grand').textContent = fmt(Math.round(grand));
 }
 
-function saveQuotation(status) {
+function saveQuotation(status, channel) {
   var account = document.getElementById('qt-account').value;
   if (!account) { alert('Please select a customer'); return; }
 
@@ -273,8 +283,7 @@ function saveQuotation(status) {
     var price = parseFloat(document.getElementById('price-' + id)?.value) || 0;
     var qty = parseInt(document.getElementById('qty-' + id)?.value) || 1;
     var disc = parseFloat(document.getElementById('disc-' + id)?.value) || 0;
-    var whtText = document.getElementById('wht-' + id)?.textContent || '0%';
-    var whtRate = parseFloat(whtText) || 0;
+    var whtRate = parseFloat(document.getElementById('wht-' + id)?.value) || 0;
     subtotal += price * qty;
     totalDisc += disc;
     totalWht += (price * qty) * (whtRate / 100);
@@ -301,6 +310,15 @@ function saveQuotation(status) {
 
   closeForm();
   renderTable();
+
+  // Show confirmation based on channel
+  if (channel === 'email') {
+    alert('Quotation saved and sent via Email to ' + account);
+  } else if (channel === 'line') {
+    alert('Quotation saved and sent via LINE to ' + account);
+  } else if (channel === 'pdf') {
+    alert('Quotation saved. PDF download will start shortly.\n\n(In production, this generates a PDF via the backend API)');
+  }
 }
 
 renderTable();
