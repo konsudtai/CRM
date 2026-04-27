@@ -9,7 +9,7 @@ function saveUserProfile(p) { localStorage.setItem('sf7-user', JSON.stringify(p)
 function getNavMenus() {
   return [
     { key:'dashboard', label:t('nav_dashboard'), items:[{page:'dashboard',name:t('nav_dashboard'),desc:t('nav_kpi_desc')}] },
-    { key:'crm', label:t('nav_crm'), items:[{page:'accounts',name:t('nav_accounts'),desc:t('nav_accounts_desc')},{page:'contacts',name:t('nav_contacts'),desc:t('nav_contacts_desc')}] },
+    { key:'crm', label:t('nav_crm'), items:[{page:'accounts',name:t('nav_accounts'),desc:t('nav_accounts_desc')}] },
     { key:'sales', label:t('nav_sales'), items:[{page:'leads',name:t('nav_leads'),desc:t('nav_leads_desc')},{page:'opportunities',name:t('nav_opportunities'),desc:t('nav_opportunities_desc')}] },
     { key:'activity', label:t('nav_activities'), items:[{page:'tasks',name:t('nav_tasks'),desc:t('nav_tasks_desc')},{page:'calendar',name:t('nav_calendar'),desc:t('nav_calendar_desc')}] },
     { key:'docs', label:t('nav_documents'), items:[{page:'quotations',name:t('nav_quotations'),desc:t('nav_quotations_desc')},{page:'products',name:t('nav_products'),desc:t('nav_products_desc')}] },
