@@ -1,61 +1,249 @@
-<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — ตั้งค่า</title><link rel="stylesheet" href="../css/app.css"/></head><body>
-<div class="bg-pattern"></div><div id="nav"></div>
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SalesFAST 7 — Settings</title>
+<link rel="stylesheet" href="../css/app.css"/>
+<style>
+.tab-bar{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:20px}
+.tab-btn{padding:10px 20px;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;cursor:pointer;font-family:inherit;position:relative;transition:color .15s}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--sf-blue);font-weight:600}
+.tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:var(--sf-blue)}
+.tab-content{display:none}.tab-content.active{display:block}
+.user-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;background:var(--surface2);margin-bottom:8px;transition:background .12s}
+.user-card:hover{background:var(--row-hover)}
+.user-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:13px;font-weight:600}
+.user-email{font-size:11px;color:var(--text3);margin-top:1px}
+.user-actions{display:flex;gap:6px}
+.user-action-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:11px;font-weight:500;font-family:inherit;color:var(--text2);transition:all .12s}
+.user-action-btn:hover{border-color:var(--sf-blue);color:var(--sf-blue)}
+.user-action-btn.danger:hover{border-color:#C23934;color:#C23934}
+.perm-grid{display:grid;grid-template-columns:140px repeat(4,1fr);gap:0;font-size:12px}
+.perm-header{padding:8px 10px;font-weight:600;color:var(--text2);background:var(--surface2);border-bottom:1px solid var(--border)}
+.perm-cell{padding:8px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center}
+.perm-module{padding:8px 10px;font-weight:500;border-bottom:1px solid var(--border);display:flex;align-items:center}
+.perm-check{width:16px;height:16px;accent-color:var(--sf-blue);cursor:pointer}
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+<div id="nav"></div>
 <div class="page anim">
-  <div class="page-header"><div><div class="page-title">ตั้งค่า</div><div class="page-subtitle">จัดการการตั้งค่าระบบ</div></div></div>
-  <div class="settings-layout">
-    <div class="settings-nav" id="settings-tabs"></div>
-    <div class="card" style="flex:1" id="settings-content"></div>
+  <div class="page-header">
+    <div>
+      <div class="page-title" data-i18n="nav_settings_page">Settings</div>
+      <div class="page-subtitle">Manage users, roles and permissions</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTab('users',this)">Users</button>
+    <button class="tab-btn" onclick="showTab('roles',this)">Roles & Permissions</button>
+  </div>
+
+  <!-- Tab: Users -->
+  <div class="tab-content active" id="tab-users">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <input class="search-input" id="user-search" placeholder="Search by name or email..." style="max-width:300px" oninput="renderUsers()"/>
+      <button class="btn btn-primary" onclick="openAddUser()">+ Add User</button>
+    </div>
+    <div id="user-list"></div>
+
+    <!-- Add User Form (hidden) -->
+    <div id="add-user-form" style="display:none">
+      <div class="card" style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Add New User</div>
+        <form onsubmit="saveUser(event)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="sf7-form-group"><label class="sf7-form-label">First Name *</label><input class="sf7-form-input" id="u-first" required/></div>
+            <div class="sf7-form-group"><label class="sf7-form-label">Last Name *</label><input class="sf7-form-input" id="u-last" required/></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+            <div class="sf7-form-group"><label class="sf7-form-label">Email *</label><input class="sf7-form-input" id="u-email" type="email" required/></div>
+            <div class="sf7-form-group"><label class="sf7-form-label">Phone</label><input class="sf7-form-input" id="u-phone"/></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+            <div class="sf7-form-group"><label class="sf7-form-label">Role *</label>
+              <select class="sf7-form-input" id="u-role" required>
+                <option value="Sales Rep">Sales Rep</option>
+                <option value="Sales Manager">Sales Manager</option>
+                <option value="Admin">Admin</option>
+                <option value="Viewer">Viewer</option>
+              </select>
+            </div>
+            <div class="sf7-form-group"><label class="sf7-form-label">Temporary Password *</label><input class="sf7-form-input" id="u-pass" type="password" required minlength="8" placeholder="Min 8 characters"/></div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+            <button type="button" class="btn btn-secondary" onclick="closeAddUser()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create User</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Roles & Permissions -->
+  <div class="tab-content" id="tab-roles">
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)">Permission Matrix</div>
+      <div style="overflow-x:auto">
+        <div class="perm-grid" id="perm-grid"></div>
+      </div>
+      <div style="margin-top:16px;padding:10px 14px;border-radius:8px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1);font-size:11px;color:var(--text2)">
+        <strong style="color:var(--sf-blue)">Note:</strong> Sales Manager has the highest approval authority for quotations. Only Admin can manage users and settings.
+      </div>
+    </div>
   </div>
 </div>
-<script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
-<script src="../js/nav.js"></script><script src="../js/data.js"></script>
+
+<script src="../js/helpers.js"></script>
+<script src="../js/i18n.js"></script>
+<script src="../js/nav.js"></script>
+<script src="../js/data.js"></script>
 <script>
-document.getElementById('nav').innerHTML=renderNav('settings');
-const tabs=[
-  {id:'roles',label:'บทบาทและสิทธิ์'},
-  {id:'users',label:'ผู้ใช้งาน'},
-  {id:'security',label:'ความปลอดภัย'},
-  {id:'integrations',label:'การเชื่อมต่อ'},
-  {id:'webhooks',label:'Webhooks'},
-  {id:'pdpa',label:'PDPA'},
-  {id:'api',label:'API Keys'},
-  {id:'admin',label:'Admin Portal'},
+document.getElementById('nav').innerHTML = renderNav('settings');
+
+// Mock users
+var USERS = [
+  { id:1, first:'Somchai', last:'Jaidee', email:'somchai@company.co.th', phone:'081-234-5678', role:'Admin', active:true },
+  { id:2, first:'Wilai', last:'Rakdee', email:'wilai@company.co.th', phone:'089-345-6789', role:'Sales Manager', active:true },
+  { id:3, first:'Arun', last:'Sangfa', email:'arun@company.co.th', phone:'081-456-7890', role:'Sales Rep', active:true },
+  { id:4, first:'Manee', last:'Thongkam', email:'manee@company.co.th', phone:'043-567-8901', role:'Sales Rep', active:true },
+  { id:5, first:'Pichai', last:'Yimswy', email:'pichai@company.co.th', phone:'095-555-6666', role:'Viewer', active:false },
 ];
-let activeTab='roles';
-function setTab(id){activeTab=id;renderTabs();renderContent()}
-function renderTabs(){document.getElementById('settings-tabs').innerHTML=tabs.map(t=>`<div class="settings-nav-item${activeTab===t.id?' active':''}" onclick="setTab('${t.id}')">${t.label}</div>`).join('')}
-function renderContent(){
-  const c={
-    roles:`<div class="section-title">บทบาทและสิทธิ์</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">จัดการบทบาทและกำหนดสิทธิ์การเข้าถึง (RBAC)</p>
-      <div class="table-wrap"><table><thead><tr><th>บทบาท</th><th>ประเภท</th><th>สมาชิก</th><th>สิทธิ์</th></tr></thead><tbody>
-      <tr><td style="font-weight:500">Admin</td><td><span class="tag">ค่าเริ่มต้น</span></td><td>2</td><td>ทั้งหมด</td></tr>
-      <tr><td style="font-weight:500">Sales Manager</td><td><span class="tag">ค่าเริ่มต้น</span></td><td>3</td><td>อ่าน, สร้าง, แก้ไข</td></tr>
-      <tr><td style="font-weight:500">Sales Rep</td><td><span class="tag">ค่าเริ่มต้น</span></td><td>8</td><td>อ่าน, สร้าง</td></tr>
-      <tr><td style="font-weight:500">Viewer</td><td><span class="status-badge" style="background:var(--surface3);color:var(--text2)">ค่าเริ่มต้น</span></td><td>5</td><td>อ่านเท่านั้น</td></tr>
-      </tbody></table></div><button class="btn btn-secondary" style="margin-top:16px">+ สร้างบทบาทใหม่</button>`,
-    users:`<div class="section-title">ผู้ใช้งาน</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">จัดการผู้ใช้งานในระบบ</p>
-      <div class="table-wrap"><table><thead><tr><th>ชื่อ</th><th>อีเมล</th><th>บทบาท</th><th>สถานะ</th></tr></thead><tbody>
-      ${REPS.map(r=>`<tr><td style="font-weight:500">${r.name}</td><td style="color:var(--text2)">${r.name.split(' ')[0].toLowerCase()}@ppcrm.co.th</td><td><span class="tag">Sales Rep</span></td><td><span class="status-badge" style="background:rgba(48,209,88,.12);color:#1a7d39">Active</span></td></tr>`).join('')}
-      </tbody></table></div><button class="btn btn-primary" style="margin-top:16px">+ เพิ่มผู้ใช้</button>`,
-    security:`<div class="section-title">ความปลอดภัย</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">จัดการนโยบายความปลอดภัย</p>
-      ${[{label:'MFA (การยืนยันตัวตน 2 ขั้นตอน)',desc:'บังคับใช้ MFA สำหรับผู้ใช้ทุกคน',on:true},{label:'IP Allowlist',desc:'จำกัดการเข้าถึงจาก IP ที่กำหนด',on:false},{label:'Session Timeout (30 นาที)',desc:'ออกจากระบบอัตโนมัติหลังไม่มีกิจกรรม',on:true},{label:'Password Policy',desc:'รหัสผ่านขั้นต่ำ 8 ตัวอักษร + ตัวพิมพ์ใหญ่ + ตัวเลข',on:true}].map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:8px"><div><div style="font-size:14px;font-weight:500">${s.label}</div><div style="font-size:12px;color:var(--text2)">${s.desc}</div></div><div style="width:44px;height:24px;border-radius:12px;background:${s.on?'var(--sf-blue)':'var(--surface3)'};position:relative;cursor:pointer"><div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;${s.on?'right:2px':'left:2px'};box-shadow:0 1px 3px rgba(0,0,0,.2)"></div></div></div>`).join('')}`,
-    integrations:`<div class="section-title">การเชื่อมต่อ</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">เชื่อมต่อกับบริการภายนอก</p>
-      ${[{name:'LINE OA',desc:'ส่งข้อความและแจ้งเตือนผ่าน LINE',icon:'',on:true},{name:'Gmail',desc:'ซิงค์อีเมลกับ Gmail',icon:'',on:false},{name:'Google Calendar',desc:'ซิงค์ปฏิทินกับ Google',icon:'',on:true},{name:'Microsoft 365',desc:'ซิงค์อีเมลและปฏิทิน',icon:'',on:false},{name:'AWS Bedrock (AI)',desc:'AI Lead Scoring, Chatbot, Summarization',icon:'',on:true}].map(i=>`<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:8px"><div style="display:flex;align-items:center;gap:12px"><span style="font-size:24px">${i.icon}</span><div><div style="font-size:14px;font-weight:500">${i.name}</div><div style="font-size:12px;color:var(--text2)">${i.desc}</div></div></div><button class="btn ${i.on?'btn-secondary':'btn-primary'}" style="padding:6px 14px;font-size:12px">${i.on?' เชื่อมต่อแล้ว':'เชื่อมต่อ'}</button></div>`).join('')}`,
-    webhooks:`<div class="section-title">Webhooks</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">ส่ง event ไปยัง URL ภายนอกเมื่อมีการเปลี่ยนแปลงข้อมูล</p>
-      <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:500">https://erp.company.co.th/webhook</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Events: lead.created, opportunity.updated · <span class="status-badge" style="background:rgba(48,209,88,.12);color:#1a7d39">Active</span></div></div><button class="btn btn-secondary" style="padding:6px 14px;font-size:12px">แก้ไข</button></div></div>
-      <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:500">https://accounting.co.th/api/hook</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Events: quotation.accepted · <span class="status-badge" style="background:rgba(48,209,88,.12);color:#1a7d39">Active</span></div></div><button class="btn btn-secondary" style="padding:6px 14px;font-size:12px">แก้ไข</button></div></div>
-      <button class="btn btn-secondary" style="margin-top:8px">+ เพิ่ม Webhook</button>`,
-    pdpa:`<div class="section-title">PDPA (พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล)</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">จัดการความยินยอมและนโยบายข้อมูลส่วนบุคคล</p>
-      ${[{label:'วัตถุประสงค์การเก็บข้อมูล',desc:'3 วัตถุประสงค์ที่กำหนด · ความยินยอม 245 รายการ'},{label:'Audit Log',desc:'บันทึกการเข้าถึงข้อมูลทั้งหมด · 1,234 รายการเดือนนี้'},{label:'คำขอลบข้อมูล',desc:'0 คำขอที่รอดำเนินการ · ดำเนินการภายใน 30 วัน'},{label:'Consent Records',desc:'บันทึกความยินยอมแบบ immutable · ไม่สามารถแก้ไขหรือลบได้'}].map(s=>`<div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:8px"><div style="font-size:14px;font-weight:500">${s.label}</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${s.desc}</div></div>`).join('')}
-      <button class="btn btn-secondary" style="margin-top:8px">+ เพิ่มวัตถุประสงค์</button>`,
-    api:`<div class="section-title">API Keys</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">จัดการ API Keys สำหรับเชื่อมต่อระบบภายนอก (REST API + OAuth 2.0)</p>
-      <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:500">Production API Key</div><div style="font-size:11px;color:var(--text2);margin-top:4px;font-family:monospace">ppcrm_live_sk_••••••••••••3a7f</div><div style="font-size:11px;color:var(--text3);margin-top:2px">สร้างเมื่อ 1 ม.ค. 2569 · Rate limit: 1,000 req/min</div></div><button class="btn btn-secondary" style="padding:6px 14px;font-size:12px">Regenerate</button></div></div>
-      <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:500">Test API Key</div><div style="font-size:11px;color:var(--text2);margin-top:4px;font-family:monospace">ppcrm_test_sk_••••••••••••9b2c</div><div style="font-size:11px;color:var(--text3);margin-top:2px">สร้างเมื่อ 15 ม.ค. 2569</div></div><button class="btn btn-secondary" style="padding:6px 14px;font-size:12px">Regenerate</button></div></div>
-      <button class="btn btn-primary" style="margin-top:8px">+ สร้าง API Key ใหม่</button>
-      <div style="margin-top:24px;padding:16px;background:rgba(0,113,227,.04);border-radius:10px;border:1px solid rgba(0,113,227,.1)"><div style="font-size:13px;font-weight:600;color:var(--sf-blue)"> API Documentation</div><div style="font-size:12px;color:var(--text2);margin-top:4px">OpenAPI 3.0 docs available at <code style="background:var(--surface3);padding:2px 6px;border-radius:4px;font-size:11px">/api/docs</code></div></div>`,
-    admin:`<div class="section-title">Admin Portal</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">Access the full admin portal for tenant management, system health, and advanced configuration.</p><a href="../admin/index.html" class="btn btn-primary" style="padding:10px 24px;font-size:14px;text-decoration:none">Open Admin Portal</a>`,
-  };
-  document.getElementById('settings-content').innerHTML=c[activeTab]||c.roles;
+
+var ROLES = ['Admin','Sales Manager','Sales Rep','Viewer'];
+var MODULES = ['Dashboard','Accounts','Pipeline','Tasks','Calendar','Quotations','Products','Settings'];
+var PERMS = {
+  'Admin':       { Dashboard:'CRUD', Accounts:'CRUD', Pipeline:'CRUD', Tasks:'CRUD', Calendar:'CRUD', Quotations:'CRUD', Products:'CRUD', Settings:'CRUD' },
+  'Sales Manager':{ Dashboard:'R', Accounts:'CRU', Pipeline:'CRUD', Tasks:'CRUD', Calendar:'CRU', Quotations:'CRUD', Products:'CRU', Settings:'R' },
+  'Sales Rep':   { Dashboard:'R', Accounts:'CR', Pipeline:'CRU', Tasks:'CRU', Calendar:'CR', Quotations:'CR', Products:'R', Settings:'' },
+  'Viewer':      { Dashboard:'R', Accounts:'R', Pipeline:'R', Tasks:'R', Calendar:'R', Quotations:'R', Products:'R', Settings:'' },
+};
+
+var roleColors = { 'Admin':'#0176D3', 'Sales Manager':'#2E844A', 'Sales Rep':'#DD7A01', 'Viewer':'#939393' };
+
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(function(el){ el.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(el){ el.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
 }
-renderTabs();renderContent();
-</script></body></html>
+
+function renderUsers() {
+  var q = (document.getElementById('user-search').value || '').toLowerCase();
+  var filtered = USERS.filter(function(u) {
+    return (u.first + ' ' + u.last + ' ' + u.email).toLowerCase().indexOf(q) >= 0;
+  });
+  document.getElementById('user-list').innerHTML = filtered.map(function(u) {
+    var initials = (u.first[0] || '') + (u.last[0] || '');
+    var color = roleColors[u.role] || '#939393';
+    return '<div class="user-card">' +
+      '<div class="user-av" style="background:' + color + '">' + initials + '</div>' +
+      '<div class="user-info">' +
+        '<div class="user-name">' + u.first + ' ' + u.last +
+          (u.active ? '' : ' <span style="font-size:10px;color:#C23934;font-weight:600">(Inactive)</span>') +
+        '</div>' +
+        '<div class="user-email">' + u.email + (u.phone ? ' / ' + u.phone : '') + '</div>' +
+      '</div>' +
+      '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:' + color + '14;color:' + color + '">' + u.role + '</span>' +
+      '<div class="user-actions">' +
+        '<button class="user-action-btn" onclick="changeRole(' + u.id + ')">Role</button>' +
+        '<button class="user-action-btn" onclick="resetPw(' + u.id + ')">Reset PW</button>' +
+        '<button class="user-action-btn danger" onclick="toggleActive(' + u.id + ')">' + (u.active ? 'Deactivate' : 'Activate') + '</button>' +
+      '</div>' +
+    '</div>';
+  }).join('') || '<div class="empty-state">No users found</div>';
+}
+
+function openAddUser() {
+  document.getElementById('add-user-form').style.display = 'block';
+  document.getElementById('u-first').value = '';
+  document.getElementById('u-last').value = '';
+  document.getElementById('u-email').value = '';
+  document.getElementById('u-phone').value = '';
+  document.getElementById('u-pass').value = '';
+  window.scrollTo(0, document.getElementById('add-user-form').offsetTop - 80);
+}
+function closeAddUser() { document.getElementById('add-user-form').style.display = 'none'; }
+
+function saveUser(e) {
+  e.preventDefault();
+  USERS.push({
+    id: USERS.length + 1,
+    first: document.getElementById('u-first').value,
+    last: document.getElementById('u-last').value,
+    email: document.getElementById('u-email').value,
+    phone: document.getElementById('u-phone').value,
+    role: document.getElementById('u-role').value,
+    active: true,
+  });
+  closeAddUser();
+  renderUsers();
+}
+
+function changeRole(id) {
+  var u = USERS.find(function(x){ return x.id === id; });
+  if (!u) return;
+  var newRole = prompt('Change role for ' + u.first + ' ' + u.last + '\n\nCurrent: ' + u.role + '\n\nOptions: Admin, Sales Manager, Sales Rep, Viewer', u.role);
+  if (newRole && ROLES.indexOf(newRole) >= 0) {
+    u.role = newRole;
+    renderUsers();
+  }
+}
+
+function resetPw(id) {
+  var u = USERS.find(function(x){ return x.id === id; });
+  if (!u) return;
+  var newPw = prompt('Set new temporary password for ' + u.first + ' ' + u.last + ':');
+  if (newPw && newPw.length >= 8) {
+    alert('Password reset for ' + u.email + '. User must change on next login.');
+  } else if (newPw) {
+    alert('Password must be at least 8 characters');
+  }
+}
+
+function toggleActive(id) {
+  var u = USERS.find(function(x){ return x.id === id; });
+  if (!u) return;
+  u.active = !u.active;
+  renderUsers();
+}
+
+function renderPermissions() {
+  var html = '';
+  // Header row
+  html += '<div class="perm-header">Module</div>';
+  ROLES.forEach(function(r) {
+    html += '<div class="perm-header" style="text-align:center;color:' + (roleColors[r] || '#939393') + '">' + r + '</div>';
+  });
+  // Module rows
+  MODULES.forEach(function(m) {
+    html += '<div class="perm-module">' + m + '</div>';
+    ROLES.forEach(function(r) {
+      var p = PERMS[r][m] || '';
+      var checks = '';
+      ['C','R','U','D'].forEach(function(action) {
+        var has = p.indexOf(action) >= 0;
+        var label = action === 'C' ? 'Create' : action === 'R' ? 'Read' : action === 'U' ? 'Update' : 'Delete';
+        checks += '<label style="display:flex;align-items:center;gap:2px;font-size:10px;color:var(--text3)" title="' + label + '">' +
+          '<input type="checkbox" class="perm-check" ' + (has ? 'checked' : '') + ' disabled/>' + action +
+        '</label>';
+      });
+      html += '<div class="perm-cell" style="gap:6px">' + checks + '</div>';
+    });
+  });
+  document.getElementById('perm-grid').innerHTML = html;
+  document.getElementById('perm-grid').style.gridTemplateColumns = '140px repeat(' + ROLES.length + ', 1fr)';
+}
+
+renderUsers();
+renderPermissions();
+</script>
+</body>
+</html>

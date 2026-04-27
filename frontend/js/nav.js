@@ -13,7 +13,7 @@ function getNavMenus() {
     { key:'sales', label:t('nav_sales'), items:[{page:'leads',name:t('nav_pipeline'),desc:t('nav_pipeline_desc')}] },
     { key:'activity', label:t('nav_activities'), items:[{page:'tasks',name:t('nav_tasks'),desc:t('nav_tasks_desc')},{page:'calendar',name:t('nav_calendar'),desc:t('nav_calendar_desc')}] },
     { key:'docs', label:t('nav_documents'), items:[{page:'quotations',name:t('nav_quotations'),desc:t('nav_quotations_desc')},{page:'products',name:t('nav_products'),desc:t('nav_products_desc')}] },
-    { key:'system', label:t('nav_settings'), items:[{page:'notifications',name:t('nav_notifications'),desc:t('nav_notifications_desc')},{page:'settings',name:t('nav_settings_page'),desc:t('nav_settings_desc')}] },
+    { key:'system', label:t('nav_settings'), items:[{page:'settings',name:t('nav_settings_page'),desc:t('nav_settings_desc')}] },
   ];
 }
 
