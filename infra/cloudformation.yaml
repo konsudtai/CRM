@@ -211,7 +211,7 @@ Resources:
       Engine: postgres
       EngineVersion: '16.4'
       DBInstanceClass: db.t4g.small
-      AllocatedStorage: 50
+      AllocatedStorage: 100
       StorageType: gp3
       MasterUsername: salesfast7
       MasterUserPassword: !Ref DBPassword
