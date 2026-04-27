@@ -9,112 +9,124 @@
 .qt-summary{background:var(--surface);border-radius:12px;padding:18px 20px;border:1px solid var(--border);position:sticky;top:70px}
 .qt-summary-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
 .qt-summary-row.total{border-top:2px solid var(--sf-blue);padding-top:12px;margin-top:8px;font-size:15px;font-weight:700}
-.qt-line-table th,.qt-line-table td{padding:8px 10px;font-size:12px}
+.qt-line-table th,.qt-line-table td{padding:8px 6px;font-size:12px}
 .qt-line-table input,.qt-line-table select{padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);font-size:12px;font-family:inherit;color:var(--text);outline:none;width:100%}
 .qt-line-table input:focus,.qt-line-table select:focus{border-color:var(--sf-blue)}
-.qt-remove{width:24px;height:24px;border-radius:50%;border:none;background:rgba(194,57,52,.06);color:#C23934;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:background .15s}
+.qt-remove{width:24px;height:24px;border-radius:50%;border:none;background:rgba(194,57,52,.06);color:#C23934;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
 .qt-remove:hover{background:rgba(194,57,52,.12)}
+/* Logo upload */
+.logo-upload{width:100%;height:80px;border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .15s;overflow:hidden;position:relative}
+.logo-upload:hover{border-color:var(--sf-blue)}
+.logo-upload img{max-height:70px;max-width:100%;object-fit:contain}
+.logo-upload-text{font-size:11px;color:var(--text3);text-align:center}
+/* A4 Preview */
+.preview-overlay{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all .2s}
+.preview-overlay.open{opacity:1;visibility:visible}
+.preview-container{background:#fff;width:210mm;max-width:95vw;max-height:90vh;overflow-y:auto;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative}
+.preview-toolbar{position:sticky;top:0;z-index:1;background:#fff;padding:12px 20px;border-bottom:1px solid #e5e5e5;display:flex;justify-content:space-between;align-items:center}
+.a4-page{width:210mm;max-width:100%;padding:20mm 18mm;font-family:'Inter',sans-serif;font-size:11px;color:#1a1a1a;line-height:1.5;box-sizing:border-box}
+.a4-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #0176D3}
+.a4-logo{max-height:60px;max-width:180px;object-fit:contain}
+.a4-company{text-align:right;font-size:10px;color:#666}
+.a4-title{font-size:22px;font-weight:800;color:#0176D3;margin-bottom:16px;letter-spacing:-.5px}
+.a4-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.a4-info-box{background:#f8f9fa;border-radius:6px;padding:12px}
+.a4-info-label{font-size:9px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.a4-info-value{font-size:12px;font-weight:500}
+.a4-table{width:100%;border-collapse:collapse;margin-bottom:20px}
+.a4-table th{background:#f0f4f8;padding:8px 10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;color:#555;border-bottom:1px solid #ddd;text-align:left}
+.a4-table td{padding:8px 10px;border-bottom:1px solid #eee;font-size:11px}
+.a4-table .right{text-align:right}
+.a4-totals{display:flex;justify-content:flex-end}
+.a4-totals-box{width:240px}
+.a4-totals-row{display:flex;justify-content:space-between;padding:4px 0;font-size:11px}
+.a4-totals-row.grand{border-top:2px solid #0176D3;padding-top:8px;margin-top:6px;font-size:14px;font-weight:700;color:#0176D3}
+.a4-footer{margin-top:40px;padding-top:16px;border-top:1px solid #ddd;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.a4-sig-line{border-top:1px solid #999;margin-top:40px;padding-top:6px;font-size:10px;color:#999}
+@media print{.preview-toolbar{display:none}.preview-container{max-width:none;max-height:none;box-shadow:none;border-radius:0}}
+@media(max-width:768px){.a4-page{padding:10mm 8mm}.a4-info-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="bg-pattern"></div>
 <div id="nav"></div>
-
 <div class="page anim">
   <div class="page-header">
-    <div>
-      <div class="page-title" data-i18n="acc_form_title" id="page-title-text">Quotations</div>
-      <div class="page-subtitle">Create and manage quotations — VAT 7% / WHT auto-calculated</div>
-    </div>
+    <div><div class="page-title">Quotations</div><div class="page-subtitle">Create and manage quotations — VAT 7% / WHT auto-calculated</div></div>
     <button class="btn btn-primary" onclick="openCreate()" id="create-btn">+ New Quotation</button>
   </div>
 
-  <!-- List View -->
+  <!-- List -->
   <div id="list-view">
     <div class="filter-bar" style="margin-bottom:16px" id="qt-filter">
       <button class="filter-btn active" onclick="filterQt('all',this)">All</button>
       <button class="filter-btn" onclick="filterQt('draft',this)">Draft</button>
-      <button class="filter-btn" onclick="filterQt('pending_approval',this)">Pending</button>
       <button class="filter-btn" onclick="filterQt('sent',this)">Sent</button>
       <button class="filter-btn" onclick="filterQt('accepted',this)">Accepted</button>
-      <button class="filter-btn" onclick="filterQt('rejected',this)">Rejected</button>
     </div>
-    <div class="card">
-      <div class="table-wrap">
-        <table><thead><tr><th>Number</th><th>Customer</th><th>Status</th><th>Subtotal</th><th>VAT 7%</th><th>WHT</th><th>Grand Total</th><th>Date</th></tr></thead>
-        <tbody id="tbody"></tbody></table>
-      </div>
-    </div>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>Number</th><th>Customer</th><th>Status</th><th>Subtotal</th><th>VAT</th><th>WHT</th><th>Total</th><th>Date</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
   </div>
 
   <!-- Create Form -->
   <div id="form-view" style="display:none">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        <span data-i18n="btn_back">Back</span>
-      </button>
+      <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back</button>
       <div class="page-title">New Quotation</div>
     </div>
-
     <div style="display:grid;grid-template-columns:1fr 300px;gap:16px">
-      <!-- Left: Form -->
       <div>
-        <!-- Customer Info -->
+        <!-- Company Logo + Info -->
         <div class="card" style="margin-bottom:14px">
-          <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Customer & Details</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="sf7-form-group"><label class="sf7-form-label">Customer *</label><select class="sf7-form-input" id="qt-account" required onchange="updateQtNumber()"></select></div>
-            <div class="sf7-form-group"><label class="sf7-form-label">Quotation No.</label><input class="sf7-form-input" id="qt-number" readonly style="opacity:.7"/></div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-            <div class="sf7-form-group"><label class="sf7-form-label">Valid Until</label><input class="sf7-form-input" id="qt-valid" type="date"/></div>
-            <div class="sf7-form-group"><label class="sf7-form-label">Notes</label><input class="sf7-form-input" id="qt-notes" placeholder="Optional notes"/></div>
+          <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Company Logo & Details</div>
+          <div style="display:grid;grid-template-columns:120px 1fr;gap:14px">
+            <div>
+              <div class="logo-upload" onclick="document.getElementById('logo-input').click()" id="logo-preview">
+                <div class="logo-upload-text" id="logo-text">Click to<br/>upload logo</div>
+              </div>
+              <input type="file" id="logo-input" accept="image/*" style="display:none" onchange="handleLogo(event)"/>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div class="sf7-form-group"><label class="sf7-form-label">Company Name</label><input class="sf7-form-input" id="qt-company-name" placeholder="Your company name"/></div>
+              <div class="sf7-form-group"><label class="sf7-form-label">Tax ID</label><input class="sf7-form-input" id="qt-company-tax" placeholder="0105556012345"/></div>
+              <div class="sf7-form-group" style="grid-column:1/-1"><label class="sf7-form-label">Address</label><input class="sf7-form-input" id="qt-company-addr" placeholder="Company address"/></div>
+            </div>
           </div>
         </div>
-
-        <!-- Line Items -->
+        <!-- Customer -->
+        <div class="card" style="margin-bottom:14px">
+          <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Customer</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="sf7-form-group"><label class="sf7-form-label">Customer *</label><select class="sf7-form-input" id="qt-account" required></select></div>
+            <div class="sf7-form-group"><label class="sf7-form-label">Quotation No.</label><input class="sf7-form-input" id="qt-number" readonly style="opacity:.7"/></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
+            <div class="sf7-form-group"><label class="sf7-form-label">Valid Until</label><input class="sf7-form-input" id="qt-valid" type="date"/></div>
+            <div class="sf7-form-group"><label class="sf7-form-label">Notes</label><input class="sf7-form-input" id="qt-notes" placeholder="Optional"/></div>
+          </div>
+        </div>
+        <!-- Lines -->
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
             <div style="font-size:13px;font-weight:700;color:var(--sf-blue)">Line Items</div>
             <button class="btn btn-secondary" onclick="addLine()" style="padding:5px 12px;font-size:12px">+ Add Item</button>
           </div>
-          <div class="table-wrap">
-            <table class="qt-line-table">
-              <thead><tr><th>Product / Description</th><th style="width:70px">Qty</th><th style="width:100px">Unit Price</th><th style="width:80px">Discount</th><th style="width:60px">WHT%</th><th style="width:90px">Line Total</th><th style="width:30px"></th></tr></thead>
-              <tbody id="qt-lines"></tbody>
-            </table>
-          </div>
+          <div class="table-wrap"><table class="qt-line-table"><thead><tr><th>Product / Description</th><th style="width:60px">Qty</th><th style="width:90px">Price</th><th style="width:70px">Disc.</th><th style="width:50px">WHT%</th><th style="width:80px">Total</th><th style="width:28px"></th></tr></thead><tbody id="qt-lines"></tbody></table></div>
         </div>
       </div>
-
-      <!-- Right: Summary -->
+      <!-- Summary -->
       <div>
         <div class="qt-summary">
           <div style="font-size:13px;font-weight:700;margin-bottom:14px">Summary</div>
-          <div class="qt-summary-row"><span style="color:var(--text2)">Subtotal</span><span id="sum-subtotal">฿0</span></div>
-          <div class="qt-summary-row"><span style="color:var(--text2)">Discount</span><span id="sum-discount" style="color:var(--red)">-฿0</span></div>
-          <div class="qt-summary-row"><span style="color:var(--text2)">VAT 7%</span><span id="sum-vat">฿0</span></div>
-          <div class="qt-summary-row"><span style="color:var(--text2)">WHT</span><span id="sum-wht" style="color:var(--red)">-฿0</span></div>
-          <div class="qt-summary-row total"><span style="color:var(--sf-blue)">Grand Total</span><span style="color:var(--sf-blue)" id="sum-grand">฿0</span></div>
-
+          <div class="qt-summary-row"><span style="color:var(--text2)">Subtotal</span><span id="sum-subtotal">&#3647;0</span></div>
+          <div class="qt-summary-row"><span style="color:var(--text2)">Discount</span><span id="sum-discount" style="color:var(--red)">-&#3647;0</span></div>
+          <div class="qt-summary-row"><span style="color:var(--text2)">VAT 7%</span><span id="sum-vat">&#3647;0</span></div>
+          <div class="qt-summary-row"><span style="color:var(--text2)">WHT</span><span id="sum-wht" style="color:var(--red)">-&#3647;0</span></div>
+          <div class="qt-summary-row total"><span style="color:var(--sf-blue)">Grand Total</span><span style="color:var(--sf-blue)" id="sum-grand">&#3647;0</span></div>
           <div style="display:flex;flex-direction:column;gap:8px;margin-top:20px">
-            <button class="btn btn-primary" onclick="saveQuotation('draft')" style="width:100%;justify-content:center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-              Save as Draft
-            </button>
-            <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin:4px 0">Send via</div>
-            <button class="btn btn-secondary" onclick="saveQuotation('sent','email')" style="width:100%;justify-content:center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
-              Send via Email
-            </button>
-            <button class="btn btn-secondary" onclick="saveQuotation('sent','line')" style="width:100%;justify-content:center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-              Send via LINE
-            </button>
-            <button class="btn btn-secondary" onclick="saveQuotation('draft','pdf')" style="width:100%;justify-content:center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              Download PDF
+            <button class="btn btn-primary" onclick="saveQuotation('draft')" style="width:100%;justify-content:center">Save as Draft</button>
+            <button class="btn btn-secondary" onclick="previewQuotation()" style="width:100%;justify-content:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Preview & Download PDF
             </button>
           </div>
         </div>
@@ -123,202 +135,114 @@
   </div>
 </div>
 
-<script src="../js/helpers.js"></script>
-<script src="../js/i18n.js"></script>
-<script src="../js/nav.js"></script>
-<script src="../js/data.js"></script>
+<!-- A4 Preview Modal -->
+<div class="preview-overlay" id="preview-overlay" onclick="if(event.target===this)closePreview()">
+  <div class="preview-container">
+    <div class="preview-toolbar">
+      <span style="font-size:13px;font-weight:600">Quotation Preview (A4)</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="printQuotation()" style="padding:6px 16px;font-size:12px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print / Save PDF
+        </button>
+        <button class="btn btn-secondary" onclick="closePreview()" style="padding:6px 12px;font-size:12px">Close</button>
+      </div>
+    </div>
+    <div id="a4-content"></div>
+  </div>
+</div>
+
+<script src="../js/helpers.js"></script><script src="../js/i18n.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
-document.getElementById('nav').innerHTML = renderNav('quotations');
-document.getElementById('page-title-text').textContent = 'Quotations';
+document.getElementById('nav').innerHTML=renderNav('quotations');
+let qtFilter='all',lineCounter=0,companyLogo='';
 
-let qtFilter = 'all';
-let lineCounter = 0;
-
-function filterQt(f, btn) {
-  qtFilter = f;
-  document.querySelectorAll('#qt-filter .filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderTable();
+function filterQt(f,btn){qtFilter=f;document.querySelectorAll('#qt-filter .filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTable()}
+function renderTable(){
+  const f=qtFilter==='all'?QUOTATIONS:QUOTATIONS.filter(q=>q.status===qtFilter);
+  document.getElementById('tbody').innerHTML=f.map(q=>`<tr><td><a href="#" class="table-link">${q.number}</a></td><td style="color:var(--text2);font-size:12px">${q.account}</td><td><span class="status-badge" style="background:${STATUS_COLORS[q.status]}18;color:${STATUS_COLORS[q.status]}">${STATUS_LABELS[q.status]||q.status}</span></td><td>${fmt(q.subtotal)}</td><td>${fmt(q.vat)}</td><td style="color:var(--red)">-${fmt(q.wht)}</td><td style="font-weight:600;color:var(--sf-blue)">${fmt(q.grand)}</td><td style="color:var(--text2)">${q.date}</td></tr>`).join('')||'<tr><td colspan="8" class="empty-state">No quotations</td></tr>';
 }
 
-function renderTable() {
-  const f = qtFilter === 'all' ? QUOTATIONS : QUOTATIONS.filter(q => q.status === qtFilter);
-  document.getElementById('tbody').innerHTML = f.map(q => `
-    <tr>
-      <td><a href="#" class="table-link">${q.number}</a></td>
-      <td style="color:var(--text2);font-size:12px">${q.account}</td>
-      <td><span class="status-badge" style="background:${STATUS_COLORS[q.status]}18;color:${STATUS_COLORS[q.status]}">${STATUS_LABELS[q.status] || q.status}</span></td>
-      <td>${fmt(q.subtotal)}</td>
-      <td>${fmt(q.vat)}</td>
-      <td style="color:var(--red)">-${fmt(q.wht)}</td>
-      <td style="font-weight:600;color:var(--sf-blue)">${fmt(q.grand)}</td>
-      <td style="color:var(--text2)">${q.date}</td>
-    </tr>`).join('') || '<tr><td colspan="8" class="empty-state">No quotations found</td></tr>';
+function handleLogo(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    companyLogo=ev.target.result;
+    document.getElementById('logo-preview').innerHTML='<img src="'+companyLogo+'" alt="Logo"/>';
+  };
+  reader.readAsDataURL(file);
 }
 
-function openCreate() {
-  document.getElementById('list-view').style.display = 'none';
-  document.getElementById('qt-filter').style.display = 'none';
-  document.getElementById('create-btn').style.display = 'none';
-  document.getElementById('form-view').style.display = 'block';
+function openCreate(){
+  document.getElementById('list-view').style.display='none';document.getElementById('qt-filter').style.display='none';document.getElementById('create-btn').style.display='none';document.getElementById('form-view').style.display='block';
+  document.getElementById('qt-account').innerHTML='<option value="">-- Select --</option>'+ACCOUNTS.map(a=>'<option value="'+a.name+'">'+a.name+'</option>').join('');
+  var d=new Date();d.setDate(d.getDate()+30);document.getElementById('qt-valid').value=d.toISOString().slice(0,10);
+  var year=new Date().getFullYear()+543;document.getElementById('qt-number').value='QT-'+year+'-'+String(QUOTATIONS.length+1).padStart(4,'0');
+  lineCounter=0;document.getElementById('qt-lines').innerHTML='';addLine();window.scrollTo(0,0);
+}
+function closeForm(){document.getElementById('form-view').style.display='none';document.getElementById('list-view').style.display='block';document.getElementById('qt-filter').style.display='inline-flex';document.getElementById('create-btn').style.display='inline-flex'}
 
-  // Populate customer dropdown
-  document.getElementById('qt-account').innerHTML = '<option value="">-- Select Customer --</option>' +
-    ACCOUNTS.map(a => '<option value="' + a.name + '">' + a.name + '</option>').join('');
+function addLine(){
+  lineCounter++;var id=lineCounter;
+  var opts='<option value="">-- Custom --</option>'+PRODUCTS.filter(p=>p.active).map(p=>'<option value="'+p.id+'" data-price="'+p.price+'" data-wht="'+p.wht+'" data-name="'+p.name+'">'+p.name+'</option>').join('');
+  var row=document.createElement('tr');row.id='line-'+id;
+  row.innerHTML='<td><select onchange="selProd('+id+')" id="sel-'+id+'" style="margin-bottom:4px">'+opts+'</select><input type="text" id="name-'+id+'" placeholder="Type product/service name"/></td><td><input type="number" value="1" min="1" onchange="calc()" id="qty-'+id+'"/></td><td><input type="number" id="price-'+id+'" onchange="calc()" placeholder="0"/></td><td><input type="number" value="0" min="0" id="disc-'+id+'" onchange="calc()"/></td><td><input type="number" value="0" min="0" max="5" id="wht-'+id+'" onchange="calc()" style="width:44px"/></td><td style="font-weight:600;color:var(--sf-blue)" id="total-'+id+'">&#3647;0</td><td><button class="qt-remove" onclick="document.getElementById(\'line-'+id+'\').remove();calc()">x</button></td>';
+  document.getElementById('qt-lines').appendChild(row);calc();
+}
+function selProd(id){var s=document.getElementById('sel-'+id),o=s.options[s.selectedIndex];if(o&&o.value){document.getElementById('name-'+id).value=o.dataset.name||'';document.getElementById('price-'+id).value=o.dataset.price||0;document.getElementById('wht-'+id).value=o.dataset.wht||0}calc()}
 
-  // Set default valid date (30 days from now)
-  var d = new Date(); d.setDate(d.getDate() + 30);
-  document.getElementById('qt-valid').value = d.toISOString().slice(0, 10);
-
-  updateQtNumber();
-  lineCounter = 0;
-  document.getElementById('qt-lines').innerHTML = '';
-  addLine();
-  window.scrollTo(0, 0);
+function calc(){
+  var rows=document.getElementById('qt-lines').querySelectorAll('tr'),sub=0,disc=0,wht=0;
+  rows.forEach(function(r){var id=r.id.replace('line-','');var p=parseFloat(document.getElementById('price-'+id)?.value)||0;var q=parseInt(document.getElementById('qty-'+id)?.value)||1;var d=parseFloat(document.getElementById('disc-'+id)?.value)||0;var w=parseFloat(document.getElementById('wht-'+id)?.value)||0;var lt=p*q;sub+=lt;disc+=d;wht+=lt*(w/100);document.getElementById('total-'+id).textContent=fmt(Math.max(0,lt-d))});
+  var after=sub-disc,vat=Math.round(after*0.07),grand=Math.round(after+vat-wht);
+  document.getElementById('sum-subtotal').textContent=fmt(sub);document.getElementById('sum-discount').textContent='-'+fmt(disc);document.getElementById('sum-vat').textContent=fmt(vat);document.getElementById('sum-wht').textContent='-'+fmt(Math.round(wht));document.getElementById('sum-grand').textContent=fmt(grand);
 }
 
-function closeForm() {
-  document.getElementById('form-view').style.display = 'none';
-  document.getElementById('list-view').style.display = 'block';
-  document.getElementById('qt-filter').style.display = 'inline-flex';
-  document.getElementById('create-btn').style.display = 'inline-flex';
+function getLineItems(){
+  var items=[];document.getElementById('qt-lines').querySelectorAll('tr').forEach(function(r){var id=r.id.replace('line-','');var name=document.getElementById('name-'+id)?.value||document.getElementById('sel-'+id)?.options[document.getElementById('sel-'+id).selectedIndex]?.text||'';var p=parseFloat(document.getElementById('price-'+id)?.value)||0;var q=parseInt(document.getElementById('qty-'+id)?.value)||1;var d=parseFloat(document.getElementById('disc-'+id)?.value)||0;var w=parseFloat(document.getElementById('wht-'+id)?.value)||0;items.push({name:name,qty:q,price:p,disc:d,wht:w,total:p*q-d})});return items;
 }
 
-function updateQtNumber() {
-  var year = new Date().getFullYear() + 543;
-  var num = String(QUOTATIONS.length + 1).padStart(4, '0');
-  document.getElementById('qt-number').value = 'QT-' + year + '-' + num;
+function previewQuotation(){
+  var account=document.getElementById('qt-account').value;if(!account){alert('Please select a customer');return}
+  var items=getLineItems();if(items.length===0){alert('Add at least one item');return}
+  var sub=0,disc=0,whtTotal=0;items.forEach(function(i){sub+=i.price*i.qty;disc+=i.disc;whtTotal+=i.price*i.qty*(i.wht/100)});
+  var after=sub-disc,vat=Math.round(after*0.07),grand=Math.round(after+vat-whtTotal);
+  var cust=ACCOUNTS.find(a=>a.name===account)||{};
+  var logoHtml=companyLogo?'<img src="'+companyLogo+'" class="a4-logo"/>':'<div style="font-size:18px;font-weight:800;color:#0176D3">'+((document.getElementById('qt-company-name').value)||'SalesFAST 7')+'</div>';
+
+  document.getElementById('a4-content').innerHTML=`<div class="a4-page">
+    <div class="a4-header">
+      <div>${logoHtml}<div style="font-size:10px;color:#666;margin-top:4px">${document.getElementById('qt-company-addr').value||''}</div>${document.getElementById('qt-company-tax').value?'<div style="font-size:10px;color:#666">Tax ID: '+document.getElementById('qt-company-tax').value+'</div>':''}</div>
+      <div class="a4-company"><div style="font-size:16px;font-weight:700;color:#0176D3;margin-bottom:4px">QUOTATION</div><div>${document.getElementById('qt-number').value}</div><div>Date: ${new Date().toLocaleDateString('en-GB')}</div><div>Valid: ${document.getElementById('qt-valid').value}</div></div>
+    </div>
+    <div class="a4-info-grid">
+      <div class="a4-info-box"><div class="a4-info-label">Bill To</div><div class="a4-info-value" style="font-weight:600">${cust.name||account}</div><div style="font-size:10px;color:#666">${cust.taxId?'Tax ID: '+cust.taxId:''}</div><div style="font-size:10px;color:#666">${cust.phone||''} ${cust.email?'/ '+cust.email:''}</div></div>
+      <div class="a4-info-box"><div class="a4-info-label">Payment Terms</div><div class="a4-info-value">Net 30 days</div><div style="font-size:10px;color:#666;margin-top:4px">${document.getElementById('qt-notes').value||''}</div></div>
+    </div>
+    <table class="a4-table"><thead><tr><th style="width:40px">#</th><th>Description</th><th class="right" style="width:50px">Qty</th><th class="right" style="width:90px">Unit Price</th><th class="right" style="width:70px">Discount</th><th class="right" style="width:50px">WHT%</th><th class="right" style="width:90px">Amount</th></tr></thead>
+    <tbody>${items.map((it,i)=>'<tr><td>'+(i+1)+'</td><td>'+it.name+'</td><td class="right">'+it.qty+'</td><td class="right">'+fmt(it.price)+'</td><td class="right">'+(it.disc>0?'-'+fmt(it.disc):'-')+'</td><td class="right">'+(it.wht>0?it.wht+'%':'-')+'</td><td class="right" style="font-weight:600">'+fmt(it.total)+'</td></tr>').join('')}</tbody></table>
+    <div class="a4-totals"><div class="a4-totals-box">
+      <div class="a4-totals-row"><span>Subtotal</span><span>${fmt(sub)}</span></div>
+      ${disc>0?'<div class="a4-totals-row"><span>Discount</span><span style="color:#C23934">-'+fmt(disc)+'</span></div>':''}
+      <div class="a4-totals-row"><span>VAT 7%</span><span>${fmt(vat)}</span></div>
+      ${whtTotal>0?'<div class="a4-totals-row"><span>WHT</span><span style="color:#C23934">-'+fmt(Math.round(whtTotal))+'</span></div>':''}
+      <div class="a4-totals-row grand"><span>Grand Total</span><span>${fmt(grand)}</span></div>
+    </div></div>
+    <div class="a4-footer"><div><div style="font-size:10px;font-weight:600">Authorized Signature (Seller)</div><div class="a4-sig-line">Name: _____________________ Date: __________</div></div><div><div style="font-size:10px;font-weight:600">Accepted by (Customer)</div><div class="a4-sig-line">Name: _____________________ Date: __________</div></div></div>
+  </div>`;
+  document.getElementById('preview-overlay').classList.add('open');
 }
+function closePreview(){document.getElementById('preview-overlay').classList.remove('open')}
+function printQuotation(){window.print()}
 
-function addLine() {
-  lineCounter++;
-  var id = lineCounter;
-  var productOpts = '<option value="">-- Type custom or select --</option>' +
-    PRODUCTS.filter(p => p.active).map(p =>
-      '<option value="' + p.id + '" data-price="' + p.price + '" data-wht="' + p.wht + '" data-name="' + p.name + '">' + p.name + ' (' + p.sku + ')</option>'
-    ).join('');
-
-  var row = document.createElement('tr');
-  row.id = 'line-' + id;
-  row.innerHTML = `
-    <td>
-      <select onchange="selectProduct(${id})" id="sel-${id}" style="margin-bottom:4px">${productOpts}</select>
-      <input type="text" id="name-${id}" placeholder="Or type product/service name" style="font-size:11px"/>
-    </td>
-    <td><input type="number" value="1" min="1" onchange="updateLine(${id})" id="qty-${id}"/></td>
-    <td><input type="number" id="price-${id}" onchange="updateLine(${id})" placeholder="0"/></td>
-    <td><input type="number" value="0" min="0" id="disc-${id}" onchange="updateLine(${id})"/></td>
-    <td><input type="number" value="0" min="0" max="5" step="1" id="wht-${id}" onchange="updateLine(${id})" style="width:50px"/></td>
-    <td style="font-weight:600;color:var(--sf-blue)" id="total-${id}">${String.fromCharCode(3647)}0</td>
-    <td><button class="qt-remove" onclick="removeLine(${id})">x</button></td>`;
-  document.getElementById('qt-lines').appendChild(row);
-  updateLine(id);
-}
-
-function selectProduct(id) {
-  var select = document.getElementById('sel-' + id);
-  var opt = select.options[select.selectedIndex];
-  if (opt && opt.value) {
-    document.getElementById('name-' + id).value = opt.dataset.name || '';
-    document.getElementById('price-' + id).value = opt.dataset.price || 0;
-    document.getElementById('wht-' + id).value = opt.dataset.wht || 0;
-  }
-  updateLine(id);
-}
-
-function updateLine(id) {
-  var price = parseFloat(document.getElementById('price-' + id).value) || 0;
-  var qty = parseInt(document.getElementById('qty-' + id).value) || 1;
-  var disc = parseFloat(document.getElementById('disc-' + id).value) || 0;
-  var lineTotal = (price * qty) - disc;
-  document.getElementById('total-' + id).textContent = fmt(Math.max(0, lineTotal));
-  recalcSummary();
-}
-
-function removeLine(id) {
-  var row = document.getElementById('line-' + id);
-  if (row) row.remove();
-  recalcSummary();
-}
-
-function recalcSummary() {
-  var rows = document.getElementById('qt-lines').querySelectorAll('tr');
-  var subtotal = 0, totalDisc = 0, totalWht = 0;
-
-  rows.forEach(function(row) {
-    var id = row.id.replace('line-', '');
-    var price = parseFloat(document.getElementById('price-' + id)?.value) || 0;
-    var qty = parseInt(document.getElementById('qty-' + id)?.value) || 1;
-    var disc = parseFloat(document.getElementById('disc-' + id)?.value) || 0;
-    var whtRate = parseFloat(document.getElementById('wht-' + id)?.value) || 0;
-
-    var lineTotal = (price * qty);
-    subtotal += lineTotal;
-    totalDisc += disc;
-    totalWht += lineTotal * (whtRate / 100);
-  });
-
-  var afterDisc = subtotal - totalDisc;
-  var vat = afterDisc * 0.07;
-  var grand = afterDisc + vat - totalWht;
-
-  document.getElementById('sum-subtotal').textContent = fmt(subtotal);
-  document.getElementById('sum-discount').textContent = '-' + fmt(totalDisc);
-  document.getElementById('sum-vat').textContent = fmt(Math.round(vat));
-  document.getElementById('sum-wht').textContent = '-' + fmt(Math.round(totalWht));
-  document.getElementById('sum-grand').textContent = fmt(Math.round(grand));
-}
-
-function saveQuotation(status, channel) {
-  var account = document.getElementById('qt-account').value;
-  if (!account) { alert('Please select a customer'); return; }
-
-  var rows = document.getElementById('qt-lines').querySelectorAll('tr');
-  if (rows.length === 0) { alert('Please add at least one line item'); return; }
-
-  // Calculate totals
-  var subtotal = 0, totalDisc = 0, totalWht = 0;
-  rows.forEach(function(row) {
-    var id = row.id.replace('line-', '');
-    var price = parseFloat(document.getElementById('price-' + id)?.value) || 0;
-    var qty = parseInt(document.getElementById('qty-' + id)?.value) || 1;
-    var disc = parseFloat(document.getElementById('disc-' + id)?.value) || 0;
-    var whtRate = parseFloat(document.getElementById('wht-' + id)?.value) || 0;
-    subtotal += price * qty;
-    totalDisc += disc;
-    totalWht += (price * qty) * (whtRate / 100);
-  });
-
-  var afterDisc = subtotal - totalDisc;
-  var vat = Math.round(afterDisc * 0.07);
-  var grand = Math.round(afterDisc + vat - totalWht);
-
-  var now = new Date();
-  var thaiMonth = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  QUOTATIONS.unshift({
-    id: QUOTATIONS.length + 1,
-    number: document.getElementById('qt-number').value,
-    account: account,
-    status: status,
-    subtotal: subtotal,
-    vat: vat,
-    wht: Math.round(totalWht),
-    grand: grand,
-    date: now.getDate() + ' ' + thaiMonth[now.getMonth()] + ' ' + (now.getFullYear() + 543 - 2000),
-  });
-
-  closeForm();
-  renderTable();
-
-  // Show confirmation based on channel
-  if (channel === 'email') {
-    alert('Quotation saved and sent via Email to ' + account);
-  } else if (channel === 'line') {
-    alert('Quotation saved and sent via LINE to ' + account);
-  } else if (channel === 'pdf') {
-    alert('Quotation saved. PDF download will start shortly.\n\n(In production, this generates a PDF via the backend API)');
-  }
+function saveQuotation(status){
+  var account=document.getElementById('qt-account').value;if(!account){alert('Please select a customer');return}
+  var items=getLineItems();if(items.length===0){alert('Add at least one item');return}
+  var sub=0,disc=0,whtTotal=0;items.forEach(function(i){sub+=i.price*i.qty;disc+=i.disc;whtTotal+=i.price*i.qty*(i.wht/100)});
+  var after=sub-disc,vat=Math.round(after*0.07),grand=Math.round(after+vat-whtTotal);
+  var now=new Date(),ml=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  QUOTATIONS.unshift({id:QUOTATIONS.length+1,number:document.getElementById('qt-number').value,account:account,status:status,subtotal:sub,vat:vat,wht:Math.round(whtTotal),grand:grand,date:now.getDate()+' '+ml[now.getMonth()]+' '+(now.getFullYear()+543-2000)});
+  closeForm();renderTable();
 }
 
 renderTable();
