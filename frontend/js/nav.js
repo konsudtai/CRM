@@ -38,6 +38,9 @@ function renderNav(activePage) {
 
   return `<nav class="sf7-nav">
     <div class="sf7-nav-left">
+      <button class="sf7-hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
       <a href="dashboard.html" class="sf7-brand">SalesFAST <span style="color:#4BCA81">7</span></a>
       <div class="sf7-nav-items">${menuHtml}</div>
     </div>
@@ -73,6 +76,27 @@ function renderNav(activePage) {
       </div>
     </div>
   </nav>
+
+  <!-- Mobile Menu -->
+  <div class="sf7-mobile-menu" id="sf7-mobile-menu">
+    <div class="sf7-mm-label">Main</div>
+    <a href="dashboard.html" class="${activePage==='dashboard'?'active':''}">Dashboard</a>
+    <div class="sf7-mm-label">CRM</div>
+    <a href="accounts.html" class="${activePage==='accounts'?'active':''}">Accounts</a>
+    <a href="contacts.html" class="${activePage==='contacts'?'active':''}">Contacts</a>
+    <div class="sf7-mm-label">Sales</div>
+    <a href="leads.html" class="${activePage==='leads'?'active':''}">Leads</a>
+    <a href="opportunities.html" class="${activePage==='opportunities'?'active':''}">Opportunities</a>
+    <div class="sf7-mm-label">Activities</div>
+    <a href="tasks.html" class="${activePage==='tasks'?'active':''}">Tasks</a>
+    <a href="calendar.html" class="${activePage==='calendar'?'active':''}">Calendar</a>
+    <div class="sf7-mm-label">Documents</div>
+    <a href="quotations.html" class="${activePage==='quotations'?'active':''}">Quotations</a>
+    <a href="products.html" class="${activePage==='products'?'active':''}">Products</a>
+    <div class="sf7-mm-label">System</div>
+    <a href="notifications.html" class="${activePage==='notifications'?'active':''}">Notifications</a>
+    <a href="settings.html" class="${activePage==='settings'?'active':''}">Settings</a>
+  </div>
 
   <!-- Profile Modal -->
   <div class="sf7-modal-overlay" id="profile-modal">
@@ -124,6 +148,12 @@ function renderNav(activePage) {
       </form>
     </div>
   </div>`;
+}
+
+/* Mobile menu toggle */
+function toggleMobileMenu() {
+  const menu = document.getElementById('sf7-mobile-menu');
+  menu.classList.toggle('open');
 }
 
 /* User menu toggle */

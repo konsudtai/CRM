@@ -114,7 +114,17 @@ body{font-family:'Inter',sans-serif;min-height:100vh;display:grid;grid-template-
 @media(max-width:768px){
   body{grid-template-columns:1fr}
   .left{display:none}
-  .right{padding:24px}
+  .right{padding:24px 16px}
+  .form-card{max-width:100%}
+  .form-title{font-size:24px}
+  .back-link{top:16px;left:12px}
+}
+@media(max-width:380px){
+  .right{padding:16px 12px}
+  .form-title{font-size:22px}
+  .field-input{padding:10px 12px;font-size:13px}
+  .submit-btn{padding:12px;font-size:14px}
+  .social-row{flex-direction:column}
 }
 </style>
 </head>

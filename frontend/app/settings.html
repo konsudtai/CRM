@@ -26,16 +26,16 @@ function renderTabs(){document.getElementById('settings-tabs').innerHTML=tabs.ma
 function renderContent(){
   const c={
     roles:`<div class="section-title">บทบาทและสิทธิ์</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">จัดการบทบาทและกำหนดสิทธิ์การเข้าถึง (RBAC)</p>
-      <table><thead><tr><th>บทบาท</th><th>ประเภท</th><th>สมาชิก</th><th>สิทธิ์</th></tr></thead><tbody>
+      <div class="table-wrap"><table><thead><tr><th>บทบาท</th><th>ประเภท</th><th>สมาชิก</th><th>สิทธิ์</th></tr></thead><tbody>
       <tr><td style="font-weight:500">Admin</td><td><span class="tag">ค่าเริ่มต้น</span></td><td>2</td><td>ทั้งหมด</td></tr>
       <tr><td style="font-weight:500">Sales Manager</td><td><span class="tag">ค่าเริ่มต้น</span></td><td>3</td><td>อ่าน, สร้าง, แก้ไข</td></tr>
       <tr><td style="font-weight:500">Sales Rep</td><td><span class="tag">ค่าเริ่มต้น</span></td><td>8</td><td>อ่าน, สร้าง</td></tr>
       <tr><td style="font-weight:500">Viewer</td><td><span class="status-badge" style="background:var(--surface3);color:var(--text2)">ค่าเริ่มต้น</span></td><td>5</td><td>อ่านเท่านั้น</td></tr>
-      </tbody></table><button class="btn btn-secondary" style="margin-top:16px">+ สร้างบทบาทใหม่</button>`,
+      </tbody></table></div><button class="btn btn-secondary" style="margin-top:16px">+ สร้างบทบาทใหม่</button>`,
     users:`<div class="section-title">ผู้ใช้งาน</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">จัดการผู้ใช้งานในระบบ</p>
-      <table><thead><tr><th>ชื่อ</th><th>อีเมล</th><th>บทบาท</th><th>สถานะ</th></tr></thead><tbody>
+      <div class="table-wrap"><table><thead><tr><th>ชื่อ</th><th>อีเมล</th><th>บทบาท</th><th>สถานะ</th></tr></thead><tbody>
       ${REPS.map(r=>`<tr><td style="font-weight:500">${r.name}</td><td style="color:var(--text2)">${r.name.split(' ')[0].toLowerCase()}@ppcrm.co.th</td><td><span class="tag">Sales Rep</span></td><td><span class="status-badge" style="background:rgba(48,209,88,.12);color:#1a7d39">Active</span></td></tr>`).join('')}
-      </tbody></table><button class="btn btn-primary" style="margin-top:16px">+ เพิ่มผู้ใช้</button>`,
+      </tbody></table></div><button class="btn btn-primary" style="margin-top:16px">+ เพิ่มผู้ใช้</button>`,
     security:`<div class="section-title">ความปลอดภัย</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">จัดการนโยบายความปลอดภัย</p>
       ${[{label:'MFA (การยืนยันตัวตน 2 ขั้นตอน)',desc:'บังคับใช้ MFA สำหรับผู้ใช้ทุกคน',on:true},{label:'IP Allowlist',desc:'จำกัดการเข้าถึงจาก IP ที่กำหนด',on:false},{label:'Session Timeout (30 นาที)',desc:'ออกจากระบบอัตโนมัติหลังไม่มีกิจกรรม',on:true},{label:'Password Policy',desc:'รหัสผ่านขั้นต่ำ 8 ตัวอักษร + ตัวพิมพ์ใหญ่ + ตัวเลข',on:true}].map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:8px"><div><div style="font-size:14px;font-weight:500">${s.label}</div><div style="font-size:12px;color:var(--text2)">${s.desc}</div></div><div style="width:44px;height:24px;border-radius:12px;background:${s.on?'var(--sf-blue)':'var(--surface3)'};position:relative;cursor:pointer"><div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;${s.on?'right:2px':'left:2px'};box-shadow:0 1px 3px rgba(0,0,0,.2)"></div></div></div>`).join('')}`,
     integrations:`<div class="section-title">การเชื่อมต่อ</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">เชื่อมต่อกับบริการภายนอก</p>
