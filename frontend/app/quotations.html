@@ -1,23 +1,309 @@
-<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — ใบเสนอราคา</title><link rel="stylesheet" href="../css/app.css"/></head><body>
-<div class="bg-pattern"></div><div id="nav"></div>
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SalesFAST 7 — Quotations</title>
+<link rel="stylesheet" href="../css/app.css"/>
+<style>
+.qt-summary{background:var(--surface);border-radius:12px;padding:18px 20px;border:1px solid var(--border);position:sticky;top:70px}
+.qt-summary-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+.qt-summary-row.total{border-top:2px solid var(--sf-blue);padding-top:12px;margin-top:8px;font-size:15px;font-weight:700}
+.qt-line-table th,.qt-line-table td{padding:8px 10px;font-size:12px}
+.qt-line-table input,.qt-line-table select{padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);font-size:12px;font-family:inherit;color:var(--text);outline:none;width:100%}
+.qt-line-table input:focus,.qt-line-table select:focus{border-color:var(--sf-blue)}
+.qt-remove{width:24px;height:24px;border-radius:50%;border:none;background:rgba(194,57,52,.06);color:#C23934;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:background .15s}
+.qt-remove:hover{background:rgba(194,57,52,.12)}
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+<div id="nav"></div>
+
 <div class="page anim">
-  <div class="page-header"><div><div class="page-title">ใบเสนอราคา</div><div class="page-subtitle">สร้างและจัดการใบเสนอราคา — VAT 7% / WHT อัตโนมัติ</div></div><button class="btn btn-primary">+ สร้างใบเสนอราคา</button></div>
-  <div class="filter-bar" style="margin-bottom:20px" id="qt-filter">
-    <button class="filter-btn active" onclick="filterQt('all',this)">ทั้งหมด</button>
-    <button class="filter-btn" onclick="filterQt('draft',this)">ร่าง</button>
-    <button class="filter-btn" onclick="filterQt('pending_approval',this)">รออนุมัติ</button>
-    <button class="filter-btn" onclick="filterQt('sent',this)">ส่งแล้ว</button>
-    <button class="filter-btn" onclick="filterQt('accepted',this)">ยอมรับ</button>
-    <button class="filter-btn" onclick="filterQt('rejected',this)">ปฏิเสธ</button>
+  <div class="page-header">
+    <div>
+      <div class="page-title" data-i18n="acc_form_title" id="page-title-text">Quotations</div>
+      <div class="page-subtitle">Create and manage quotations — VAT 7% / WHT auto-calculated</div>
+    </div>
+    <button class="btn btn-primary" onclick="openCreate()" id="create-btn">+ New Quotation</button>
   </div>
-  <div class="card"><div class="table-wrap"><table><thead><tr><th>เลขที่</th><th>ลูกค้า</th><th>สถานะ</th><th>ยอดรวม</th><th>VAT 7%</th><th>WHT</th><th>ยอดสุทธิ</th><th>วันที่</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
+
+  <!-- List View -->
+  <div id="list-view">
+    <div class="filter-bar" style="margin-bottom:16px" id="qt-filter">
+      <button class="filter-btn active" onclick="filterQt('all',this)">All</button>
+      <button class="filter-btn" onclick="filterQt('draft',this)">Draft</button>
+      <button class="filter-btn" onclick="filterQt('pending_approval',this)">Pending</button>
+      <button class="filter-btn" onclick="filterQt('sent',this)">Sent</button>
+      <button class="filter-btn" onclick="filterQt('accepted',this)">Accepted</button>
+      <button class="filter-btn" onclick="filterQt('rejected',this)">Rejected</button>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table><thead><tr><th>Number</th><th>Customer</th><th>Status</th><th>Subtotal</th><th>VAT 7%</th><th>WHT</th><th>Grand Total</th><th>Date</th></tr></thead>
+        <tbody id="tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Form -->
+  <div id="form-view" style="display:none">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span data-i18n="btn_back">Back</span>
+      </button>
+      <div class="page-title">New Quotation</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 300px;gap:16px">
+      <!-- Left: Form -->
+      <div>
+        <!-- Customer Info -->
+        <div class="card" style="margin-bottom:14px">
+          <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Customer & Details</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="sf7-form-group"><label class="sf7-form-label">Customer *</label><select class="sf7-form-input" id="qt-account" required onchange="updateQtNumber()"></select></div>
+            <div class="sf7-form-group"><label class="sf7-form-label">Quotation No.</label><input class="sf7-form-input" id="qt-number" readonly style="opacity:.7"/></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+            <div class="sf7-form-group"><label class="sf7-form-label">Valid Until</label><input class="sf7-form-input" id="qt-valid" type="date"/></div>
+            <div class="sf7-form-group"><label class="sf7-form-label">Notes</label><input class="sf7-form-input" id="qt-notes" placeholder="Optional notes"/></div>
+          </div>
+        </div>
+
+        <!-- Line Items -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:700;color:var(--sf-blue)">Line Items</div>
+            <button class="btn btn-secondary" onclick="addLine()" style="padding:5px 12px;font-size:12px">+ Add Item</button>
+          </div>
+          <div class="table-wrap">
+            <table class="qt-line-table">
+              <thead><tr><th>Product</th><th style="width:70px">Qty</th><th style="width:100px">Unit Price</th><th style="width:80px">Discount</th><th style="width:60px">WHT%</th><th style="width:90px">Line Total</th><th style="width:30px"></th></tr></thead>
+              <tbody id="qt-lines"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Summary -->
+      <div>
+        <div class="qt-summary">
+          <div style="font-size:13px;font-weight:700;margin-bottom:14px">Summary</div>
+          <div class="qt-summary-row"><span style="color:var(--text2)">Subtotal</span><span id="sum-subtotal">฿0</span></div>
+          <div class="qt-summary-row"><span style="color:var(--text2)">Discount</span><span id="sum-discount" style="color:var(--red)">-฿0</span></div>
+          <div class="qt-summary-row"><span style="color:var(--text2)">VAT 7%</span><span id="sum-vat">฿0</span></div>
+          <div class="qt-summary-row"><span style="color:var(--text2)">WHT</span><span id="sum-wht" style="color:var(--red)">-฿0</span></div>
+          <div class="qt-summary-row total"><span style="color:var(--sf-blue)">Grand Total</span><span style="color:var(--sf-blue)" id="sum-grand">฿0</span></div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:20px">
+            <button class="btn btn-primary" onclick="saveQuotation('draft')" style="width:100%;justify-content:center">Save as Draft</button>
+            <button class="btn btn-secondary" onclick="saveQuotation('sent')" style="width:100%;justify-content:center">Save & Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-<script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
-<script src="../js/nav.js"></script><script src="../js/data.js"></script>
+
+<script src="../js/helpers.js"></script>
+<script src="../js/i18n.js"></script>
+<script src="../js/nav.js"></script>
+<script src="../js/data.js"></script>
 <script>
-document.getElementById('nav').innerHTML=renderNav('quotations');
-let qtFilter='all';
-function filterQt(f,btn){qtFilter=f;document.querySelectorAll('#qt-filter .filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render()}
-function render(){const f=qtFilter==='all'?QUOTATIONS:QUOTATIONS.filter(q=>q.status===qtFilter);document.getElementById('tbody').innerHTML=f.map(q=>`<tr><td><a href="#" class="table-link">${q.number}</a></td><td style="color:var(--text2);font-size:12px">${q.account}</td><td><span class="status-badge" style="background:${STATUS_COLORS[q.status]}18;color:${STATUS_COLORS[q.status]}">${STATUS_LABELS[q.status]||q.status}</span></td><td>${fmt(q.subtotal)}</td><td>${fmt(q.vat)}</td><td style="color:var(--red)">-${fmt(q.wht)}</td><td style="font-weight:600;color:var(--sf-blue)">${fmt(q.grand)}</td><td style="color:var(--text2)">${q.date}</td></tr>`).join('');}
-render();
-</script></body></html>
+document.getElementById('nav').innerHTML = renderNav('quotations');
+document.getElementById('page-title-text').textContent = 'Quotations';
+
+let qtFilter = 'all';
+let lineCounter = 0;
+
+function filterQt(f, btn) {
+  qtFilter = f;
+  document.querySelectorAll('#qt-filter .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function renderTable() {
+  const f = qtFilter === 'all' ? QUOTATIONS : QUOTATIONS.filter(q => q.status === qtFilter);
+  document.getElementById('tbody').innerHTML = f.map(q => `
+    <tr>
+      <td><a href="#" class="table-link">${q.number}</a></td>
+      <td style="color:var(--text2);font-size:12px">${q.account}</td>
+      <td><span class="status-badge" style="background:${STATUS_COLORS[q.status]}18;color:${STATUS_COLORS[q.status]}">${STATUS_LABELS[q.status] || q.status}</span></td>
+      <td>${fmt(q.subtotal)}</td>
+      <td>${fmt(q.vat)}</td>
+      <td style="color:var(--red)">-${fmt(q.wht)}</td>
+      <td style="font-weight:600;color:var(--sf-blue)">${fmt(q.grand)}</td>
+      <td style="color:var(--text2)">${q.date}</td>
+    </tr>`).join('') || '<tr><td colspan="8" class="empty-state">No quotations found</td></tr>';
+}
+
+function openCreate() {
+  document.getElementById('list-view').style.display = 'none';
+  document.getElementById('qt-filter').style.display = 'none';
+  document.getElementById('create-btn').style.display = 'none';
+  document.getElementById('form-view').style.display = 'block';
+
+  // Populate customer dropdown
+  document.getElementById('qt-account').innerHTML = '<option value="">-- Select Customer --</option>' +
+    ACCOUNTS.map(a => '<option value="' + a.name + '">' + a.name + '</option>').join('');
+
+  // Set default valid date (30 days from now)
+  var d = new Date(); d.setDate(d.getDate() + 30);
+  document.getElementById('qt-valid').value = d.toISOString().slice(0, 10);
+
+  updateQtNumber();
+  lineCounter = 0;
+  document.getElementById('qt-lines').innerHTML = '';
+  addLine();
+  window.scrollTo(0, 0);
+}
+
+function closeForm() {
+  document.getElementById('form-view').style.display = 'none';
+  document.getElementById('list-view').style.display = 'block';
+  document.getElementById('qt-filter').style.display = 'inline-flex';
+  document.getElementById('create-btn').style.display = 'inline-flex';
+}
+
+function updateQtNumber() {
+  var year = new Date().getFullYear() + 543;
+  var num = String(QUOTATIONS.length + 1).padStart(4, '0');
+  document.getElementById('qt-number').value = 'QT-' + year + '-' + num;
+}
+
+function addLine() {
+  lineCounter++;
+  var id = lineCounter;
+  var productOpts = PRODUCTS.filter(p => p.active).map(p =>
+    '<option value="' + p.id + '" data-price="' + p.price + '" data-wht="' + p.wht + '">' + p.name + ' (' + p.sku + ')</option>'
+  ).join('');
+
+  var row = document.createElement('tr');
+  row.id = 'line-' + id;
+  row.innerHTML = `
+    <td><select onchange="updateLine(${id})">${productOpts}</select></td>
+    <td><input type="number" value="1" min="1" onchange="updateLine(${id})" id="qty-${id}"/></td>
+    <td><input type="number" id="price-${id}" onchange="updateLine(${id})"/></td>
+    <td><input type="number" value="0" min="0" id="disc-${id}" onchange="updateLine(${id})"/></td>
+    <td><span id="wht-${id}" style="font-size:11px;color:var(--text2)">0%</span></td>
+    <td style="font-weight:600;color:var(--sf-blue)" id="total-${id}">฿0</td>
+    <td><button class="qt-remove" onclick="removeLine(${id})">×</button></td>`;
+  document.getElementById('qt-lines').appendChild(row);
+
+  // Set default price from first product
+  var firstProduct = PRODUCTS.find(p => p.active);
+  if (firstProduct) {
+    document.getElementById('price-' + id).value = firstProduct.price;
+    document.getElementById('wht-' + id).textContent = firstProduct.wht + '%';
+  }
+  updateLine(id);
+}
+
+function updateLine(id) {
+  var row = document.getElementById('line-' + id);
+  if (!row) return;
+  var select = row.querySelector('select');
+  var opt = select.options[select.selectedIndex];
+  var price = parseFloat(document.getElementById('price-' + id).value) || 0;
+  var qty = parseInt(document.getElementById('qty-' + id).value) || 1;
+  var disc = parseFloat(document.getElementById('disc-' + id).value) || 0;
+
+  // Update price and WHT from selected product
+  if (opt && opt.dataset.price) {
+    document.getElementById('price-' + id).value = opt.dataset.price;
+    price = parseFloat(opt.dataset.price);
+    document.getElementById('wht-' + id).textContent = (opt.dataset.wht || 0) + '%';
+  }
+
+  var lineTotal = (price * qty) - disc;
+  document.getElementById('total-' + id).textContent = fmt(Math.max(0, lineTotal));
+  recalcSummary();
+}
+
+function removeLine(id) {
+  var row = document.getElementById('line-' + id);
+  if (row) row.remove();
+  recalcSummary();
+}
+
+function recalcSummary() {
+  var rows = document.getElementById('qt-lines').querySelectorAll('tr');
+  var subtotal = 0, totalDisc = 0, totalWht = 0;
+
+  rows.forEach(function(row) {
+    var id = row.id.replace('line-', '');
+    var price = parseFloat(document.getElementById('price-' + id)?.value) || 0;
+    var qty = parseInt(document.getElementById('qty-' + id)?.value) || 1;
+    var disc = parseFloat(document.getElementById('disc-' + id)?.value) || 0;
+    var whtText = document.getElementById('wht-' + id)?.textContent || '0%';
+    var whtRate = parseFloat(whtText) || 0;
+
+    var lineTotal = (price * qty);
+    subtotal += lineTotal;
+    totalDisc += disc;
+    totalWht += lineTotal * (whtRate / 100);
+  });
+
+  var afterDisc = subtotal - totalDisc;
+  var vat = afterDisc * 0.07;
+  var grand = afterDisc + vat - totalWht;
+
+  document.getElementById('sum-subtotal').textContent = fmt(subtotal);
+  document.getElementById('sum-discount').textContent = '-' + fmt(totalDisc);
+  document.getElementById('sum-vat').textContent = fmt(Math.round(vat));
+  document.getElementById('sum-wht').textContent = '-' + fmt(Math.round(totalWht));
+  document.getElementById('sum-grand').textContent = fmt(Math.round(grand));
+}
+
+function saveQuotation(status) {
+  var account = document.getElementById('qt-account').value;
+  if (!account) { alert('Please select a customer'); return; }
+
+  var rows = document.getElementById('qt-lines').querySelectorAll('tr');
+  if (rows.length === 0) { alert('Please add at least one line item'); return; }
+
+  // Calculate totals
+  var subtotal = 0, totalDisc = 0, totalWht = 0;
+  rows.forEach(function(row) {
+    var id = row.id.replace('line-', '');
+    var price = parseFloat(document.getElementById('price-' + id)?.value) || 0;
+    var qty = parseInt(document.getElementById('qty-' + id)?.value) || 1;
+    var disc = parseFloat(document.getElementById('disc-' + id)?.value) || 0;
+    var whtText = document.getElementById('wht-' + id)?.textContent || '0%';
+    var whtRate = parseFloat(whtText) || 0;
+    subtotal += price * qty;
+    totalDisc += disc;
+    totalWht += (price * qty) * (whtRate / 100);
+  });
+
+  var afterDisc = subtotal - totalDisc;
+  var vat = Math.round(afterDisc * 0.07);
+  var grand = Math.round(afterDisc + vat - totalWht);
+
+  var now = new Date();
+  var thaiMonth = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  QUOTATIONS.unshift({
+    id: QUOTATIONS.length + 1,
+    number: document.getElementById('qt-number').value,
+    account: account,
+    status: status,
+    subtotal: subtotal,
+    vat: vat,
+    wht: Math.round(totalWht),
+    grand: grand,
+    date: now.getDate() + ' ' + thaiMonth[now.getMonth()] + ' ' + (now.getFullYear() + 543 - 2000),
+  });
+
+  closeForm();
+  renderTable();
+}
+
+renderTable();
+</script>
+</body>
+</html>
