@@ -5,7 +5,8 @@
   <input class="search-input" id="search" placeholder="ค้นหาสินค้า / SKU..." style="margin-bottom:20px;max-width:360px" oninput="render()"/>
   <div class="card"><div class="table-wrap"><table><thead><tr><th>ชื่อสินค้า</th><th>SKU</th><th>ราคาต่อหน่วย</th><th>หน่วย</th><th>WHT %</th><th>สถานะ</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
 </div>
-<script src="../js/helpers.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
+<script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
+<script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('products');
 function render(){const q=(document.getElementById('search').value||'').toLowerCase();const f=PRODUCTS.filter(p=>p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q));document.getElementById('tbody').innerHTML=f.map(p=>`<tr><td style="font-weight:500">${p.name}</td><td style="color:var(--text2)">${p.sku}</td><td style="font-weight:500;color:var(--sf-blue)">${fmt(p.price)}</td><td style="color:var(--text2)">${p.unit}</td><td style="color:var(--text2)">${p.wht}%</td><td><span class="status-badge" style="background:${p.active?'rgba(48,209,88,.12)':'rgba(128,128,128,.1)'};color:${p.active?'#1a7d39':'var(--text2)'}">${p.active?'ใช้งาน':'ปิดใช้งาน'}</span></td></tr>`).join('');}

@@ -13,30 +13,30 @@
 <div class="page anim">
   <div class="page-header">
     <div>
-      <div class="page-title">Tasks & Activities</div>
-      <div class="page-subtitle">Manage tasks, appointments and call logs</div>
+      <div class="page-title">${t("task_title")}</div>
+      <div class="page-subtitle">${t("task_sub")}</div>
     </div>
     <div class="page-actions">
-      <button class="btn btn-secondary" onclick="openCallLog()">Log Call</button>
-      <a href="calendar.html" class="btn btn-secondary">Calendar</a>
-      <button class="btn btn-primary" onclick="openCreateTask()">+ New Task</button>
+      <button class="btn btn-secondary" onclick="openCallLog()">${t("task_call")}</button>
+      <a href="calendar.html" class="btn btn-secondary">${t("task_calendar")}</a>
+      <button class="btn btn-primary" onclick="openCreateTask()">${t("task_new")}</button>
     </div>
   </div>
 
   <!-- Filter -->
   <div class="filter-bar" style="margin-bottom:16px" id="task-filter">
-    <button class="filter-btn active" data-v="all" onclick="filterTasks('all',this)">All</button>
-    <button class="filter-btn" data-v="Open" onclick="filterTasks('Open',this)">Open</button>
-    <button class="filter-btn" data-v="In Progress" onclick="filterTasks('In Progress',this)">In Progress</button>
-    <button class="filter-btn" data-v="Completed" onclick="filterTasks('Completed',this)">Completed</button>
-    <button class="filter-btn" data-v="Overdue" onclick="filterTasks('Overdue',this)">Overdue</button>
+    <button class="filter-btn active" data-v="all" onclick="filterTasks('all',this)">${t("task_all")}</button>
+    <button class="filter-btn" data-v="Open" onclick="filterTasks('Open',this)">${t("task_open")}</button>
+    <button class="filter-btn" data-v="In Progress" onclick="filterTasks('In Progress',this)">${t("task_progress")}</button>
+    <button class="filter-btn" data-v="Completed" onclick="filterTasks('Completed',this)">${t("task_done")}</button>
+    <button class="filter-btn" data-v="Overdue" onclick="filterTasks('Overdue',this)">${t("task_overdue")}</button>
   </div>
 
   <!-- Task List -->
   <div class="card" id="list-view">
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Task</th><th>Due Date</th><th>Priority</th><th>Status</th><th>Account</th></tr></thead>
+        <thead><tr><th>${t("task_col_name")}</th><th>${t("task_col_due")}</th><th>${t("task_col_priority")}</th><th>${t("task_col_status")}</th><th>${t("task_col_account")}</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
@@ -46,39 +46,39 @@
   <div id="task-form" style="display:none">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> ${t("btn_back")}
       </button>
-      <div class="page-title" id="form-title">New Task</div>
+      <div class="page-title" id="form-title">${t("task_form_title")}</div>
     </div>
     <form onsubmit="saveTask(event)">
       <div class="card" style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Task Details</div>
-        <div class="sf7-form-group"><label class="sf7-form-label">Title *</label><input class="sf7-form-input" id="ft-title" required placeholder="e.g. Follow up with customer"/></div>
-        <div class="sf7-form-group"><label class="sf7-form-label">Description</label><textarea class="sf7-form-input" id="ft-desc" rows="3" placeholder="Task details..."></textarea></div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">${t("task_form_details")}</div>
+        <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_title")} *</label><input class="sf7-form-input" id="ft-title" required placeholder="e.g. Follow up with customer"/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_desc")}</label><textarea class="sf7-form-input" id="ft-desc" rows="3" placeholder="Task details..."></textarea></div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Due Date *</label><input class="sf7-form-input" id="ft-due" type="date" required/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Priority</label>
+          <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_due")} *</label><input class="sf7-form-input" id="ft-due" type="date" required/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_priority")}</label>
             <select class="sf7-form-input" id="ft-priority"><option value="High">High</option><option value="Medium" selected>Medium</option><option value="Low">Low</option></select>
           </div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Status</label>
+          <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_status")}</label>
             <select class="sf7-form-input" id="ft-status"><option value="Open">Open</option><option value="In Progress">In Progress</option></select>
           </div>
         </div>
       </div>
       <div class="card" style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Link to</div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">${t("task_form_link")}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Account</label>
+          <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_account")}</label>
             <select class="sf7-form-input" id="ft-account"><option value="">-- None --</option></select>
           </div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Assigned To</label>
+          <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_assigned")}</label>
             <select class="sf7-form-input" id="ft-assigned"><option value="">-- Unassigned --</option></select>
           </div>
         </div>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button type="button" class="btn btn-secondary" onclick="closeForm()">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save Task</button>
+        <button type="button" class="btn btn-secondary" onclick="closeForm()">${t("btn_cancel")}</button>
+        <button type="submit" class="btn btn-primary">${t("btn_save")}</button>
       </div>
     </form>
   </div>
@@ -87,36 +87,37 @@
   <div id="call-form" style="display:none">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> ${t("btn_back")}
       </button>
-      <div class="page-title">Log Call</div>
+      <div class="page-title">${t("task_call")}</div>
     </div>
     <form onsubmit="saveCall(event)">
       <div class="card" style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Call Details</div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">${t("call_form_details")}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Duration (minutes) *</label><input class="sf7-form-input" id="fc-duration" type="number" min="1" required placeholder="15"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Outcome *</label>
-            <select class="sf7-form-input" id="fc-outcome"><option>Connected</option><option>No Answer</option><option>Left Message</option><option>Busy</option><option>Wrong Number</option></select>
+          <div class="sf7-form-group"><label class="sf7-form-label">${t("call_f_duration")} *</label><input class="sf7-form-input" id="fc-duration" type="number" min="1" required placeholder="15"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">${t("call_f_outcome")} *</label>
+            <select class="sf7-form-input" id="fc-outcome"><option>${t("call_connected")}</option><option>${t("call_no_answer")}</option><option>${t("call_left_msg")}</option><option>${t("call_busy")}</option><option>${t("call_wrong")}</option></select>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Account</label>
+          <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_account")}</label>
             <select class="sf7-form-input" id="fc-account"><option value="">-- Select --</option></select>
           </div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Contact Person</label><input class="sf7-form-input" id="fc-contact" placeholder="Name of person called"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">${t("call_f_contact")}</label><input class="sf7-form-input" id="fc-contact" placeholder="Name of person called"/></div>
         </div>
-        <div class="sf7-form-group" style="margin-top:12px"><label class="sf7-form-label">Notes</label><textarea class="sf7-form-input" id="fc-notes" rows="3" placeholder="Call summary..."></textarea></div>
+        <div class="sf7-form-group" style="margin-top:12px"><label class="sf7-form-label">${t("call_f_notes")}</label><textarea class="sf7-form-input" id="fc-notes" rows="3" placeholder="Call summary..."></textarea></div>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button type="button" class="btn btn-secondary" onclick="closeForm()">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save Call Log</button>
+        <button type="button" class="btn btn-secondary" onclick="closeForm()">${t("btn_cancel")}</button>
+        <button type="submit" class="btn btn-primary">${t("btn_save")}</button>
       </div>
     </form>
   </div>
 </div>
 
 <script src="../js/helpers.js"></script>
+<script src="../js/i18n.js"></script>
 <script src="../js/nav.js"></script>
 <script src="../js/data.js"></script>
 <script>

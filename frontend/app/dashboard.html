@@ -23,13 +23,13 @@
 <div class="page anim">
   <div class="page-header">
     <div>
-      <div class="page-title">Dashboard</div>
-      <div class="page-subtitle">Sales overview — Updated today</div>
+      <div class="page-title">${t('dash_title')}</div>
+      <div class="page-subtitle">${t('dash_sub')}</div>
     </div>
     <div class="filter-bar" id="period-bar">
-      <button class="filter-btn active" onclick="setPeriod('month',this)">Month</button>
-      <button class="filter-btn" onclick="setPeriod('quarter',this)">Quarter</button>
-      <button class="filter-btn" onclick="setPeriod('year',this)">Year</button>
+      <button class="filter-btn active" onclick="setPeriod('month',this)">${t('dash_month')}</button>
+      <button class="filter-btn" onclick="setPeriod('quarter',this)">${t('dash_quarter')}</button>
+      <button class="filter-btn" onclick="setPeriod('year',this)">${t('dash_year')}</button>
     </div>
   </div>
 
@@ -39,11 +39,11 @@
   <!-- Pipeline + Deals -->
   <div class="grid-2" style="margin-bottom:16px">
     <div class="card">
-      <div class="section-title">Pipeline by Stage</div>
+      <div class="section-title">${t('pipe_by_stage')}</div>
       <div id="pipeline"></div>
     </div>
     <div class="card">
-      <div class="section-title">Deals & Weighted Value</div>
+      <div class="section-title">${t('pipe_weighted')}</div>
       <div id="deals"></div>
     </div>
   </div>
@@ -51,17 +51,18 @@
   <!-- Funnel + Reps -->
   <div class="grid-2">
     <div class="card">
-      <div class="section-title">Lead Conversion Funnel</div>
+      <div class="section-title">${t('funnel_title')}</div>
       <div id="funnel"></div>
     </div>
     <div class="card">
-      <div class="section-title">Sales Team Performance</div>
+      <div class="section-title">${t('reps_title')}</div>
       <div id="reps"></div>
     </div>
   </div>
 </div>
 
 <script src="../js/helpers.js"></script>
+<script src="../js/i18n.js"></script>
 <script src="../js/nav.js"></script>
 <script src="../js/data.js"></script>
 <script>
@@ -86,7 +87,7 @@ function renderKPIs() {
       </div>
       <div class="kpi-label">Closed Revenue</div>
       <div class="kpi-value">${fmt(k.closed)}</div>
-      <div class="kpi-sub">of target ${fmt(k.target)}</div>
+      <div class="kpi-sub">${t('kpi_of_target')} ${fmt(k.target)}</div>
       <span class="kpi-trend up">+18%</span>
       <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:var(--sf-blue)"></div></div>
     </div>
@@ -115,7 +116,7 @@ function renderKPIs() {
       </div>
       <div class="kpi-label">Conversion Rate</div>
       <div class="kpi-value">${k.conv}%</div>
-      <div class="kpi-sub">Benchmark: 22%</div>
+      <div class="kpi-sub">${t('kpi_benchmark')}</div>
       <div class="progress-bar"><div class="progress-fill" style="width:${k.conv}%;background:#7F56D9"></div></div>
     </div>`;
 }
@@ -128,7 +129,7 @@ function renderPipeline() {
         <span style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px">
           <span class="pipe-dot" style="background:${s.color}"></span>
           ${s.name}
-          <span class="pipe-badge">${s.deals} deals</span>
+          <span class="pipe-badge">${s.deals} ${t('pipe_deals')}</span>
         </span>
         <span style="font-size:12px;color:var(--text2)">${fmt(s.total)}</span>
       </div>
@@ -142,7 +143,7 @@ function renderPipeline() {
       <div style="display:flex;align-items:center;flex:1">
         <span class="pipe-dot" style="background:${s.color};margin-right:10px"></span>
         <span style="font-size:13px;font-weight:500">${s.name}</span>
-        <span style="font-size:12px;color:var(--text2);margin-left:6px">${s.deals} deals</span>
+        <span style="font-size:12px;color:var(--text2);margin-left:6px">${s.deals} ${t('pipe_deals')}</span>
       </div>
       <span style="font-size:13px;font-weight:600;color:var(--sf-blue)">${fmt(s.weighted)}</span>
     </div>`).join('');

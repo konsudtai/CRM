@@ -20,18 +20,18 @@
 <div class="page anim">
   <div class="page-header">
     <div>
-      <div class="page-title">Accounts</div>
-      <div class="page-subtitle">Manage all customer accounts — <span id="count">0</span> records</div>
+      <div class="page-title">${t("acc_title")}</div>
+      <div class="page-subtitle">${t("acc_sub")} — <span id="count">0</span> records</div>
     </div>
-    <button class="btn btn-primary" onclick="openCreate()">+ New Account</button>
+    <button class="btn btn-primary" onclick="openCreate()">${t("acc_new")}</button>
   </div>
 
   <!-- Search + Table -->
   <div class="card" id="list-view">
-    <input class="search-input" id="search" placeholder="Search company name, tax ID, industry..." style="margin-bottom:16px" oninput="renderTable()"/>
+    <input class="search-input" id="search" placeholder="${t('acc_search')}" style="margin-bottom:16px" oninput="renderTable()"/>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Company</th><th>Tax ID</th><th>Industry</th><th>Phone</th><th>Status</th><th>Tier</th><th>Revenue</th></tr></thead>
+        <thead><tr><th>${t("acc_company")}</th><th>${t("acc_taxid")}</th><th>${t("acc_industry")}</th><th>${t("acc_phone")}</th><th>${t("acc_status")}</th><th>${t("acc_tier")}</th><th>${t("acc_revenue")}</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
@@ -44,13 +44,13 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Back
       </button>
-      <div class="page-title" id="form-title">New Account</div>
+      <div class="page-title" id="form-title">${t("acc_form_title")}</div>
     </div>
 
     <form onsubmit="saveAccount(event)">
       <!-- Company Info -->
       <div class="card" style="margin-bottom:16px">
-        <div class="form-section-title">Company Information</div>
+        <div class="form-section-title">${t("acc_form_company")}</div>
         <div class="form-grid">
           <div class="sf7-form-group"><label class="sf7-form-label">Company Name (TH) *</label><input class="sf7-form-input" id="f-name" required placeholder="บริษัท ... จำกัด"/></div>
           <div class="sf7-form-group"><label class="sf7-form-label">Company Name (EN)</label><input class="sf7-form-input" id="f-name-en" placeholder="... Co., Ltd."/></div>
@@ -64,7 +64,7 @@
 
       <!-- Tax & Registration -->
       <div class="card" style="margin-bottom:16px">
-        <div class="form-section-title">Tax & Registration</div>
+        <div class="form-section-title">${t("acc_form_tax")}</div>
         <div class="form-grid">
           <div class="sf7-form-group"><label class="sf7-form-label">Tax ID (13 digits)</label><input class="sf7-form-input" id="f-tax" maxlength="13" placeholder="0105556012345"/></div>
           <div class="sf7-form-group"><label class="sf7-form-label">Branch Code</label><input class="sf7-form-input" id="f-branch" value="00000" placeholder="00000 = HQ"/></div>
@@ -79,7 +79,7 @@
 
       <!-- Contact Info -->
       <div class="card" style="margin-bottom:16px">
-        <div class="form-section-title">Contact Information</div>
+        <div class="form-section-title">${t("acc_form_contact")}</div>
         <div class="form-grid">
           <div class="sf7-form-group"><label class="sf7-form-label">Phone</label><input class="sf7-form-input" id="f-phone" placeholder="02-xxx-xxxx"/></div>
           <div class="sf7-form-group"><label class="sf7-form-label">Phone 2</label><input class="sf7-form-input" id="f-phone2"/></div>
@@ -94,7 +94,7 @@
 
       <!-- Address -->
       <div class="card" style="margin-bottom:16px">
-        <div class="form-section-title">Registered Address</div>
+        <div class="form-section-title">${t("acc_form_address")}</div>
         <div class="sf7-form-group"><label class="sf7-form-label">Address</label><textarea class="sf7-form-input" id="f-addr" rows="2" placeholder="เลขที่ / อาคาร / ซอย / ถนน"></textarea></div>
         <div class="form-grid" style="margin-top:12px">
           <div class="sf7-form-group"><label class="sf7-form-label">Sub-district (ตำบล/แขวง)</label><input class="sf7-form-input" id="f-sub"/></div>
@@ -108,7 +108,7 @@
 
       <!-- Sales Info -->
       <div class="card" style="margin-bottom:16px">
-        <div class="form-section-title">Sales Information</div>
+        <div class="form-section-title">${t("acc_form_sales")}</div>
         <div class="form-grid">
           <div class="sf7-form-group"><label class="sf7-form-label">Account Source</label><select class="sf7-form-input" id="f-source"><option value="">-- Select --</option><option>Website</option><option>Referral</option><option>Event</option><option>Cold Call</option><option>LINE</option><option>Facebook</option><option>Other</option></select></div>
           <div class="sf7-form-group"><label class="sf7-form-label">Account Tier</label><select class="sf7-form-input" id="f-tier"><option value="standard">Standard</option><option value="silver">Silver</option><option value="gold">Gold</option><option value="platinum">Platinum</option></select></div>
@@ -122,20 +122,21 @@
 
       <!-- Notes -->
       <div class="card" style="margin-bottom:16px">
-        <div class="form-section-title">Internal Notes</div>
+        <div class="form-section-title">${t("acc_form_notes")}</div>
         <div class="sf7-form-group"><textarea class="sf7-form-input" id="f-notes" rows="3" placeholder="Internal notes (not visible to customer)"></textarea></div>
       </div>
 
       <!-- Actions -->
       <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button type="button" class="btn btn-secondary" onclick="closeForm()">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save Account</button>
+        <button type="button" class="btn btn-secondary" onclick="closeForm()">${t("btn_cancel")}</button>
+        <button type="submit" class="btn btn-primary">${t("btn_save")}</button>
       </div>
     </form>
   </div>
 </div>
 
 <script src="../js/helpers.js"></script>
+<script src="../js/i18n.js"></script>
 <script src="../js/nav.js"></script>
 <script src="../js/data.js"></script>
 <script>
