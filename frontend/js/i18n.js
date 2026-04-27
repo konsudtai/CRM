@@ -130,3 +130,18 @@ function setLang(lang) {
   location.reload();
 }
 function t(key) { return LANG[getLang()][key] || LANG['en'][key] || key; }
+
+/* Apply translations to all elements with data-i18n attribute */
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const val = t(key);
+    if (val) el.textContent = val;
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    const val = t(key);
+    if (val) el.placeholder = val;
+  });
+}
+document.addEventListener('DOMContentLoaded', () => applyI18n());

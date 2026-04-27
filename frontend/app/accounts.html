@@ -6,8 +6,6 @@
 <title>SalesFAST 7 — Accounts</title>
 <link rel="stylesheet" href="../css/app.css"/>
 <style>
-.form-section{margin-bottom:24px}
-.form-section-title{font-size:13px;font-weight:700;color:var(--sf-blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 .form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:768px){.form-grid,.form-grid-2{grid-template-columns:1fr}}
@@ -20,116 +18,110 @@
 <div class="page anim">
   <div class="page-header">
     <div>
-      <div class="page-title">${t("acc_title")}</div>
-      <div class="page-subtitle">${t("acc_sub")} — <span id="count">0</span> records</div>
+      <div class="page-title" data-i18n="acc_title">Accounts</div>
+      <div class="page-subtitle"><span data-i18n="acc_sub">Manage all customer accounts</span> — <span id="count">0</span> <span data-i18n="acc_records">records</span></div>
     </div>
-    <button class="btn btn-primary" onclick="openCreate()">${t("acc_new")}</button>
+    <button class="btn btn-primary" onclick="openCreate()" data-i18n="acc_new">+ New Account</button>
   </div>
 
-  <!-- Search + Table -->
+  <!-- List View -->
   <div class="card" id="list-view">
-    <input class="search-input" id="search" placeholder="${t('acc_search')}" style="margin-bottom:16px" oninput="renderTable()"/>
+    <input class="search-input" id="search" data-i18n-placeholder="acc_search" placeholder="Search company name, tax ID, industry..." style="margin-bottom:16px" oninput="renderTable()"/>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>${t("acc_company")}</th><th>${t("acc_taxid")}</th><th>${t("acc_industry")}</th><th>${t("acc_phone")}</th><th>${t("acc_status")}</th><th>${t("acc_tier")}</th><th>${t("acc_revenue")}</th></tr></thead>
+        <thead><tr>
+          <th data-i18n="acc_company">Company</th>
+          <th data-i18n="acc_taxid">Tax ID</th>
+          <th data-i18n="acc_industry">Industry</th>
+          <th data-i18n="acc_phone">Phone</th>
+          <th data-i18n="acc_status">Status</th>
+          <th data-i18n="acc_tier">Tier</th>
+          <th data-i18n="acc_revenue">Revenue</th>
+        </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- Create / Edit Form (hidden by default) -->
+  <!-- Create Form -->
   <div id="form-view" style="display:none">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        Back
+        <span data-i18n="btn_back">Back</span>
       </button>
-      <div class="page-title" id="form-title">${t("acc_form_title")}</div>
+      <div class="page-title" data-i18n="acc_form_title">New Account</div>
     </div>
-
     <form onsubmit="saveAccount(event)">
-      <!-- Company Info -->
       <div class="card" style="margin-bottom:16px">
-        <div class="form-section-title">${t("acc_form_company")}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="acc_form_company">Company Information</div>
         <div class="form-grid">
-          <div class="sf7-form-group"><label class="sf7-form-label">Company Name (TH) *</label><input class="sf7-form-input" id="f-name" required placeholder="บริษัท ... จำกัด"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Company Name (EN)</label><input class="sf7-form-input" id="f-name-en" placeholder="... Co., Ltd."/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Company Type</label><select class="sf7-form-input" id="f-type"><option value="">-- Select --</option><option>บจก.</option><option>หจก.</option><option>บมจ.</option><option>ร้านค้า</option><option>บุคคลธรรมดา</option></select></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_name_th">Company Name (TH)</label><input class="sf7-form-input" id="f-name" required/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_name_en">Company Name (EN)</label><input class="sf7-form-input" id="f-name-en"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_type">Company Type</label><select class="sf7-form-input" id="f-type"><option value="">--</option><option>บจก.</option><option>หจก.</option><option>บมจ.</option><option>ร้านค้า</option><option>บุคคลธรรมดา</option></select></div>
         </div>
         <div class="form-grid-2" style="margin-top:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Industry</label><input class="sf7-form-input" id="f-industry" placeholder="e.g. Technology, Manufacturing"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Business Description</label><input class="sf7-form-input" id="f-desc" placeholder="Brief description"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_industry">Industry</label><input class="sf7-form-input" id="f-industry"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_desc">Business Description</label><input class="sf7-form-input" id="f-desc"/></div>
         </div>
       </div>
-
-      <!-- Tax & Registration -->
       <div class="card" style="margin-bottom:16px">
-        <div class="form-section-title">${t("acc_form_tax")}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="acc_form_tax">Tax & Registration</div>
         <div class="form-grid">
-          <div class="sf7-form-group"><label class="sf7-form-label">Tax ID (13 digits)</label><input class="sf7-form-input" id="f-tax" maxlength="13" placeholder="0105556012345"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Branch Code</label><input class="sf7-form-input" id="f-branch" value="00000" placeholder="00000 = HQ"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Branch Name</label><input class="sf7-form-input" id="f-branch-name" placeholder="สำนักงานใหญ่"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_tax_label">Tax ID (13 digits)</label><input class="sf7-form-input" id="f-tax" maxlength="13"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_branch">Branch Code</label><input class="sf7-form-input" id="f-branch" value="00000"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_branch_name">Branch Name</label><input class="sf7-form-input" id="f-branch-name"/></div>
         </div>
         <div class="form-grid" style="margin-top:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Registered Capital (THB)</label><input class="sf7-form-input" id="f-capital" type="number" placeholder="1,000,000"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Registration Date</label><input class="sf7-form-input" id="f-reg-date" type="date"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Registration No.</label><input class="sf7-form-input" id="f-reg-no" placeholder="0105556012345"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_capital">Registered Capital (THB)</label><input class="sf7-form-input" id="f-capital" type="number"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_reg_date">Registration Date</label><input class="sf7-form-input" id="f-reg-date" type="date"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_reg_no">Registration No.</label><input class="sf7-form-input" id="f-reg-no"/></div>
         </div>
       </div>
-
-      <!-- Contact Info -->
       <div class="card" style="margin-bottom:16px">
-        <div class="form-section-title">${t("acc_form_contact")}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="acc_form_contact">Contact Information</div>
         <div class="form-grid">
-          <div class="sf7-form-group"><label class="sf7-form-label">Phone</label><input class="sf7-form-input" id="f-phone" placeholder="02-xxx-xxxx"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Phone 2</label><input class="sf7-form-input" id="f-phone2"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Fax</label><input class="sf7-form-input" id="f-fax"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_phone">Phone</label><input class="sf7-form-input" id="f-phone"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_phone2">Phone 2</label><input class="sf7-form-input" id="f-phone2"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_fax">Fax</label><input class="sf7-form-input" id="f-fax"/></div>
         </div>
         <div class="form-grid" style="margin-top:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Email</label><input class="sf7-form-input" id="f-email" type="email" placeholder="info@company.co.th"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Website</label><input class="sf7-form-input" id="f-website" placeholder="www.company.co.th"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">LINE OA ID</label><input class="sf7-form-input" id="f-line" placeholder="@company"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_email">Email</label><input class="sf7-form-input" id="f-email" type="email"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_website">Website</label><input class="sf7-form-input" id="f-website"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_line">LINE OA ID</label><input class="sf7-form-input" id="f-line"/></div>
         </div>
       </div>
-
-      <!-- Address -->
       <div class="card" style="margin-bottom:16px">
-        <div class="form-section-title">${t("acc_form_address")}</div>
-        <div class="sf7-form-group"><label class="sf7-form-label">Address</label><textarea class="sf7-form-input" id="f-addr" rows="2" placeholder="เลขที่ / อาคาร / ซอย / ถนน"></textarea></div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="acc_form_address">Registered Address</div>
+        <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_addr">Address</label><textarea class="sf7-form-input" id="f-addr" rows="2"></textarea></div>
         <div class="form-grid" style="margin-top:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Sub-district (ตำบล/แขวง)</label><input class="sf7-form-input" id="f-sub"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">District (อำเภอ/เขต)</label><input class="sf7-form-input" id="f-dist"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Province (จังหวัด)</label><input class="sf7-form-input" id="f-prov"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_subdistrict">Sub-district</label><input class="sf7-form-input" id="f-sub"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_district">District</label><input class="sf7-form-input" id="f-dist"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_province">Province</label><input class="sf7-form-input" id="f-prov"/></div>
         </div>
         <div class="form-grid" style="margin-top:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Postal Code</label><input class="sf7-form-input" id="f-zip" maxlength="5"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_zip">Postal Code</label><input class="sf7-form-input" id="f-zip" maxlength="5"/></div>
         </div>
       </div>
-
-      <!-- Sales Info -->
       <div class="card" style="margin-bottom:16px">
-        <div class="form-section-title">${t("acc_form_sales")}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="acc_form_sales">Sales Information</div>
         <div class="form-grid">
-          <div class="sf7-form-group"><label class="sf7-form-label">Account Source</label><select class="sf7-form-input" id="f-source"><option value="">-- Select --</option><option>Website</option><option>Referral</option><option>Event</option><option>Cold Call</option><option>LINE</option><option>Facebook</option><option>Other</option></select></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Account Tier</label><select class="sf7-form-input" id="f-tier"><option value="standard">Standard</option><option value="silver">Silver</option><option value="gold">Gold</option><option value="platinum">Platinum</option></select></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Credit Term (days)</label><input class="sf7-form-input" id="f-credit" type="number" value="30"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_source">Account Source</label><select class="sf7-form-input" id="f-source"><option value="">--</option><option>Website</option><option>Referral</option><option>Event</option><option>Cold Call</option><option>LINE</option><option>Facebook</option></select></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_tier">Account Tier</label><select class="sf7-form-input" id="f-tier"><option value="standard">Standard</option><option value="silver">Silver</option><option value="gold">Gold</option><option value="platinum">Platinum</option></select></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_credit_term">Credit Term (days)</label><input class="sf7-form-input" id="f-credit" type="number" value="30"/></div>
         </div>
-        <div class="form-grid" style="margin-top:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Credit Limit (THB)</label><input class="sf7-form-input" id="f-limit" type="number"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Payment Method</label><select class="sf7-form-input" id="f-payment"><option value="">-- Select --</option><option>Transfer</option><option>Cheque</option><option>Cash</option><option>Credit</option></select></div>
+        <div class="form-grid-2" style="margin-top:12px">
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_credit_limit">Credit Limit (THB)</label><input class="sf7-form-input" id="f-limit" type="number"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_payment">Payment Method</label><select class="sf7-form-input" id="f-payment"><option value="">--</option><option>Transfer</option><option>Cheque</option><option>Cash</option><option>Credit</option></select></div>
         </div>
       </div>
-
-      <!-- Notes -->
       <div class="card" style="margin-bottom:16px">
-        <div class="form-section-title">${t("acc_form_notes")}</div>
-        <div class="sf7-form-group"><textarea class="sf7-form-input" id="f-notes" rows="3" placeholder="Internal notes (not visible to customer)"></textarea></div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="acc_form_notes">Internal Notes</div>
+        <div class="sf7-form-group"><textarea class="sf7-form-input" id="f-notes" rows="3"></textarea></div>
       </div>
-
-      <!-- Actions -->
       <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button type="button" class="btn btn-secondary" onclick="closeForm()">${t("btn_cancel")}</button>
-        <button type="submit" class="btn btn-primary">${t("btn_save")}</button>
+        <button type="button" class="btn btn-secondary" onclick="closeForm()" data-i18n="btn_cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" data-i18n="btn_save">Save</button>
       </div>
     </form>
   </div>
@@ -143,28 +135,26 @@
 document.getElementById('nav').innerHTML = renderNav('accounts');
 
 function renderTable() {
-  const q = (document.getElementById('search').value || '').toLowerCase();
-  const f = ACCOUNTS.filter(a => a.name.toLowerCase().includes(q) || a.industry.toLowerCase().includes(q) || (a.taxId||'').includes(q));
+  var q = (document.getElementById('search').value || '').toLowerCase();
+  var f = ACCOUNTS.filter(function(a) { return a.name.toLowerCase().indexOf(q) >= 0 || a.industry.toLowerCase().indexOf(q) >= 0 || (a.taxId || '').indexOf(q) >= 0; });
   document.getElementById('count').textContent = f.length;
-  document.getElementById('tbody').innerHTML = f.map(a => `
-    <tr>
-      <td><a href="account-detail.html?id=${a.id}" class="table-link">${a.name}</a></td>
-      <td style="color:var(--text2);font-size:12px;font-family:monospace">${a.taxId || '-'}</td>
-      <td style="color:var(--text2)">${a.industry}</td>
-      <td style="color:var(--text2);font-size:12px">${a.phone}</td>
-      <td><span class="status-badge" style="background:rgba(46,132,74,.1);color:#2E844A">${a.status || 'Active'}</span></td>
-      <td><span class="tag">${a.tier || 'Standard'}</span></td>
-      <td style="font-weight:600;color:var(--sf-blue)">${fmt(a.revenue)}</td>
-    </tr>
-  `).join('') || '<tr><td colspan="7" class="empty-state">No accounts found</td></tr>';
+  document.getElementById('tbody').innerHTML = f.map(function(a) {
+    return '<tr>' +
+      '<td><a href="account-detail.html?id=' + a.id + '" class="table-link">' + a.name + '</a></td>' +
+      '<td style="color:var(--text2);font-size:12px;font-family:monospace">' + (a.taxId || '-') + '</td>' +
+      '<td style="color:var(--text2)">' + a.industry + '</td>' +
+      '<td style="color:var(--text2);font-size:12px">' + a.phone + '</td>' +
+      '<td><span class="status-badge" style="background:rgba(46,132,74,.1);color:#2E844A">' + (a.status || 'Active') + '</span></td>' +
+      '<td><span class="tag">' + (a.tier || 'Standard') + '</span></td>' +
+      '<td style="font-weight:600;color:var(--sf-blue)">' + fmt(a.revenue) + '</td>' +
+      '</tr>';
+  }).join('') || '<tr><td colspan="7" class="empty-state">No accounts found</td></tr>';
 }
 
 function openCreate() {
   document.getElementById('list-view').style.display = 'none';
   document.getElementById('form-view').style.display = 'block';
-  document.getElementById('form-title').textContent = 'New Account';
-  // Clear form
-  document.querySelectorAll('#form-view input, #form-view textarea, #form-view select').forEach(el => {
+  document.querySelectorAll('#form-view input, #form-view textarea, #form-view select').forEach(function(el) {
     if (el.id === 'f-branch') el.value = '00000';
     else if (el.id === 'f-credit') el.value = '30';
     else if (el.id === 'f-tier') el.value = 'standard';
@@ -181,11 +171,9 @@ function closeForm() {
 
 function saveAccount(e) {
   e.preventDefault();
-  const newAccount = {
+  ACCOUNTS.unshift({
     id: ACCOUNTS.length + 1,
     name: document.getElementById('f-name').value,
-    nameEn: document.getElementById('f-name-en').value,
-    type: document.getElementById('f-type').value,
     industry: document.getElementById('f-industry').value || 'Other',
     taxId: document.getElementById('f-tax').value,
     phone: document.getElementById('f-phone').value || '-',
@@ -194,8 +182,7 @@ function saveAccount(e) {
     tier: document.getElementById('f-tier').value,
     revenue: 0,
     tags: [document.getElementById('f-tier').value || 'Standard'],
-  };
-  ACCOUNTS.unshift(newAccount);
+  });
   closeForm();
   renderTable();
 }

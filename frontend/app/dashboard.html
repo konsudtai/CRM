@@ -9,11 +9,6 @@
 .kpi-stripe{position:absolute;top:0;left:0;right:0;height:4px;border-radius:12px 12px 0 0}
 .pipe-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .pipe-badge{font-size:11px;font-weight:500;color:var(--text2);background:var(--surface3);padding:1px 7px;border-radius:20px}
-.funnel-fill{min-width:32px}
-.rep-bar-wrap{width:80px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-top:4px}
-.rep-bar{height:100%;border-radius:2px;transition:width 1s ease}
-.rep-meta{font-size:12px;color:var(--text2);margin-top:2px}
-.rep-rev{font-size:13px;font-weight:700}
 </style>
 </head>
 <body>
@@ -23,41 +18,25 @@
 <div class="page anim">
   <div class="page-header">
     <div>
-      <div class="page-title">${t('dash_title')}</div>
-      <div class="page-subtitle">${t('dash_sub')}</div>
+      <div class="page-title" data-i18n="dash_title">Dashboard</div>
+      <div class="page-subtitle" data-i18n="dash_sub">Sales overview — Updated today</div>
     </div>
     <div class="filter-bar" id="period-bar">
-      <button class="filter-btn active" onclick="setPeriod('month',this)">${t('dash_month')}</button>
-      <button class="filter-btn" onclick="setPeriod('quarter',this)">${t('dash_quarter')}</button>
-      <button class="filter-btn" onclick="setPeriod('year',this)">${t('dash_year')}</button>
+      <button class="filter-btn active" onclick="setPeriod('month',this)" data-i18n="dash_month">Month</button>
+      <button class="filter-btn" onclick="setPeriod('quarter',this)" data-i18n="dash_quarter">Quarter</button>
+      <button class="filter-btn" onclick="setPeriod('year',this)" data-i18n="dash_year">Year</button>
     </div>
   </div>
 
-  <!-- KPIs -->
   <div class="kpi-grid" id="kpis"></div>
 
-  <!-- Pipeline + Deals -->
   <div class="grid-2" style="margin-bottom:16px">
-    <div class="card">
-      <div class="section-title">${t('pipe_by_stage')}</div>
-      <div id="pipeline"></div>
-    </div>
-    <div class="card">
-      <div class="section-title">${t('pipe_weighted')}</div>
-      <div id="deals"></div>
-    </div>
+    <div class="card"><div class="section-title" data-i18n="pipe_by_stage">Pipeline by Stage</div><div id="pipeline"></div></div>
+    <div class="card"><div class="section-title" data-i18n="pipe_weighted">Deals & Weighted Value</div><div id="deals"></div></div>
   </div>
-
-  <!-- Funnel + Reps -->
   <div class="grid-2">
-    <div class="card">
-      <div class="section-title">${t('funnel_title')}</div>
-      <div id="funnel"></div>
-    </div>
-    <div class="card">
-      <div class="section-title">${t('reps_title')}</div>
-      <div id="reps"></div>
-    </div>
+    <div class="card"><div class="section-title" data-i18n="funnel_title">Lead Conversion Funnel</div><div id="funnel"></div></div>
+    <div class="card"><div class="section-title" data-i18n="reps_title">Sales Team Performance</div><div id="reps"></div></div>
   </div>
 </div>
 
@@ -82,10 +61,8 @@ function renderKPIs() {
   document.getElementById('kpis').innerHTML = `
     <div class="kpi-card" style="position:relative;overflow:hidden">
       <div class="kpi-stripe" style="background:var(--sf-blue)"></div>
-      <div class="kpi-icon" style="background:rgba(1,118,211,.1);margin-top:6px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0176D3" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      </div>
-      <div class="kpi-label">Closed Revenue</div>
+      <div class="kpi-icon" style="background:rgba(1,118,211,.1);margin-top:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0176D3" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <div class="kpi-label">${t('kpi_closed')}</div>
       <div class="kpi-value">${fmt(k.closed)}</div>
       <div class="kpi-sub">${t('kpi_of_target')} ${fmt(k.target)}</div>
       <span class="kpi-trend up">+18%</span>
@@ -93,28 +70,22 @@ function renderKPIs() {
     </div>
     <div class="kpi-card" style="position:relative;overflow:hidden">
       <div class="kpi-stripe" style="background:#2E844A"></div>
-      <div class="kpi-icon" style="background:rgba(46,132,74,.1);margin-top:6px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2E844A" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-      </div>
-      <div class="kpi-label">Target Progress</div>
+      <div class="kpi-icon" style="background:rgba(46,132,74,.1);margin-top:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2E844A" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+      <div class="kpi-label">${t('kpi_target')}</div>
       <div class="kpi-value">${Math.round(pct)}%</div>
       <span class="kpi-trend up">+5pt</span>
     </div>
     <div class="kpi-card" style="position:relative;overflow:hidden">
       <div class="kpi-stripe" style="background:#DD7A01"></div>
-      <div class="kpi-icon" style="background:rgba(221,122,1,.1);margin-top:6px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DD7A01" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      </div>
-      <div class="kpi-label">New Leads</div>
+      <div class="kpi-icon" style="background:rgba(221,122,1,.1);margin-top:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DD7A01" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <div class="kpi-label">${t('kpi_leads')}</div>
       <div class="kpi-value">${k.leads}</div>
       <span class="kpi-trend up">+12</span>
     </div>
     <div class="kpi-card" style="position:relative;overflow:hidden">
       <div class="kpi-stripe" style="background:#7F56D9"></div>
-      <div class="kpi-icon" style="background:rgba(127,86,217,.1);margin-top:6px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7F56D9" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-      </div>
-      <div class="kpi-label">Conversion Rate</div>
+      <div class="kpi-icon" style="background:rgba(127,86,217,.1);margin-top:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7F56D9" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+      <div class="kpi-label">${t('kpi_conv')}</div>
       <div class="kpi-value">${k.conv}%</div>
       <div class="kpi-sub">${t('kpi_benchmark')}</div>
       <div class="progress-bar"><div class="progress-fill" style="width:${k.conv}%;background:#7F56D9"></div></div>
@@ -123,68 +94,43 @@ function renderKPIs() {
 
 function renderPipeline() {
   const max = Math.max(...STAGES.map(s => s.total));
+  const dealWord = t('pipe_deals');
   document.getElementById('pipeline').innerHTML = STAGES.map(s => `
-    <div class="pipeline-row">
-      <div class="pipeline-header">
-        <span style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px">
-          <span class="pipe-dot" style="background:${s.color}"></span>
-          ${s.name}
-          <span class="pipe-badge">${s.deals} ${t('pipe_deals')}</span>
-        </span>
-        <span style="font-size:12px;color:var(--text2)">${fmt(s.total)}</span>
-      </div>
-      <div class="pipeline-track">
-        <div class="pipeline-fill" style="width:${(s.total/max)*100}%;background:linear-gradient(90deg,${s.color}cc,${s.color})"></div>
-      </div>
-    </div>`).join('');
+    <div class="pipeline-row"><div class="pipeline-header">
+      <span style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px">
+        <span class="pipe-dot" style="background:${s.color}"></span>${s.name}
+        <span class="pipe-badge">${s.deals} ${dealWord}</span>
+      </span><span style="font-size:12px;color:var(--text2)">${fmt(s.total)}</span>
+    </div><div class="pipeline-track"><div class="pipeline-fill" style="width:${(s.total/max)*100}%;background:linear-gradient(90deg,${s.color}cc,${s.color})"></div></div></div>`).join('');
 
   document.getElementById('deals').innerHTML = STAGES.map(s => `
-    <div class="deal-row">
-      <div style="display:flex;align-items:center;flex:1">
-        <span class="pipe-dot" style="background:${s.color};margin-right:10px"></span>
-        <span style="font-size:13px;font-weight:500">${s.name}</span>
-        <span style="font-size:12px;color:var(--text2);margin-left:6px">${s.deals} ${t('pipe_deals')}</span>
-      </div>
-      <span style="font-size:13px;font-weight:600;color:var(--sf-blue)">${fmt(s.weighted)}</span>
-    </div>`).join('');
+    <div class="deal-row"><div style="display:flex;align-items:center;flex:1">
+      <span class="pipe-dot" style="background:${s.color};margin-right:10px"></span>
+      <span style="font-size:13px;font-weight:500">${s.name}</span>
+      <span style="font-size:12px;color:var(--text2);margin-left:6px">${s.deals} ${dealWord}</span>
+    </div><span style="font-size:13px;font-weight:600;color:var(--sf-blue)">${fmt(s.weighted)}</span></div>`).join('');
 }
 
 function renderFunnel() {
-  const rows = [
-    { label: 'New', pct: 100, color: '#1B96FF', count: 38 },
-    { label: 'Contacted', pct: 74, color: '#7F56D9', count: 28 },
-    { label: 'Qualified', pct: 52, color: '#0B827C', count: 20 },
-    { label: 'Won', pct: 25, color: '#2E844A', count: 10 },
-  ];
+  const rows = [{label:'New',pct:100,color:'#1B96FF',count:38},{label:'Contacted',pct:74,color:'#7F56D9',count:28},{label:'Qualified',pct:52,color:'#0B827C',count:20},{label:'Won',pct:25,color:'#2E844A',count:10}];
   document.getElementById('funnel').innerHTML = rows.map(r => `
-    <div class="funnel-bar">
-      <span class="funnel-label">${r.label}</span>
-      <div class="funnel-track">
-        <div class="funnel-fill" style="width:${r.pct}%;background:linear-gradient(90deg,${r.color}cc,${r.color})">${r.count}</div>
-      </div>
-    </div>`).join('');
+    <div class="funnel-bar"><span class="funnel-label">${r.label}</span>
+    <div class="funnel-track"><div class="funnel-fill" style="width:${r.pct}%;background:linear-gradient(90deg,${r.color}cc,${r.color})">${r.count}</div></div></div>`).join('');
 }
 
 function renderReps() {
   const max = Math.max(...REPS.map(r => r.revenue));
+  const dWord = t('reps_deals');
+  const aWord = t('reps_acts');
   document.getElementById('reps').innerHTML = REPS.map(r => `
-    <div class="rep-row">
-      <div class="rep-avatar" style="background:linear-gradient(135deg,${r.color},${r.color}99)">${r.initials}</div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600">${r.name}</div>
-        <div class="rep-bar-wrap">
-          <div class="rep-bar" style="width:${(r.revenue/max)*100}%;background:${r.color}"></div>
-        </div>
-        <div class="rep-meta">${r.deals} deals — ${r.acts} activities</div>
-      </div>
-      <div class="rep-rev">${fmt(r.revenue)}</div>
-    </div>`).join('');
+    <div class="rep-row"><div class="rep-avatar" style="background:linear-gradient(135deg,${r.color},${r.color}99)">${r.initials}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:600">${r.name}</div>
+    <div style="width:80px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-top:4px"><div style="height:100%;border-radius:2px;width:${(r.revenue/max)*100}%;background:${r.color}"></div></div>
+    <div style="font-size:12px;color:var(--text2);margin-top:2px">${r.deals} ${dWord} — ${r.acts} ${aWord}</div></div>
+    <div style="font-size:13px;font-weight:700">${fmt(r.revenue)}</div></div>`).join('');
 }
 
-renderKPIs();
-renderPipeline();
-renderFunnel();
-renderReps();
+renderKPIs(); renderPipeline(); renderFunnel(); renderReps();
 </script>
 </body>
 </html>

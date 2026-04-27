@@ -13,104 +13,101 @@
 <div class="page anim">
   <div class="page-header">
     <div>
-      <div class="page-title">${t("task_title")}</div>
-      <div class="page-subtitle">${t("task_sub")}</div>
+      <div class="page-title" data-i18n="task_title">Tasks & Activities</div>
+      <div class="page-subtitle" data-i18n="task_sub">Manage tasks, appointments and call logs</div>
     </div>
     <div class="page-actions">
-      <button class="btn btn-secondary" onclick="openCallLog()">${t("task_call")}</button>
-      <a href="calendar.html" class="btn btn-secondary">${t("task_calendar")}</a>
-      <button class="btn btn-primary" onclick="openCreateTask()">${t("task_new")}</button>
+      <button class="btn btn-secondary" onclick="openCallLog()" data-i18n="task_call">Log Call</button>
+      <a href="calendar.html" class="btn btn-secondary" data-i18n="task_calendar">Calendar</a>
+      <button class="btn btn-primary" onclick="openCreateTask()" data-i18n="task_new">+ New Task</button>
     </div>
   </div>
 
-  <!-- Filter -->
   <div class="filter-bar" style="margin-bottom:16px" id="task-filter">
-    <button class="filter-btn active" data-v="all" onclick="filterTasks('all',this)">${t("task_all")}</button>
-    <button class="filter-btn" data-v="Open" onclick="filterTasks('Open',this)">${t("task_open")}</button>
-    <button class="filter-btn" data-v="In Progress" onclick="filterTasks('In Progress',this)">${t("task_progress")}</button>
-    <button class="filter-btn" data-v="Completed" onclick="filterTasks('Completed',this)">${t("task_done")}</button>
-    <button class="filter-btn" data-v="Overdue" onclick="filterTasks('Overdue',this)">${t("task_overdue")}</button>
+    <button class="filter-btn active" data-v="all" onclick="filterTasks('all',this)" data-i18n="task_all">All</button>
+    <button class="filter-btn" data-v="Open" onclick="filterTasks('Open',this)" data-i18n="task_open">Open</button>
+    <button class="filter-btn" data-v="In Progress" onclick="filterTasks('In Progress',this)" data-i18n="task_progress">In Progress</button>
+    <button class="filter-btn" data-v="Completed" onclick="filterTasks('Completed',this)" data-i18n="task_done">Completed</button>
+    <button class="filter-btn" data-v="Overdue" onclick="filterTasks('Overdue',this)" data-i18n="task_overdue">Overdue</button>
   </div>
 
-  <!-- Task List -->
   <div class="card" id="list-view">
     <div class="table-wrap">
       <table>
-        <thead><tr><th>${t("task_col_name")}</th><th>${t("task_col_due")}</th><th>${t("task_col_priority")}</th><th>${t("task_col_status")}</th><th>${t("task_col_account")}</th></tr></thead>
+        <thead><tr>
+          <th data-i18n="task_col_name">Task</th>
+          <th data-i18n="task_col_due">Due Date</th>
+          <th data-i18n="task_col_priority">Priority</th>
+          <th data-i18n="task_col_status">Status</th>
+          <th data-i18n="task_col_account">Account</th>
+        </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- Create Task Form (hidden) -->
+  <!-- Create Task Form -->
   <div id="task-form" style="display:none">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> ${t("btn_back")}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span data-i18n="btn_back">Back</span>
       </button>
-      <div class="page-title" id="form-title">${t("task_form_title")}</div>
+      <div class="page-title" data-i18n="task_form_title">New Task</div>
     </div>
     <form onsubmit="saveTask(event)">
       <div class="card" style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">${t("task_form_details")}</div>
-        <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_title")} *</label><input class="sf7-form-input" id="ft-title" required placeholder="e.g. Follow up with customer"/></div>
-        <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_desc")}</label><textarea class="sf7-form-input" id="ft-desc" rows="3" placeholder="Task details..."></textarea></div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="task_form_details">Task Details</div>
+        <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_title">Title</label><input class="sf7-form-input" id="ft-title" required/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_desc">Description</label><textarea class="sf7-form-input" id="ft-desc" rows="3"></textarea></div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_due")} *</label><input class="sf7-form-input" id="ft-due" type="date" required/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_priority")}</label>
-            <select class="sf7-form-input" id="ft-priority"><option value="High">High</option><option value="Medium" selected>Medium</option><option value="Low">Low</option></select>
-          </div>
-          <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_status")}</label>
-            <select class="sf7-form-input" id="ft-status"><option value="Open">Open</option><option value="In Progress">In Progress</option></select>
-          </div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_due">Due Date</label><input class="sf7-form-input" id="ft-due" type="date" required/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_priority">Priority</label>
+            <select class="sf7-form-input" id="ft-priority"><option value="High">High</option><option value="Medium" selected>Medium</option><option value="Low">Low</option></select></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_status">Status</label>
+            <select class="sf7-form-input" id="ft-status"><option value="Open">Open</option><option value="In Progress">In Progress</option></select></div>
         </div>
       </div>
       <div class="card" style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">${t("task_form_link")}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="task_form_link">Link to</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_account")}</label>
-            <select class="sf7-form-input" id="ft-account"><option value="">-- None --</option></select>
-          </div>
-          <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_assigned")}</label>
-            <select class="sf7-form-input" id="ft-assigned"><option value="">-- Unassigned --</option></select>
-          </div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_account">Account</label><select class="sf7-form-input" id="ft-account"></select></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_assigned">Assigned To</label><select class="sf7-form-input" id="ft-assigned"></select></div>
         </div>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button type="button" class="btn btn-secondary" onclick="closeForm()">${t("btn_cancel")}</button>
-        <button type="submit" class="btn btn-primary">${t("btn_save")}</button>
+        <button type="button" class="btn btn-secondary" onclick="closeForm()" data-i18n="btn_cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" data-i18n="btn_save">Save</button>
       </div>
     </form>
   </div>
 
-  <!-- Call Log Form (hidden) -->
+  <!-- Call Log Form -->
   <div id="call-form" style="display:none">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> ${t("btn_back")}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span data-i18n="btn_back">Back</span>
       </button>
-      <div class="page-title">${t("task_call")}</div>
+      <div class="page-title" data-i18n="call_form_title">Log Call</div>
     </div>
     <form onsubmit="saveCall(event)">
       <div class="card" style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">${t("call_form_details")}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="call_form_details">Call Details</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">${t("call_f_duration")} *</label><input class="sf7-form-input" id="fc-duration" type="number" min="1" required placeholder="15"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">${t("call_f_outcome")} *</label>
-            <select class="sf7-form-input" id="fc-outcome"><option>${t("call_connected")}</option><option>${t("call_no_answer")}</option><option>${t("call_left_msg")}</option><option>${t("call_busy")}</option><option>${t("call_wrong")}</option></select>
-          </div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="call_f_duration">Duration (minutes)</label><input class="sf7-form-input" id="fc-duration" type="number" min="1" required/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="call_f_outcome">Outcome</label>
+            <select class="sf7-form-input" id="fc-outcome"><option data-i18n="call_connected">Connected</option><option data-i18n="call_no_answer">No Answer</option><option data-i18n="call_left_msg">Left Message</option><option data-i18n="call_busy">Busy</option><option data-i18n="call_wrong">Wrong Number</option></select></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">${t("task_f_account")}</label>
-            <select class="sf7-form-input" id="fc-account"><option value="">-- Select --</option></select>
-          </div>
-          <div class="sf7-form-group"><label class="sf7-form-label">${t("call_f_contact")}</label><input class="sf7-form-input" id="fc-contact" placeholder="Name of person called"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_account">Account</label><select class="sf7-form-input" id="fc-account"></select></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="call_f_contact">Contact Person</label><input class="sf7-form-input" id="fc-contact"/></div>
         </div>
-        <div class="sf7-form-group" style="margin-top:12px"><label class="sf7-form-label">${t("call_f_notes")}</label><textarea class="sf7-form-input" id="fc-notes" rows="3" placeholder="Call summary..."></textarea></div>
+        <div class="sf7-form-group" style="margin-top:12px"><label class="sf7-form-label" data-i18n="call_f_notes">Notes</label><textarea class="sf7-form-input" id="fc-notes" rows="3"></textarea></div>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button type="button" class="btn btn-secondary" onclick="closeForm()">${t("btn_cancel")}</button>
-        <button type="submit" class="btn btn-primary">${t("btn_save")}</button>
+        <button type="button" class="btn btn-secondary" onclick="closeForm()" data-i18n="btn_cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" data-i18n="btn_save">Save</button>
       </div>
     </form>
   </div>
@@ -122,7 +119,6 @@
 <script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML = renderNav('tasks');
-
 let taskFilter = 'all';
 
 function filterTasks(f, btn) {
@@ -147,14 +143,10 @@ function renderTable() {
 }
 
 function populateDropdowns() {
-  const accountOpts = ACCOUNTS.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
-  const repOpts = REPS.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
-  ['ft-account', 'fc-account'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = '<option value="">-- None --</option>' + accountOpts;
-  });
-  const assignEl = document.getElementById('ft-assigned');
-  if (assignEl) assignEl.innerHTML = '<option value="">-- Unassigned --</option>' + repOpts;
+  var opts = '<option value="">-- None --</option>' + ACCOUNTS.map(a => '<option value="' + a.name + '">' + a.name + '</option>').join('');
+  ['ft-account','fc-account'].forEach(function(id) { var el = document.getElementById(id); if (el) el.innerHTML = opts; });
+  var rOpts = '<option value="">-- Unassigned --</option>' + REPS.map(r => '<option value="' + r.name + '">' + r.name + '</option>').join('');
+  var el = document.getElementById('ft-assigned'); if (el) el.innerHTML = rOpts;
 }
 
 function openCreateTask() {
@@ -162,12 +154,9 @@ function openCreateTask() {
   document.getElementById('task-filter').style.display = 'none';
   document.getElementById('task-form').style.display = 'block';
   document.getElementById('call-form').style.display = 'none';
-  document.getElementById('form-title').textContent = 'New Task';
   document.getElementById('ft-title').value = '';
   document.getElementById('ft-desc').value = '';
   document.getElementById('ft-due').value = '';
-  document.getElementById('ft-priority').value = 'Medium';
-  document.getElementById('ft-status').value = 'Open';
   populateDropdowns();
   window.scrollTo(0, 0);
 }
@@ -178,7 +167,6 @@ function openCallLog() {
   document.getElementById('task-form').style.display = 'none';
   document.getElementById('call-form').style.display = 'block';
   document.getElementById('fc-duration').value = '';
-  document.getElementById('fc-outcome').value = 'Connected';
   document.getElementById('fc-contact').value = '';
   document.getElementById('fc-notes').value = '';
   populateDropdowns();
@@ -194,35 +182,18 @@ function closeForm() {
 
 function saveTask(e) {
   e.preventDefault();
-  TASKS.unshift({
-    id: TASKS.length + 1,
-    title: document.getElementById('ft-title').value,
-    due: document.getElementById('ft-due').value,
-    priority: document.getElementById('ft-priority').value,
-    status: document.getElementById('ft-status').value,
-    account: document.getElementById('ft-account').value || '',
-  });
-  closeForm();
-  renderTable();
+  TASKS.unshift({ id: TASKS.length + 1, title: document.getElementById('ft-title').value, due: document.getElementById('ft-due').value, priority: document.getElementById('ft-priority').value, status: document.getElementById('ft-status').value, account: document.getElementById('ft-account').value || '' });
+  closeForm(); renderTable();
 }
 
 function saveCall(e) {
   e.preventDefault();
-  const duration = document.getElementById('fc-duration').value;
-  const outcome = document.getElementById('fc-outcome').value;
-  const contact = document.getElementById('fc-contact').value;
-  const account = document.getElementById('fc-account').value;
-  const notes = document.getElementById('fc-notes').value;
-  TASKS.unshift({
-    id: TASKS.length + 1,
-    title: `Call: ${contact || account || 'Unknown'} (${duration}min, ${outcome})`,
-    due: new Date().toISOString().slice(0, 10),
-    priority: 'Medium',
-    status: 'Completed',
-    account: account || '',
-  });
-  closeForm();
-  renderTable();
+  var contact = document.getElementById('fc-contact').value;
+  var account = document.getElementById('fc-account').value;
+  var duration = document.getElementById('fc-duration').value;
+  var outcome = document.getElementById('fc-outcome').value;
+  TASKS.unshift({ id: TASKS.length + 1, title: 'Call: ' + (contact || account || 'Unknown') + ' (' + duration + 'min, ' + outcome + ')', due: new Date().toISOString().slice(0, 10), priority: 'Medium', status: 'Completed', account: account || '' });
+  closeForm(); renderTable();
 }
 
 renderTable();
