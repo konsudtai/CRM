@@ -72,6 +72,9 @@
               <select class="sf7-form-input" id="u-role" required>
                 <option value="Sales Rep">Sales Rep</option>
                 <option value="Sales Manager">Sales Manager</option>
+                <option value="Accounting">Accounting</option>
+                <option value="Support">Support</option>
+                <option value="Marketing">Marketing</option>
                 <option value="Admin">Admin</option>
                 <option value="Viewer">Viewer</option>
               </select>
@@ -95,7 +98,7 @@
         <div class="perm-grid" id="perm-grid"></div>
       </div>
       <div style="margin-top:16px;padding:10px 14px;border-radius:8px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1);font-size:11px;color:var(--text2)">
-        <strong style="color:var(--sf-blue)">Note:</strong> Sales Manager has the highest approval authority for quotations. Only Admin can manage users and settings.
+        <strong style="color:var(--sf-blue)">Note:</strong> Sales Manager has the highest approval authority for quotations. Accounting can view and update quotation status. Support can manage customer tasks. Marketing has read-only access to leads and dashboard. Only Admin can manage users and settings.
       </div>
     </div>
   </div>
@@ -114,19 +117,25 @@ var USERS = [
   { id:2, first:'Wilai', last:'Rakdee', email:'wilai@company.co.th', phone:'089-345-6789', role:'Sales Manager', active:true },
   { id:3, first:'Arun', last:'Sangfa', email:'arun@company.co.th', phone:'081-456-7890', role:'Sales Rep', active:true },
   { id:4, first:'Manee', last:'Thongkam', email:'manee@company.co.th', phone:'043-567-8901', role:'Sales Rep', active:true },
-  { id:5, first:'Pichai', last:'Yimswy', email:'pichai@company.co.th', phone:'095-555-6666', role:'Viewer', active:false },
+  { id:5, first:'Napa', last:'Srisuk', email:'napa@company.co.th', phone:'092-333-4444', role:'Accounting', active:true },
+  { id:6, first:'Wichai', last:'Lekkhaeng', email:'wichai@company.co.th', phone:'095-555-6666', role:'Support', active:true },
+  { id:7, first:'Pimchan', last:'Deemark', email:'pimchan@company.co.th', phone:'086-777-8888', role:'Marketing', active:true },
+  { id:8, first:'Pichai', last:'Yimswy', email:'pichai@company.co.th', phone:'095-999-0000', role:'Viewer', active:false },
 ];
 
-var ROLES = ['Admin','Sales Manager','Sales Rep','Viewer'];
+var ROLES = ['Admin','Sales Manager','Sales Rep','Accounting','Support','Marketing','Viewer'];
 var MODULES = ['Dashboard','Accounts','Pipeline','Tasks','Calendar','Quotations','Products','Settings'];
 var PERMS = {
-  'Admin':       { Dashboard:'CRUD', Accounts:'CRUD', Pipeline:'CRUD', Tasks:'CRUD', Calendar:'CRUD', Quotations:'CRUD', Products:'CRUD', Settings:'CRUD' },
-  'Sales Manager':{ Dashboard:'R', Accounts:'CRU', Pipeline:'CRUD', Tasks:'CRUD', Calendar:'CRU', Quotations:'CRUD', Products:'CRU', Settings:'R' },
-  'Sales Rep':   { Dashboard:'R', Accounts:'CR', Pipeline:'CRU', Tasks:'CRU', Calendar:'CR', Quotations:'CR', Products:'R', Settings:'' },
-  'Viewer':      { Dashboard:'R', Accounts:'R', Pipeline:'R', Tasks:'R', Calendar:'R', Quotations:'R', Products:'R', Settings:'' },
+  'Admin':         { Dashboard:'CRUD', Accounts:'CRUD', Pipeline:'CRUD', Tasks:'CRUD', Calendar:'CRUD', Quotations:'CRUD', Products:'CRUD', Settings:'CRUD' },
+  'Sales Manager': { Dashboard:'R',    Accounts:'CRU',  Pipeline:'CRUD', Tasks:'CRUD', Calendar:'CRU',  Quotations:'CRUD', Products:'CRU',  Settings:'R' },
+  'Sales Rep':     { Dashboard:'R',    Accounts:'CR',   Pipeline:'CRU',  Tasks:'CRU',  Calendar:'CR',   Quotations:'CR',   Products:'R',    Settings:'' },
+  'Accounting':    { Dashboard:'R',    Accounts:'R',    Pipeline:'R',    Tasks:'R',     Calendar:'R',    Quotations:'RU',   Products:'R',    Settings:'' },
+  'Support':       { Dashboard:'R',    Accounts:'RU',   Pipeline:'R',    Tasks:'CRU',   Calendar:'CR',   Quotations:'R',    Products:'R',    Settings:'' },
+  'Marketing':     { Dashboard:'R',    Accounts:'R',    Pipeline:'R',    Tasks:'CR',    Calendar:'R',    Quotations:'R',    Products:'R',    Settings:'' },
+  'Viewer':        { Dashboard:'R',    Accounts:'R',    Pipeline:'R',    Tasks:'R',     Calendar:'R',    Quotations:'R',    Products:'R',    Settings:'' },
 };
 
-var roleColors = { 'Admin':'#0176D3', 'Sales Manager':'#2E844A', 'Sales Rep':'#DD7A01', 'Viewer':'#939393' };
+var roleColors = { 'Admin':'#0176D3', 'Sales Manager':'#2E844A', 'Sales Rep':'#DD7A01', 'Accounting':'#7F56D9', 'Support':'#0B827C', 'Marketing':'#C23934', 'Viewer':'#939393' };
 
 function showTab(id, btn) {
   document.querySelectorAll('.tab-content').forEach(function(el){ el.classList.remove('active'); });
