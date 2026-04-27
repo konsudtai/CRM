@@ -6,371 +6,181 @@
 <title>SalesFAST 7 — Dashboard</title>
 <link rel="stylesheet" href="../css/app.css"/>
 <style>
-/* ── BI Dashboard Styles ── */
-:root{--sf-blue:#0176D3;--sf-dark:#014486;--sf-light:#1B96FF;--green:#2E844A;--green-l:#4BCA81;--orange:#DD7A01;--red:#C23934;--purple:#7F56D9;--teal:#0B827C}
+/* BI Dashboard — Salesforce Lightning */
+.bi-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.bi-kpi{background:var(--surface);border-radius:12px;padding:18px 20px;border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.bi-kpi:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.08)}
+.bi-kpi-stripe{position:absolute;top:0;left:0;right:0;height:3px}
+.bi-kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.bi-kpi-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.bi-kpi-icon svg{width:18px;height:18px}
+.bi-kpi-trend{font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;display:flex;align-items:center;gap:2px}
+.bi-kpi-trend.up{color:#2E844A;background:rgba(46,132,74,.08)}.bi-kpi-trend.down{color:#C23934;background:rgba(194,57,52,.08)}
+.bi-kpi-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
+.bi-kpi-value{font-size:26px;font-weight:800;letter-spacing:-.8px;margin-top:2px;line-height:1}
+.bi-kpi-sub{font-size:11px;color:var(--text3);margin-top:6px}
+.bi-kpi-bar{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-top:8px}
+.bi-kpi-fill{height:100%;border-radius:2px;transition:width 1.4s ease}
 
-/* KPI Cards */
-.bi-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.bi-kpi{background:var(--surface);border-radius:14px;padding:20px 22px;border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;cursor:default}
-.bi-kpi:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(0,0,0,.1)}
-.bi-kpi-accent{position:absolute;top:0;left:0;right:0;height:4px;border-radius:14px 14px 0 0}
-.bi-kpi-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;margin-top:4px}
-.bi-kpi-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
-.bi-kpi-value{font-size:28px;font-weight:800;letter-spacing:-1px;margin-top:4px;line-height:1}
-.bi-kpi-footer{display:flex;align-items:center;gap:8px;margin-top:10px}
-.bi-kpi-trend{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px}
-.bi-kpi-trend.up{color:#1a7d39;background:rgba(46,132,74,.1)}
-.bi-kpi-trend.down{color:#c23934;background:rgba(194,57,52,.1)}
-.bi-kpi-sub{font-size:11px;color:var(--text3)}
-.bi-kpi-bar{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-top:10px}
-.bi-kpi-fill{height:100%;border-radius:2px;transition:width 1.4s cubic-bezier(.25,.46,.45,.94)}
+.bi-row{display:grid;gap:14px;margin-bottom:14px}
+.bi-row-2{grid-template-columns:1fr 1fr}
+.bi-row-3{grid-template-columns:2fr 1fr}
+.bi-row-3e{grid-template-columns:1fr 1fr 1fr}
+.bi-card{background:var(--surface);border-radius:12px;padding:18px 20px;border:1px solid var(--border)}
+.bi-card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.bi-card-title{font-size:13px;font-weight:700;letter-spacing:-.1px;color:var(--text)}
+.bi-card-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(1,118,211,.06);color:var(--sf-blue)}
 
-/* Chart Cards */
-.bi-grid-3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
-.bi-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-.bi-grid-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
-.bi-card{background:var(--surface);border-radius:14px;padding:20px 22px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
-.bi-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.bi-card-title{font-size:14px;font-weight:700;letter-spacing:-.2px}
-.bi-card-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(1,118,211,.08);color:var(--sf-blue)}
+/* Stage rows */
+.st-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}.st-row:last-child{border-bottom:none}
+.st-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.st-name{font-size:12px;font-weight:500;flex:1;color:var(--text)}
+.st-bar{width:90px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;flex-shrink:0}
+.st-bar-fill{height:100%;border-radius:2px;transition:width 1.2s ease}
+.st-val{font-size:12px;font-weight:600;min-width:60px;text-align:right;color:var(--text)}
+.st-cnt{font-size:11px;color:var(--text3);min-width:36px;text-align:right}
 
-/* Bar Chart */
-.bar-chart{display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:8px}
-.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
-.bar{width:100%;border-radius:6px 6px 0 0;transition:height 1.2s cubic-bezier(.25,.46,.45,.94);min-height:4px;cursor:pointer;position:relative}
-.bar:hover{filter:brightness(1.1)}
-.bar-label{font-size:10px;color:var(--text3);text-align:center;white-space:nowrap}
-.bar-val{font-size:10px;font-weight:600;color:var(--text2)}
-
-/* Donut Chart */
-.donut-wrap{display:flex;align-items:center;gap:20px}
-.donut-svg{flex-shrink:0}
-.donut-legend{display:flex;flex-direction:column;gap:8px;flex:1}
-.donut-legend-item{display:flex;align-items:center;gap:8px;font-size:12px}
-.donut-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.donut-legend-label{flex:1;color:var(--text2)}
-.donut-legend-val{font-weight:600;font-size:12px}
+/* Donut */
+.donut-wrap{display:flex;align-items:center;gap:16px}
+.donut-legend{display:flex;flex-direction:column;gap:6px;flex:1}
+.dl-item{display:flex;align-items:center;gap:7px;font-size:11px}
+.dl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dl-label{flex:1;color:var(--text2)}.dl-val{font-weight:600;color:var(--text)}
 
 /* Funnel */
-.funnel-wrap{display:flex;flex-direction:column;gap:6px}
-.funnel-row{display:flex;align-items:center;gap:10px}
-.funnel-label{font-size:12px;color:var(--text2);width:90px;flex-shrink:0}
-.funnel-bar-track{flex:1;height:28px;background:var(--surface3);border-radius:6px;overflow:hidden;position:relative}
-.funnel-bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding:0 12px;font-size:11px;font-weight:700;color:#fff;transition:width 1.3s cubic-bezier(.25,.46,.45,.94)}
-.funnel-count{font-size:12px;font-weight:600;min-width:32px;text-align:right}
-.funnel-pct{font-size:10px;color:var(--text3);min-width:36px;text-align:right}
+.fn-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.fn-label{font-size:11px;color:var(--text2);width:80px;flex-shrink:0}
+.fn-track{flex:1;height:24px;background:var(--surface3);border-radius:5px;overflow:hidden}
+.fn-fill{height:100%;border-radius:5px;display:flex;align-items:center;padding:0 10px;font-size:10px;font-weight:700;color:#fff;transition:width 1.3s ease}
+.fn-pct{font-size:10px;color:var(--text3);min-width:32px;text-align:right}
 
-/* Pipeline stages */
-.stage-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
-.stage-row:last-child{border-bottom:none}
-.stage-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.stage-name{font-size:13px;font-weight:500;flex:1}
-.stage-bar-wrap{width:100px;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
-.stage-bar-fill{height:100%;border-radius:3px;transition:width 1.2s ease}
-.stage-val{font-size:12px;font-weight:600;min-width:70px;text-align:right}
-.stage-count{font-size:11px;color:var(--text3);min-width:40px;text-align:right}
+/* Reps */
+.rp-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}.rp-row:last-child{border-bottom:none}
+.rp-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.rp-info{flex:1}.rp-name{font-size:12px;font-weight:600}.rp-meta{font-size:10px;color:var(--text3);margin-top:1px}
+.rp-bar{width:70px;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-top:3px}
+.rp-bar-fill{height:100%;border-radius:2px;transition:width 1s ease}
+.rp-rev{font-size:12px;font-weight:700;min-width:60px;text-align:right}
 
-/* Rep table */
-.rep-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
-.rep-row:last-child{border-bottom:none}
-.rep-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
-.rep-info{flex:1;min-width:0}
-.rep-name{font-size:13px;font-weight:600}
-.rep-meta{font-size:11px;color:var(--text3);margin-top:1px}
-.rep-bar-wrap{width:80px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden}
-.rep-bar-fill{height:100%;border-radius:2px;transition:width 1s ease}
-.rep-rev{font-size:13px;font-weight:700;min-width:70px;text-align:right}
+/* Bar chart */
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:110px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar-rect{width:100%;border-radius:4px 4px 0 0;transition:height 1.2s ease;min-height:2px;cursor:default}
+.bar-rect:hover{filter:brightness(1.1)}
+.bar-lbl{font-size:9px;color:var(--text3)}
+.bar-v{font-size:9px;font-weight:600;color:var(--text2)}
 
-/* Activity feed */
-.activity-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
-.activity-item:last-child{border-bottom:none}
-.activity-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
-.activity-body{flex:1;min-width:0}
-.activity-text{font-size:13px;font-weight:500}
-.activity-meta{font-size:11px;color:var(--text3);margin-top:2px}
-.activity-badge{font-size:10px;font-weight:600;padding:1px 7px;border-radius:20px}
+/* Activity */
+.act-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}.act-row:last-child{border-bottom:none}
+.act-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.act-icon svg{width:14px;height:14px}
+.act-body{flex:1;min-width:0}.act-text{font-size:12px;font-weight:500}.act-meta{font-size:10px;color:var(--text3);margin-top:1px}
+.act-badge{font-size:9px;font-weight:600;padding:1px 6px;border-radius:20px;align-self:flex-start;margin-top:2px}
 
 /* Gauge */
-.gauge-wrap{display:flex;flex-direction:column;align-items:center}
-.gauge-val{font-size:32px;font-weight:900;letter-spacing:-1px;margin-top:-8px}
-.gauge-label{font-size:11px;color:var(--text3);margin-top:2px}
+.gauge-center{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 0}
 
-/* Responsive */
-@media(max-width:1024px){.bi-kpi-grid{grid-template-columns:1fr 1fr}.bi-grid-3{grid-template-columns:1fr}.bi-grid-3col{grid-template-columns:1fr 1fr}}
-@media(max-width:640px){.bi-kpi-grid{grid-template-columns:1fr 1fr}.bi-grid-2,.bi-grid-3col{grid-template-columns:1fr}.bi-kpi-value{font-size:22px}}
+@media(max-width:1024px){.bi-kpi-grid{grid-template-columns:1fr 1fr}.bi-row-3,.bi-row-3e{grid-template-columns:1fr}}
+@media(max-width:640px){.bi-kpi-grid{grid-template-columns:1fr 1fr}.bi-row-2{grid-template-columns:1fr}.bi-kpi-value{font-size:20px}}
 </style>
 </head>
 <body>
 <div class="bg-pattern"></div>
 <div id="nav"></div>
-
 <div class="page anim">
-  <!-- Header -->
   <div class="page-header">
-    <div>
-      <div class="page-title" data-i18n="dash_title">Dashboard</div>
-      <div class="page-subtitle" id="dash-sub">Sales overview — Updated today</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <div class="filter-bar" id="period-bar">
-        <button class="filter-btn active" onclick="setPeriod('month',this)" data-i18n="dash_month">Month</button>
-        <button class="filter-btn" onclick="setPeriod('quarter',this)" data-i18n="dash_quarter">Quarter</button>
-        <button class="filter-btn" onclick="setPeriod('year',this)" data-i18n="dash_year">Year</button>
-      </div>
-    </div>
+    <div><div class="page-title" data-i18n="dash_title">Dashboard</div><div class="page-subtitle" data-i18n="dash_sub">Sales overview — Updated today</div></div>
+    <div class="filter-bar" id="pb"><button class="filter-btn active" onclick="setP('month',this)" data-i18n="dash_month">Month</button><button class="filter-btn" onclick="setP('quarter',this)" data-i18n="dash_quarter">Quarter</button><button class="filter-btn" onclick="setP('year',this)" data-i18n="dash_year">Year</button></div>
   </div>
-
-  <!-- KPI Row -->
-  <div class="bi-kpi-grid" id="kpi-grid"></div>
-
-  <!-- Row 1: Revenue Bar Chart + Pipeline Donut -->
-  <div class="bi-grid-3" id="row1">
-    <div class="bi-card">
-      <div class="bi-card-header">
-        <div class="bi-card-title" data-i18n="pipe_by_stage">Pipeline by Stage</div>
-        <span class="bi-card-badge" id="total-pipeline-badge">฿0</span>
-      </div>
-      <div id="pipeline-bars"></div>
-    </div>
-    <div class="bi-card">
-      <div class="bi-card-header">
-        <div class="bi-card-title">Deal Mix</div>
-      </div>
-      <div class="donut-wrap" id="donut-wrap"></div>
-    </div>
-  </div>
-
-  <!-- Row 2: Funnel + Reps -->
-  <div class="bi-grid-2">
-    <div class="bi-card">
-      <div class="bi-card-header">
-        <div class="bi-card-title" data-i18n="funnel_title">Lead Conversion Funnel</div>
-      </div>
-      <div class="funnel-wrap" id="funnel"></div>
-    </div>
-    <div class="bi-card">
-      <div class="bi-card-header">
-        <div class="bi-card-title" data-i18n="reps_title">Sales Team Performance</div>
-      </div>
-      <div id="reps"></div>
-    </div>
-  </div>
-
-  <!-- Row 3: Monthly Bar + Activity Feed + Target Gauge -->
-  <div class="bi-grid-3col">
-    <div class="bi-card">
-      <div class="bi-card-header">
-        <div class="bi-card-title">Monthly Revenue</div>
-        <span class="bi-card-badge">2026</span>
-      </div>
-      <div class="bar-chart" id="monthly-chart"></div>
-    </div>
-    <div class="bi-card">
-      <div class="bi-card-header">
-        <div class="bi-card-title">Recent Activity</div>
-      </div>
-      <div id="activity-feed"></div>
-    </div>
-    <div class="bi-card" style="display:flex;flex-direction:column;align-items:center;justify-content:center">
-      <div class="bi-card-title" style="margin-bottom:16px;text-align:center">Target Achievement</div>
-      <div class="gauge-wrap" id="gauge"></div>
-    </div>
-  </div>
+  <div class="bi-kpi-grid" id="kpis"></div>
+  <div class="bi-row bi-row-3"><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title" data-i18n="pipe_by_stage">Pipeline by Stage</span><span class="bi-card-badge" id="pipe-total"></span></div><div id="stages"></div></div><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title">Deal Mix</span></div><div class="donut-wrap" id="donut"></div></div></div>
+  <div class="bi-row bi-row-2"><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title" data-i18n="funnel_title">Lead Conversion Funnel</span></div><div id="funnel"></div></div><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title" data-i18n="reps_title">Sales Team</span></div><div id="reps"></div></div></div>
+  <div class="bi-row bi-row-3e"><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title">Monthly Revenue</span><span class="bi-card-badge">2026</span></div><div class="bar-chart" id="bars"></div></div><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title">Recent Activity</span></div><div id="acts"></div></div><div class="bi-card"><div class="bi-card-hd"><span class="bi-card-title">Target</span></div><div class="gauge-center" id="gauge"></div></div></div>
 </div>
-
-<script src="../js/helpers.js"></script>
-<script src="../js/i18n.js"></script>
-<script src="../js/nav.js"></script>
-<script src="../js/data.js"></script>
+<script src="../js/helpers.js"></script><script src="../js/i18n.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
-document.getElementById('nav').innerHTML = renderNav('dashboard');
+document.getElementById('nav').innerHTML=renderNav('dashboard');
+let P='month';
+const MD=[2.1,2.8,3.2,2.9,3.8,4.1,3.5,4.6,5.2,4.8,5.9,4.3];
+const ML=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-let period = 'month';
-const MONTHLY_DATA = [2.1,2.8,3.2,2.9,3.8,4.1,3.5,4.6,5.2,4.8,5.9,4.3];
-const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const ACTIVITIES = [
-  {icon:'💰',color:'rgba(46,132,74,.12)',text:'Deal closed: POS ศรีสมบูรณ์',meta:'สมชาย · 2 hours ago',badge:'Won',bc:'rgba(46,132,74,.1)',bcolor:'#2E844A'},
-  {icon:'🎯',color:'rgba(1,118,211,.1)',text:'New lead: บจก. ธนกิจ เทรดดิ้ง',meta:'System · 3 hours ago',badge:'New',bc:'rgba(1,118,211,.08)',bcolor:'var(--sf-blue)'},
-  {icon:'📄',color:'rgba(221,122,1,.1)',text:'Quotation sent: QT-2569-0005',meta:'วิไล · 5 hours ago',badge:'Sent',bc:'rgba(221,122,1,.08)',bcolor:'#DD7A01'},
-  {icon:'📞',color:'rgba(127,86,217,.1)',text:'Call logged: อีสเทิร์น โลจิสติกส์',meta:'อรุณ · 1 day ago',badge:'Call',bc:'rgba(127,86,217,.08)',bcolor:'#7F56D9'},
-  {icon:'✅',color:'rgba(11,130,124,.1)',text:'Task completed: ส่ง follow-up',meta:'มณี · 1 day ago',badge:'Done',bc:'rgba(11,130,124,.08)',bcolor:'#0B827C'},
-];
+// SVG icon helpers
+const IC={
+  revenue:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  leads:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+  conv:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+  deals:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>',
+  won:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+  lead:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  quote:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  call:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>',
+  task:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>',
+};
 
-function setPeriod(p, btn) {
-  period = p;
-  document.querySelectorAll('#period-bar .filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderAll();
-}
+function setP(p,b){P=p;document.querySelectorAll('#pb .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderAll()}
 
-function renderKPIs() {
-  const k = MOCK_KPI[period];
-  const pct = Math.min((k.closed / k.target) * 100, 100);
-  const kpis = [
-    { label: t('kpi_closed'), value: fmt(k.closed), icon: '💰', color: 'var(--sf-blue)', bg: 'rgba(1,118,211,.1)', trend: '+18%', dir: 'up', sub: t('kpi_of_target') + ' ' + fmt(k.target), bar: pct, barColor: 'var(--sf-blue)' },
-    { label: t('kpi_leads'), value: k.leads, icon: '⚡', color: '#DD7A01', bg: 'rgba(221,122,1,.1)', trend: '+12', dir: 'up', sub: 'vs last period', bar: 76, barColor: '#DD7A01' },
-    { label: t('kpi_conv'), value: k.conv + '%', icon: '📈', color: '#7F56D9', bg: 'rgba(127,86,217,.1)', trend: '+2.1pt', dir: 'up', sub: t('kpi_benchmark'), bar: k.conv, barColor: '#7F56D9' },
-    { label: 'Active Deals', value: OPPS.length, icon: '🤝', color: '#0B827C', bg: 'rgba(11,130,124,.1)', trend: '+3', dir: 'up', sub: 'in pipeline', bar: 60, barColor: '#0B827C' },
+function renderKPIs(){
+  const k=MOCK_KPI[P],pct=Math.min((k.closed/k.target)*100,100);
+  const items=[
+    {label:t('kpi_closed'),value:fmt(k.closed),icon:IC.revenue,color:'#0176D3',bg:'rgba(1,118,211,.08)',trend:'+18%',dir:'up',sub:t('kpi_of_target')+' '+fmt(k.target),bar:pct},
+    {label:t('kpi_leads'),value:k.leads,icon:IC.leads,color:'#DD7A01',bg:'rgba(221,122,1,.08)',trend:'+12',dir:'up',sub:'vs last period',bar:76},
+    {label:t('kpi_conv'),value:k.conv+'%',icon:IC.conv,color:'#7F56D9',bg:'rgba(127,86,217,.08)',trend:'+2.1pt',dir:'up',sub:t('kpi_benchmark'),bar:k.conv},
+    {label:'Active Deals',value:OPPS.length,icon:IC.deals,color:'#0B827C',bg:'rgba(11,130,124,.08)',trend:'+3',dir:'up',sub:'in pipeline',bar:60},
   ];
-  document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
-    <div class="bi-kpi">
-      <div class="bi-kpi-accent" style="background:${k.color}"></div>
-      <div class="bi-kpi-icon" style="background:${k.bg}">${k.icon}</div>
-      <div class="bi-kpi-label">${k.label}</div>
-      <div class="bi-kpi-value">${k.value}</div>
-      <div class="bi-kpi-footer">
-        <span class="bi-kpi-trend ${k.dir}">${k.dir === 'up' ? '↑' : '↓'} ${k.trend}</span>
-        <span class="bi-kpi-sub">${k.sub}</span>
-      </div>
-      <div class="bi-kpi-bar"><div class="bi-kpi-fill" style="width:${k.bar}%;background:${k.barColor}"></div></div>
-    </div>`).join('');
+  document.getElementById('kpis').innerHTML=items.map(i=>`<div class="bi-kpi"><div class="bi-kpi-stripe" style="background:${i.color}"></div><div class="bi-kpi-top"><div class="bi-kpi-icon" style="background:${i.bg};color:${i.color}">${i.icon}</div><span class="bi-kpi-trend ${i.dir}">${i.dir==='up'?'&#9650;':'&#9660;'} ${i.trend}</span></div><div class="bi-kpi-label">${i.label}</div><div class="bi-kpi-value">${i.value}</div><div class="bi-kpi-sub">${i.sub}</div><div class="bi-kpi-bar"><div class="bi-kpi-fill" style="width:${i.bar}%;background:${i.color}"></div></div></div>`).join('');
 }
 
-function renderPipeline() {
-  const total = STAGES.reduce((s, st) => s + st.total, 0);
-  const max = Math.max(...STAGES.map(s => s.total));
-  document.getElementById('total-pipeline-badge').textContent = fmt(total);
-  document.getElementById('pipeline-bars').innerHTML = STAGES.map(s => `
-    <div class="stage-row">
-      <div class="stage-dot" style="background:${s.color}"></div>
-      <div class="stage-name">${s.name}</div>
-      <div class="stage-bar-wrap"><div class="stage-bar-fill" style="width:${(s.total/max)*100}%;background:${s.color}"></div></div>
-      <div class="stage-val">${fmt(s.total)}</div>
-      <div class="stage-count">${s.deals} deals</div>
-    </div>`).join('');
+function renderStages(){
+  const tot=STAGES.reduce((s,x)=>s+x.total,0),mx=Math.max(...STAGES.map(s=>s.total));
+  document.getElementById('pipe-total').textContent=fmt(tot);
+  document.getElementById('stages').innerHTML=STAGES.map(s=>`<div class="st-row"><div class="st-dot" style="background:${s.color}"></div><div class="st-name">${s.name}</div><div class="st-bar"><div class="st-bar-fill" style="width:${(s.total/mx)*100}%;background:${s.color}"></div></div><div class="st-val">${fmt(s.total)}</div><div class="st-cnt">${s.deals}</div></div>`).join('');
 }
 
-function renderDonut() {
-  const total = STAGES.reduce((s, st) => s + st.deals, 0);
-  const cx = 60, cy = 60, r = 48, stroke = 18;
-  let offset = 0;
-  const circumference = 2 * Math.PI * r;
-  const slices = STAGES.map(s => {
-    const pct = s.deals / total;
-    const dash = pct * circumference;
-    const gap = circumference - dash;
-    const slice = { ...s, dash, gap, offset, pct };
-    offset += dash;
-    return slice;
-  });
-  const svgSlices = slices.map(s => `
-    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${stroke}"
-      stroke-dasharray="${s.dash} ${s.gap}" stroke-dashoffset="${-s.offset + circumference * 0.25}"
-      style="transition:stroke-dasharray 1.2s ease"/>`).join('');
-  const legend = STAGES.map(s => `
-    <div class="donut-legend-item">
-      <div class="donut-dot" style="background:${s.color}"></div>
-      <span class="donut-legend-label">${s.name}</span>
-      <span class="donut-legend-val">${s.deals}</span>
-    </div>`).join('');
-  document.getElementById('donut-wrap').innerHTML = `
-    <svg class="donut-svg" width="120" height="120" viewBox="0 0 120 120">
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--surface3)" stroke-width="${stroke}"/>
-      ${svgSlices}
-      <text x="${cx}" y="${cy - 4}" text-anchor="middle" font-size="18" font-weight="800" fill="var(--text)">${total}</text>
-      <text x="${cx}" y="${cy + 12}" text-anchor="middle" font-size="9" fill="var(--text3)">deals</text>
-    </svg>
-    <div class="donut-legend">${legend}</div>`;
+function renderDonut(){
+  const tot=STAGES.reduce((s,x)=>s+x.deals,0),cx=55,cy=55,r=42,sw=14,C=2*Math.PI*r;
+  let off=0;
+  const arcs=STAGES.map(s=>{const d=(s.deals/tot)*C,g=C-d,a=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${sw}" stroke-dasharray="${d} ${g}" stroke-dashoffset="${-off+C*.25}"/>`;off+=d;return a}).join('');
+  const leg=STAGES.map(s=>`<div class="dl-item"><div class="dl-dot" style="background:${s.color}"></div><span class="dl-label">${s.name}</span><span class="dl-val">${s.deals}</span></div>`).join('');
+  document.getElementById('donut').innerHTML=`<svg width="110" height="110" viewBox="0 0 110 110"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--surface3)" stroke-width="${sw}"/>${arcs}<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="16" font-weight="800" fill="var(--text)">${tot}</text><text x="${cx}" y="${cy+11}" text-anchor="middle" font-size="8" fill="var(--text3)">deals</text></svg><div class="donut-legend">${leg}</div>`;
 }
 
-function renderFunnel() {
-  const rows = [
-    { label: 'New Leads', count: 120, color: '#1B96FF' },
-    { label: 'Contacted', count: 78, color: '#7F56D9' },
-    { label: 'Qualified', count: 45, color: '#0B827C' },
-    { label: 'Proposal', count: 28, color: '#DD7A01' },
-    { label: 'Won', count: 12, color: '#2E844A' },
+function renderFunnel(){
+  const rows=[{l:'New Leads',c:120,cl:'#1B96FF'},{l:'Contacted',c:78,cl:'#7F56D9'},{l:'Qualified',c:45,cl:'#0B827C'},{l:'Proposal',c:28,cl:'#DD7A01'},{l:'Won',c:12,cl:'#2E844A'}];
+  document.getElementById('funnel').innerHTML=rows.map((r,i)=>`<div class="fn-row"><div class="fn-label">${r.l}</div><div class="fn-track"><div class="fn-fill" style="width:${(r.c/120)*100}%;background:${r.cl}">${r.c}</div></div><div class="fn-pct">${i===0?'100%':Math.round((r.c/120)*100)+'%'}</div></div>`).join('');
+}
+
+function renderReps(){
+  const mx=Math.max(...REPS.map(r=>r.revenue));
+  document.getElementById('reps').innerHTML=REPS.map(r=>`<div class="rp-row"><div class="rp-av" style="background:${r.color}">${r.initials}</div><div class="rp-info"><div class="rp-name">${r.name}</div><div class="rp-bar"><div class="rp-bar-fill" style="width:${(r.revenue/mx)*100}%;background:${r.color}"></div></div><div class="rp-meta">${r.deals} deals / ${r.acts} activities</div></div><div class="rp-rev">${fmt(r.revenue)}</div></div>`).join('');
+}
+
+function renderBars(){
+  const mx=Math.max(...MD),now=new Date().getMonth();
+  document.getElementById('bars').innerHTML=MD.map((v,i)=>`<div class="bar-col"><div class="bar-v">${v}M</div><div class="bar-rect" style="height:${(v/mx)*100}%;background:${i===now?'var(--sf-blue)':'rgba(1,118,211,.2)'}"></div><div class="bar-lbl">${ML[i]}</div></div>`).join('');
+}
+
+function renderActs(){
+  const items=[
+    {icon:IC.won,bg:'rgba(46,132,74,.08)',color:'#2E844A',text:'Deal closed: POS Srisomboon',meta:'Somchai / 2h ago',badge:'Won',bBg:'rgba(46,132,74,.08)',bC:'#2E844A'},
+    {icon:IC.lead,bg:'rgba(1,118,211,.08)',color:'#0176D3',text:'New lead: Thanakij Trading',meta:'System / 3h ago',badge:'New',bBg:'rgba(1,118,211,.06)',bC:'#0176D3'},
+    {icon:IC.quote,bg:'rgba(221,122,1,.08)',color:'#DD7A01',text:'Quotation sent: QT-2569-0005',meta:'Wilai / 5h ago',badge:'Sent',bBg:'rgba(221,122,1,.06)',bC:'#DD7A01'},
+    {icon:IC.call,bg:'rgba(127,86,217,.08)',color:'#7F56D9',text:'Call logged: Eastern Logistics',meta:'Arun / 1d ago',badge:'Call',bBg:'rgba(127,86,217,.06)',bC:'#7F56D9'},
+    {icon:IC.task,bg:'rgba(11,130,124,.08)',color:'#0B827C',text:'Task done: Send follow-up',meta:'Manee / 1d ago',badge:'Done',bBg:'rgba(11,130,124,.06)',bC:'#0B827C'},
   ];
-  const max = rows[0].count;
-  document.getElementById('funnel').innerHTML = rows.map((r, i) => `
-    <div class="funnel-row">
-      <div class="funnel-label">${r.label}</div>
-      <div class="funnel-bar-track">
-        <div class="funnel-bar-fill" style="width:${(r.count/max)*100}%;background:linear-gradient(90deg,${r.color}cc,${r.color})">${r.count}</div>
-      </div>
-      <div class="funnel-pct">${i === 0 ? '100%' : Math.round((r.count/max)*100) + '%'}</div>
-    </div>`).join('');
+  document.getElementById('acts').innerHTML=items.map(a=>`<div class="act-row"><div class="act-icon" style="background:${a.bg};color:${a.color}">${a.icon}</div><div class="act-body"><div class="act-text">${a.text}</div><div class="act-meta">${a.meta}</div></div><span class="act-badge" style="background:${a.bBg};color:${a.bC}">${a.badge}</span></div>`).join('');
 }
 
-function renderReps() {
-  const maxRev = Math.max(...REPS.map(r => r.revenue));
-  document.getElementById('reps').innerHTML = REPS.map(r => `
-    <div class="rep-row">
-      <div class="rep-av" style="background:linear-gradient(135deg,${r.color},${r.color}99)">${r.initials}</div>
-      <div class="rep-info">
-        <div class="rep-name">${r.name}</div>
-        <div class="rep-bar-wrap" style="margin-top:5px"><div class="rep-bar-fill" style="width:${(r.revenue/maxRev)*100}%;background:${r.color}"></div></div>
-        <div class="rep-meta">${r.deals} deals · ${r.acts} activities</div>
-      </div>
-      <div class="rep-rev">${fmt(r.revenue)}</div>
-    </div>`).join('');
+function renderGauge(){
+  const k=MOCK_KPI[P],pct=Math.min((k.closed/k.target)*100,100);
+  const r=50,cx=65,cy=65,sA=-210,eA=30,tA=eA-sA,fA=(pct/100)*tA;
+  function pol(a,R){const rd=(a-90)*Math.PI/180;return{x:cx+R*Math.cos(rd),y:cy+R*Math.sin(rd)}}
+  function arc(s,e,R){const p1=pol(s,R),p2=pol(e,R);return`M ${p1.x} ${p1.y} A ${R} ${R} 0 ${(e-s)>180?1:0} 1 ${p2.x} ${p2.y}`}
+  const cl=pct>=80?'#2E844A':pct>=50?'#0176D3':'#DD7A01';
+  const st=pct>=80?'On Track':pct>=50?'In Progress':'Needs Attention';
+  document.getElementById('gauge').innerHTML=`<svg width="130" height="90" viewBox="0 0 130 90"><path d="${arc(sA,eA,r)}" fill="none" stroke="var(--surface3)" stroke-width="10" stroke-linecap="round"/><path d="${arc(sA,sA+fA,r)}" fill="none" stroke="${cl}" stroke-width="10" stroke-linecap="round"/><text x="${cx}" y="62" text-anchor="middle" font-size="20" font-weight="900" fill="var(--text)">${Math.round(pct)}%</text><text x="${cx}" y="76" text-anchor="middle" font-size="8" fill="var(--text3)">of target</text></svg><div style="font-size:12px;font-weight:600;color:${cl};margin-top:2px">${st}</div><div style="font-size:10px;color:var(--text3);margin-top:1px">${fmt(k.closed)} / ${fmt(k.target)}</div>`;
 }
 
-function renderMonthly() {
-  const max = Math.max(...MONTHLY_DATA);
-  const now = new Date().getMonth();
-  document.getElementById('monthly-chart').innerHTML = MONTHLY_DATA.map((v, i) => {
-    const h = Math.round((v / max) * 100);
-    const isNow = i === now;
-    return `<div class="bar-wrap">
-      <div class="bar-val">${v}M</div>
-      <div class="bar" style="height:${h}%;background:${isNow ? 'var(--sf-blue)' : 'rgba(1,118,211,.25)'};${isNow ? 'box-shadow:0 4px 12px rgba(1,118,211,.3)' : ''}"></div>
-      <div class="bar-label">${MONTHS_SHORT[i]}</div>
-    </div>`;
-  }).join('');
-}
-
-function renderActivity() {
-  document.getElementById('activity-feed').innerHTML = ACTIVITIES.map(a => `
-    <div class="activity-item">
-      <div class="activity-icon" style="background:${a.color}">${a.icon}</div>
-      <div class="activity-body">
-        <div class="activity-text">${a.text}</div>
-        <div class="activity-meta">${a.meta}</div>
-      </div>
-      <span class="activity-badge" style="background:${a.bc};color:${a.bcolor}">${a.badge}</span>
-    </div>`).join('');
-}
-
-function renderGauge() {
-  const k = MOCK_KPI[period];
-  const pct = Math.min((k.closed / k.target) * 100, 100);
-  const r = 54, cx = 70, cy = 70;
-  const startAngle = -210, endAngle = 30;
-  const totalAngle = endAngle - startAngle;
-  const fillAngle = (pct / 100) * totalAngle;
-  function polar(angle, radius) {
-    const rad = (angle - 90) * Math.PI / 180;
-    return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
-  }
-  function arc(startA, endA, r) {
-    const s = polar(startA, r), e = polar(endA, r);
-    const large = (endA - startA) > 180 ? 1 : 0;
-    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
-  }
-  const color = pct >= 80 ? '#2E844A' : pct >= 50 ? 'var(--sf-blue)' : '#DD7A01';
-  document.getElementById('gauge').innerHTML = `
-    <svg width="140" height="100" viewBox="0 0 140 100">
-      <path d="${arc(startAngle, endAngle, r)}" fill="none" stroke="var(--surface3)" stroke-width="12" stroke-linecap="round"/>
-      <path d="${arc(startAngle, startAngle + fillAngle, r)}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round" style="transition:stroke-dasharray 1.5s ease"/>
-      <text x="${cx}" y="68" text-anchor="middle" font-size="22" font-weight="900" fill="var(--text)">${Math.round(pct)}%</text>
-      <text x="${cx}" y="82" text-anchor="middle" font-size="9" fill="var(--text3)">of target</text>
-    </svg>
-    <div style="font-size:13px;font-weight:600;color:${color};margin-top:4px">${pct >= 80 ? 'On Track' : pct >= 50 ? 'In Progress' : 'Needs Attention'}</div>
-    <div style="font-size:11px;color:var(--text3);margin-top:2px">${fmt(k.closed)} / ${fmt(k.target)}</div>`;
-}
-
-function renderAll() {
-  renderKPIs();
-  renderPipeline();
-  renderDonut();
-  renderFunnel();
-  renderReps();
-  renderMonthly();
-  renderActivity();
-  renderGauge();
-}
-
+function renderAll(){renderKPIs();renderStages();renderDonut();renderFunnel();renderReps();renderBars();renderActs();renderGauge()}
 renderAll();
 </script>
 </body>
