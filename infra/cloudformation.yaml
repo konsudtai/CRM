@@ -210,7 +210,7 @@ Resources:
       DBInstanceIdentifier: !Sub 'sf7-${Environment}'
       Engine: postgres
       EngineVersion: '16.4'
-      DBInstanceClass: db.t4g.small
+      DBInstanceClass: db.t4g.medium
       AllocatedStorage: 100
       StorageType: gp3
       MasterUsername: salesfast7
