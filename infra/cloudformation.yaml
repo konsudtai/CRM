@@ -1,0 +1,672 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SalesFAST 7 CRM Platform — Serverless Stack (~$20-50/mo)'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues: [prod, staging]
+  DBPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    Description: 'PostgreSQL master password (min 8 chars)'
+  JWTSecret:
+    Type: String
+    NoEcho: true
+    MinLength: 16
+    Description: 'JWT signing secret (min 16 chars)'
+  DomainName:
+    Type: String
+    Default: ''
+    Description: 'Custom domain (optional, e.g. app.salesfast7.com)'
+
+Resources:
+
+  # ============================================================
+  # VPC — Minimal (public + private subnets, NO NAT Gateway)
+  # Lambda uses VPC endpoints instead of NAT to save $32/mo
+  # ============================================================
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'sf7-${Environment}-vpc'
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'sf7-${Environment}-public-a'
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'sf7-${Environment}-public-b'
+
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.10.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub 'sf7-${Environment}-private-a'
+
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.11.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub 'sf7-${Environment}-private-b'
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  IGWAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: IGWAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetARouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetBRouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PrivateSubnetARouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnetBRouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetB
+      RouteTableId: !Ref PrivateRouteTable
+
+  # VPC Endpoints (replace NAT Gateway — saves $32/mo)
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPC
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      RouteTableIds:
+        - !Ref PrivateRouteTable
+
+  SQSEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPC
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.sqs'
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+      SecurityGroupIds:
+        - !Ref LambdaSG
+      PrivateDnsEnabled: true
+
+  SecretsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPC
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.secretsmanager'
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+      SecurityGroupIds:
+        - !Ref LambdaSG
+      PrivateDnsEnabled: true
+
+  # ============================================================
+  # Security Groups
+  # ============================================================
+  LambdaSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Lambda functions
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 10.0.0.0/16
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  RDSSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS PostgreSQL
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LambdaSG
+
+  # ============================================================
+  # RDS PostgreSQL — db.t4g.micro (~$13/mo single-AZ)
+  # ============================================================
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: SF7 DB subnets
+      SubnetIds:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Sub 'sf7-${Environment}'
+      Engine: postgres
+      EngineVersion: '16.4'
+      DBInstanceClass: db.t4g.micro
+      AllocatedStorage: 20
+      StorageType: gp3
+      MasterUsername: salesfast7
+      MasterUserPassword: !Ref DBPassword
+      DBName: salesfast7
+      VPCSecurityGroups:
+        - !Ref RDSSG
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+      StorageEncrypted: true
+      DeletionProtection: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'sf7-${Environment}-db'
+
+  # ============================================================
+  # Secrets Manager
+  # ============================================================
+  DBSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub 'sf7/${Environment}/db'
+      SecretString: !Sub |
+        {
+          "host": "${Database.Endpoint.Address}",
+          "port": 5432,
+          "username": "salesfast7",
+          "password": "${DBPassword}",
+          "database": "salesfast7"
+        }
+
+  JWTSecretStore:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub 'sf7/${Environment}/jwt'
+      SecretString: !Sub '{"secret": "${JWTSecret}"}'
+
+  # ============================================================
+  # S3 Buckets
+  # ============================================================
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'sf7-${Environment}-frontend-${AWS::AccountId}'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: !Sub '${FrontendBucket.Arn}/*'
+
+  FilesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'sf7-${Environment}-files-${AWS::AccountId}'
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT]
+            AllowedOrigins: ['*']
+            MaxAge: 3600
+
+  # ============================================================
+  # SQS Queues
+  # ============================================================
+  EventsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub 'sf7-${Environment}-events'
+      VisibilityTimeout: 60
+      MessageRetentionPeriod: 86400
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt EventsDLQ.Arn
+        maxReceiveCount: 3
+
+  EventsDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub 'sf7-${Environment}-events-dlq'
+      MessageRetentionPeriod: 1209600
+
+  # ============================================================
+  # IAM Role for Lambda
+  # ============================================================
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'sf7-${Environment}-lambda-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Policies:
+        - PolicyName: sf7-lambda-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Ref DBSecret
+                  - !Ref JWTSecretStore
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource:
+                  - !Sub '${FilesBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource:
+                  - !GetAtt EventsQueue.Arn
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+
+  # ============================================================
+  # Lambda Functions (placeholder — deploy code separately)
+  # ============================================================
+  AuthFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'sf7-${Environment}-auth'
+      Runtime: nodejs20.x
+      Handler: index.handler
+      MemorySize: 256
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        ZipFile: |
+          exports.handler = async () => ({ statusCode: 200, body: JSON.stringify({ service: 'auth', status: 'ok' }) });
+      VpcConfig:
+        SubnetIds:
+          - !Ref PrivateSubnetA
+          - !Ref PrivateSubnetB
+        SecurityGroupIds:
+          - !Ref LambdaSG
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DBSecret
+          JWT_SECRET_ARN: !Ref JWTSecretStore
+          SQS_QUEUE_URL: !Ref EventsQueue
+          S3_BUCKET: !Ref FilesBucket
+          NODE_ENV: production
+
+  CRMFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'sf7-${Environment}-crm'
+      Runtime: nodejs20.x
+      Handler: index.handler
+      MemorySize: 256
+      Timeout: 15
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        ZipFile: |
+          exports.handler = async () => ({ statusCode: 200, body: JSON.stringify({ service: 'crm', status: 'ok' }) });
+      VpcConfig:
+        SubnetIds:
+          - !Ref PrivateSubnetA
+          - !Ref PrivateSubnetB
+        SecurityGroupIds:
+          - !Ref LambdaSG
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DBSecret
+          JWT_SECRET_ARN: !Ref JWTSecretStore
+          SQS_QUEUE_URL: !Ref EventsQueue
+          S3_BUCKET: !Ref FilesBucket
+
+  SalesFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'sf7-${Environment}-sales'
+      Runtime: nodejs20.x
+      Handler: index.handler
+      MemorySize: 256
+      Timeout: 15
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        ZipFile: |
+          exports.handler = async () => ({ statusCode: 200, body: JSON.stringify({ service: 'sales', status: 'ok' }) });
+      VpcConfig:
+        SubnetIds:
+          - !Ref PrivateSubnetA
+          - !Ref PrivateSubnetB
+        SecurityGroupIds:
+          - !Ref LambdaSG
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DBSecret
+          SQS_QUEUE_URL: !Ref EventsQueue
+
+  QuotationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'sf7-${Environment}-quotation'
+      Runtime: nodejs20.x
+      Handler: index.handler
+      MemorySize: 256
+      Timeout: 30
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        ZipFile: |
+          exports.handler = async () => ({ statusCode: 200, body: JSON.stringify({ service: 'quotation', status: 'ok' }) });
+      VpcConfig:
+        SubnetIds:
+          - !Ref PrivateSubnetA
+          - !Ref PrivateSubnetB
+        SecurityGroupIds:
+          - !Ref LambdaSG
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DBSecret
+          S3_BUCKET: !Ref FilesBucket
+          SQS_QUEUE_URL: !Ref EventsQueue
+
+  NotificationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'sf7-${Environment}-notification'
+      Runtime: nodejs20.x
+      Handler: index.handler
+      MemorySize: 256
+      Timeout: 15
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        ZipFile: |
+          exports.handler = async () => ({ statusCode: 200, body: JSON.stringify({ service: 'notification', status: 'ok' }) });
+      VpcConfig:
+        SubnetIds:
+          - !Ref PrivateSubnetA
+          - !Ref PrivateSubnetB
+        SecurityGroupIds:
+          - !Ref LambdaSG
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DBSecret
+          SQS_QUEUE_URL: !Ref EventsQueue
+
+  # SQS -> Notification Lambda trigger
+  NotificationEventSource:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt EventsQueue.Arn
+      FunctionName: !Ref NotificationFunction
+      BatchSize: 5
+      Enabled: true
+
+  # ============================================================
+  # API Gateway HTTP API
+  # ============================================================
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub 'sf7-${Environment}-api'
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins: ['*']
+        AllowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+        AllowHeaders: ['*']
+        MaxAge: 86400
+
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: '$default'
+      AutoDeploy: true
+
+  # Auth routes
+  AuthIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt AuthFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  AuthPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AuthFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*'
+
+  AuthRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /auth/{proxy+}'
+      Target: !Sub 'integrations/${AuthIntegration}'
+
+  UsersRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /users/{proxy+}'
+      Target: !Sub 'integrations/${AuthIntegration}'
+
+  RolesRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /roles/{proxy+}'
+      Target: !Sub 'integrations/${AuthIntegration}'
+
+  # CRM routes
+  CRMIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt CRMFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  CRMPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CRMFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*'
+
+  AccountsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /accounts/{proxy+}'
+      Target: !Sub 'integrations/${CRMIntegration}'
+
+  TasksRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /tasks/{proxy+}'
+      Target: !Sub 'integrations/${CRMIntegration}'
+
+  # Sales routes
+  SalesIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt SalesFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  SalesPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SalesFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*'
+
+  LeadsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /leads/{proxy+}'
+      Target: !Sub 'integrations/${SalesIntegration}'
+
+  PipelineRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /pipeline/{proxy+}'
+      Target: !Sub 'integrations/${SalesIntegration}'
+
+  ReportsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /reports/{proxy+}'
+      Target: !Sub 'integrations/${SalesIntegration}'
+
+  # Quotation routes
+  QuotationIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt QuotationFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  QuotationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref QuotationFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*'
+
+  QuotationsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /quotations/{proxy+}'
+      Target: !Sub 'integrations/${QuotationIntegration}'
+
+  ProductsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /products/{proxy+}'
+      Target: !Sub 'integrations/${QuotationIntegration}'
+
+# ============================================================
+# Outputs
+# ============================================================
+Outputs:
+  ApiUrl:
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+    Description: API Gateway URL
+
+  FrontendUrl:
+    Value: !GetAtt FrontendBucket.WebsiteURL
+    Description: Frontend S3 website URL
+
+  DatabaseEndpoint:
+    Value: !GetAtt Database.Endpoint.Address
+    Description: RDS PostgreSQL endpoint
+
+  FilesBucket:
+    Value: !Ref FilesBucket
+    Description: S3 bucket for files
+
+  FrontendBucket:
+    Value: !Ref FrontendBucket
+    Description: S3 bucket for frontend
