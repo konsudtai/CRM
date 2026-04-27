@@ -13,10 +13,28 @@
     </div>
     <form onsubmit="saveLead(event)">
       <div class="card" style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Lead Information</div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Customer (Account)</div>
+        <div class="sf7-form-group">
+          <label class="sf7-form-label">Search Customer *</label>
+          <input class="sf7-form-input" id="fl-cust-search" placeholder="Type to search customer..." oninput="searchCustomer()" autocomplete="off"/>
+          <div id="fl-cust-results" style="display:none;position:absolute;z-index:10;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);max-height:200px;overflow-y:auto;width:calc(100% - 40px);margin-top:4px"></div>
+          <input type="hidden" id="fl-cust-id"/>
+        </div>
+        <div id="fl-cust-info" style="display:none;margin-top:10px;padding:12px;border-radius:8px;background:var(--surface2)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div id="fl-cust-name" style="font-size:13px;font-weight:600"></div>
+              <div id="fl-cust-detail" style="font-size:11px;color:var(--text3);margin-top:2px"></div>
+            </div>
+            <button type="button" onclick="clearCustomer()" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;font-family:inherit">Change</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Lead Details</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Name *</label><input class="sf7-form-input" id="fl-name" required placeholder="Khun ..."/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Company</label><input class="sf7-form-input" id="fl-company" placeholder="Company name"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Contact Name *</label><input class="sf7-form-input" id="fl-name" required placeholder="Khun ..."/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Deal Name *</label><input class="sf7-form-input" id="fl-deal" required placeholder="e.g. CRM Implementation"/></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
           <div class="sf7-form-group"><label class="sf7-form-label">Email</label><input class="sf7-form-input" id="fl-email" type="email"/></div>
@@ -40,21 +58,57 @@
 <script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('leads');
+var urlParams=new URLSearchParams(window.location.search);
+var preAccountId=urlParams.get('account');
+
 function sc(s){return s>=70?'ai-high':s>=40?'ai-mid':'ai-low'}
 
 function renderKanban(){
-  document.getElementById('kanban').innerHTML=STAGES_ORDER.map(stage=>{const leads=LEADS_DATA[stage]||[];return`<div class="kanban-col"><div class="kanban-col-header"><div class="kanban-col-title"><span style="width:7px;height:7px;border-radius:50%;background:${STAGE_COLORS[stage]}"></span>${stage}</div><span class="kanban-badge">${leads.length}</span></div>${leads.length===0?'<div class="empty-state" style="padding:20px;font-size:12px">Empty</div>':leads.map(l=>`<div class="kanban-card"><div class="kanban-card-name">${l.name}</div>${l.company?`<div class="kanban-card-sub">${l.company}</div>`:''}<div class="kanban-card-footer"><span style="font-size:10px;color:var(--text3)">${l.source}</span>${l.score?`<span class="ai-badge ${sc(l.score)}">${l.score}</span>`:''}</div>${l.assigned?`<div style="font-size:10px;color:var(--text3);margin-top:6px">${l.assigned}</div>`:''}</div>`).join('')}</div>`}).join('');
+  document.getElementById('kanban').innerHTML=STAGES_ORDER.map(stage=>{var leads=LEADS_DATA[stage]||[];return'<div class="kanban-col"><div class="kanban-col-header"><div class="kanban-col-title"><span style="width:7px;height:7px;border-radius:50%;background:'+STAGE_COLORS[stage]+'"></span>'+stage+'</div><span class="kanban-badge">'+leads.length+'</span></div>'+(leads.length===0?'<div class="empty-state" style="padding:20px;font-size:12px">Empty</div>':leads.map(function(l){return'<div class="kanban-card"><div class="kanban-card-name">'+l.name+'</div>'+(l.company?'<div class="kanban-card-sub">'+l.company+'</div>':'')+'<div class="kanban-card-footer"><span style="font-size:10px;color:var(--text3)">'+l.source+'</span>'+(l.score?'<span class="ai-badge '+sc(l.score)+'">'+l.score+'</span>':'')+'</div>'+(l.assigned?'<div style="font-size:10px;color:var(--text3);margin-top:6px">'+l.assigned+'</div>':'')+'</div>'}).join(''))+'</div>'}).join('');
 }
 
-function openCreate(){
+function searchCustomer(){
+  var q=document.getElementById('fl-cust-search').value.toLowerCase();
+  var results=document.getElementById('fl-cust-results');
+  if(q.length<1){results.style.display='none';return}
+  var filtered=ACCOUNTS.filter(function(a){return a.name.toLowerCase().indexOf(q)>=0||a.industry.toLowerCase().indexOf(q)>=0||(a.taxId||'').indexOf(q)>=0});
+  if(filtered.length===0){results.innerHTML='<div style="padding:12px;font-size:12px;color:var(--text3)">No customers found</div>';results.style.display='block';return}
+  results.innerHTML=filtered.map(function(a){return'<div onclick="selectCustomer('+a.id+')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background=\'var(--row-hover)\'" onmouseout="this.style.background=\'none\'"><div style="font-size:13px;font-weight:600">'+a.name+'</div><div style="font-size:11px;color:var(--text3)">'+a.industry+' / '+(a.taxId||'No Tax ID')+' / '+a.phone+'</div></div>'}).join('');
+  results.style.display='block';
+}
+
+function selectCustomer(id){
+  var a=ACCOUNTS.find(function(x){return x.id===id});
+  if(!a)return;
+  document.getElementById('fl-cust-id').value=a.id;
+  document.getElementById('fl-cust-search').style.display='none';
+  document.getElementById('fl-cust-results').style.display='none';
+  document.getElementById('fl-cust-info').style.display='block';
+  document.getElementById('fl-cust-name').textContent=a.name;
+  document.getElementById('fl-cust-detail').textContent=a.industry+' / '+(a.taxId||'-')+' / '+a.phone;
+}
+
+function clearCustomer(){
+  document.getElementById('fl-cust-id').value='';
+  document.getElementById('fl-cust-search').value='';
+  document.getElementById('fl-cust-search').style.display='block';
+  document.getElementById('fl-cust-info').style.display='none';
+}
+
+function openCreate(accountId){
   document.getElementById('kanban').style.display='none';
   document.getElementById('lead-form').style.display='block';
+  clearCustomer();
   document.getElementById('fl-name').value='';
-  document.getElementById('fl-company').value='';
+  document.getElementById('fl-deal').value='';
   document.getElementById('fl-email').value='';
   document.getElementById('fl-phone').value='';
   document.getElementById('fl-budget').value='';
-  document.getElementById('fl-assigned').innerHTML='<option value="">-- Auto --</option>'+REPS.map(r=>'<option>'+r.name+'</option>').join('');
+  document.getElementById('fl-assigned').innerHTML='<option value="">-- Auto --</option>'+REPS.map(function(r){return'<option>'+r.name+'</option>'}).join('');
+  // Pre-select customer if provided
+  if(accountId){selectCustomer(parseInt(accountId))}
+  window.scrollTo(0,0);
+}
   window.scrollTo(0,0);
 }
 function closeForm(){
@@ -63,15 +117,20 @@ function closeForm(){
 }
 function saveLead(e){
   e.preventDefault();
+  var custId=document.getElementById('fl-cust-id').value;
+  if(!custId){alert('Please select a customer first');return}
+  var cust=ACCOUNTS.find(function(x){return x.id===parseInt(custId)});
   var name=document.getElementById('fl-name').value;
-  var company=document.getElementById('fl-company').value;
+  var deal=document.getElementById('fl-deal').value;
   var source=document.getElementById('fl-source').value;
   var assigned=document.getElementById('fl-assigned').value;
   if(!LEADS_DATA['New'])LEADS_DATA['New']=[];
-  LEADS_DATA['New'].unshift({id:Date.now(),name:name,company:company,source:source,score:Math.floor(Math.random()*40+40),assigned:assigned||''});
+  LEADS_DATA['New'].unshift({id:Date.now(),name:deal||name,company:cust?cust.name:'',source:source,score:Math.floor(Math.random()*40+40),assigned:assigned||''});
   closeForm();
   renderKanban();
 }
 
 renderKanban();
+// Auto-open create form if account param in URL
+if(preAccountId){openCreate(preAccountId)}
 </script></body></html>
