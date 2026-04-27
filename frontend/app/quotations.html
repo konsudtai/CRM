@@ -203,33 +203,97 @@ function getLineItems(){
 }
 
 function previewQuotation(){
-  var account=document.getElementById('qt-account').value;if(!account){alert('Please select a customer');return}
-  var items=getLineItems();if(items.length===0){alert('Add at least one item');return}
-  var sub=0,disc=0,whtTotal=0;items.forEach(function(i){sub+=i.price*i.qty;disc+=i.disc;whtTotal+=i.price*i.qty*(i.wht/100)});
-  var after=sub-disc,vat=Math.round(after*0.07),grand=Math.round(after+vat-whtTotal);
-  var cust=ACCOUNTS.find(a=>a.name===account)||{};
-  var logoHtml=companyLogo?'<img src="'+companyLogo+'" class="a4-logo"/>':'<div style="font-size:18px;font-weight:800;color:#0176D3">'+((document.getElementById('qt-company-name').value)||'SalesFAST 7')+'</div>';
+  var account=document.getElementById('qt-account').value;
+  if(!account){alert('Please select a customer');return}
+  var items=getLineItems();
+  if(items.length===0){alert('Add at least one item');return}
 
-  document.getElementById('a4-content').innerHTML=`<div class="a4-page">
-    <div class="a4-header">
-      <div>${logoHtml}<div style="font-size:10px;color:#666;margin-top:4px">${document.getElementById('qt-company-addr').value||''}</div>${document.getElementById('qt-company-tax').value?'<div style="font-size:10px;color:#666">Tax ID: '+document.getElementById('qt-company-tax').value+'</div>':''}</div>
-      <div class="a4-company"><div style="font-size:16px;font-weight:700;color:#0176D3;margin-bottom:4px">QUOTATION</div><div>${document.getElementById('qt-number').value}</div><div>Date: ${new Date().toLocaleDateString('en-GB')}</div><div>Valid: ${document.getElementById('qt-valid').value}</div></div>
-    </div>
-    <div class="a4-info-grid">
-      <div class="a4-info-box"><div class="a4-info-label">Bill To</div><div class="a4-info-value" style="font-weight:600">${cust.name||account}</div><div style="font-size:10px;color:#666">${cust.taxId?'Tax ID: '+cust.taxId:''}</div><div style="font-size:10px;color:#666">${cust.phone||''} ${cust.email?'/ '+cust.email:''}</div></div>
-      <div class="a4-info-box"><div class="a4-info-label">Payment Terms</div><div class="a4-info-value">Net 30 days</div><div style="font-size:10px;color:#666;margin-top:4px">${document.getElementById('qt-notes').value||''}</div></div>
-    </div>
-    <table class="a4-table"><thead><tr><th style="width:40px">#</th><th>Description</th><th class="right" style="width:50px">Qty</th><th class="right" style="width:90px">Unit Price</th><th class="right" style="width:70px">Discount</th><th class="right" style="width:50px">WHT%</th><th class="right" style="width:90px">Amount</th></tr></thead>
-    <tbody>${items.map((it,i)=>'<tr><td>'+(i+1)+'</td><td>'+it.name+'</td><td class="right">'+it.qty+'</td><td class="right">'+fmt(it.price)+'</td><td class="right">'+(it.disc>0?'-'+fmt(it.disc):'-')+'</td><td class="right">'+(it.wht>0?it.wht+'%':'-')+'</td><td class="right" style="font-weight:600">'+fmt(it.total)+'</td></tr>').join('')}</tbody></table>
-    <div class="a4-totals"><div class="a4-totals-box">
-      <div class="a4-totals-row"><span>Subtotal</span><span>${fmt(sub)}</span></div>
-      ${disc>0?'<div class="a4-totals-row"><span>Discount</span><span style="color:#C23934">-'+fmt(disc)+'</span></div>':''}
-      <div class="a4-totals-row"><span>VAT 7%</span><span>${fmt(vat)}</span></div>
-      ${whtTotal>0?'<div class="a4-totals-row"><span>WHT</span><span style="color:#C23934">-'+fmt(Math.round(whtTotal))+'</span></div>':''}
-      <div class="a4-totals-row grand"><span>Grand Total</span><span>${fmt(grand)}</span></div>
-    </div></div>
-    <div class="a4-footer"><div><div style="font-size:10px;font-weight:600">Authorized Signature (Seller)</div><div class="a4-sig-line">Name: _____________________ Date: __________</div></div><div><div style="font-size:10px;font-weight:600">Accepted by (Customer)</div><div class="a4-sig-line">Name: _____________________ Date: __________</div></div></div>
-  </div>`;
+  var sub=0,disc=0,whtTotal=0;
+  items.forEach(function(i){sub+=i.price*i.qty;disc+=i.disc;whtTotal+=i.price*i.qty*(i.wht/100)});
+  var after=sub-disc,vat=Math.round(after*0.07),grand=Math.round(after+vat-whtTotal);
+  var cust=ACCOUNTS.find(function(a){return a.name===account})||{};
+
+  var compName=document.getElementById('qt-company-name').value||'SalesFAST 7';
+  var compAddr=document.getElementById('qt-company-addr').value||'';
+  var compTax=document.getElementById('qt-company-tax').value||'';
+  var qtNum=document.getElementById('qt-number').value;
+  var qtValid=document.getElementById('qt-valid').value;
+  var qtNotes=document.getElementById('qt-notes').value||'';
+  var today=new Date().toLocaleDateString('en-GB');
+
+  // Build logo HTML
+  var logoHtml='';
+  if(companyLogo){
+    logoHtml='<img src="'+companyLogo+'" class="a4-logo"/>';
+  }else{
+    logoHtml='<div style="font-size:18px;font-weight:800;color:#0176D3">'+compName+'</div>';
+  }
+
+  // Build line items rows
+  var linesHtml='';
+  for(var i=0;i<items.length;i++){
+    var it=items[i];
+    linesHtml+='<tr>';
+    linesHtml+='<td>'+(i+1)+'</td>';
+    linesHtml+='<td>'+it.name+'</td>';
+    linesHtml+='<td class="right">'+it.qty+'</td>';
+    linesHtml+='<td class="right">'+fmt(it.price)+'</td>';
+    linesHtml+='<td class="right">'+(it.disc>0?'-'+fmt(it.disc):'-')+'</td>';
+    linesHtml+='<td class="right">'+(it.wht>0?it.wht+'%':'-')+'</td>';
+    linesHtml+='<td class="right" style="font-weight:600">'+fmt(Math.max(0,it.total))+'</td>';
+    linesHtml+='</tr>';
+  }
+
+  // Build totals
+  var totalsHtml='';
+  totalsHtml+='<div class="a4-totals-row"><span>Subtotal</span><span>'+fmt(sub)+'</span></div>';
+  if(disc>0) totalsHtml+='<div class="a4-totals-row"><span>Discount</span><span style="color:#C23934">-'+fmt(disc)+'</span></div>';
+  totalsHtml+='<div class="a4-totals-row"><span>VAT 7%</span><span>'+fmt(vat)+'</span></div>';
+  if(whtTotal>0) totalsHtml+='<div class="a4-totals-row"><span>WHT</span><span style="color:#C23934">-'+fmt(Math.round(whtTotal))+'</span></div>';
+  totalsHtml+='<div class="a4-totals-row grand"><span>Grand Total</span><span>'+fmt(grand)+'</span></div>';
+
+  // Build full A4 page
+  var html='<div class="a4-page">';
+  // Header
+  html+='<div class="a4-header">';
+  html+='<div>'+logoHtml;
+  if(compAddr) html+='<div style="font-size:10px;color:#666;margin-top:4px">'+compAddr+'</div>';
+  if(compTax) html+='<div style="font-size:10px;color:#666">Tax ID: '+compTax+'</div>';
+  html+='</div>';
+  html+='<div class="a4-company"><div style="font-size:16px;font-weight:700;color:#0176D3;margin-bottom:4px">QUOTATION</div>';
+  html+='<div>'+qtNum+'</div>';
+  html+='<div>Date: '+today+'</div>';
+  html+='<div>Valid Until: '+qtValid+'</div>';
+  html+='</div></div>';
+  // Info boxes
+  html+='<div class="a4-info-grid">';
+  html+='<div class="a4-info-box"><div class="a4-info-label">Bill To</div>';
+  html+='<div class="a4-info-value" style="font-weight:600">'+(cust.name||account)+'</div>';
+  if(cust.taxId) html+='<div style="font-size:10px;color:#666">Tax ID: '+cust.taxId+'</div>';
+  if(cust.phone) html+='<div style="font-size:10px;color:#666">'+cust.phone+(cust.email?' / '+cust.email:'')+'</div>';
+  html+='</div>';
+  html+='<div class="a4-info-box"><div class="a4-info-label">Payment Terms</div>';
+  html+='<div class="a4-info-value">Net 30 days</div>';
+  if(qtNotes) html+='<div style="font-size:10px;color:#666;margin-top:4px">'+qtNotes+'</div>';
+  html+='</div></div>';
+  // Table
+  html+='<table class="a4-table"><thead><tr>';
+  html+='<th style="width:40px">#</th><th>Description</th><th class="right" style="width:50px">Qty</th>';
+  html+='<th class="right" style="width:90px">Unit Price</th><th class="right" style="width:70px">Discount</th>';
+  html+='<th class="right" style="width:50px">WHT%</th><th class="right" style="width:90px">Amount</th>';
+  html+='</tr></thead><tbody>'+linesHtml+'</tbody></table>';
+  // Totals
+  html+='<div class="a4-totals"><div class="a4-totals-box">'+totalsHtml+'</div></div>';
+  // Signatures
+  html+='<div class="a4-footer">';
+  html+='<div><div style="font-size:10px;font-weight:600">Authorized Signature (Seller)</div>';
+  html+='<div class="a4-sig-line">Name: _____________________ Date: __________</div></div>';
+  html+='<div><div style="font-size:10px;font-weight:600">Accepted by (Customer)</div>';
+  html+='<div class="a4-sig-line">Name: _____________________ Date: __________</div></div>';
+  html+='</div>';
+  html+='</div>';
+
+  document.getElementById('a4-content').innerHTML=html;
   document.getElementById('preview-overlay').classList.add('open');
 }
 function closePreview(){document.getElementById('preview-overlay').classList.remove('open')}
