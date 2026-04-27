@@ -9,6 +9,7 @@ import { SqsProvider } from './providers/sqs.provider';
 import { LineModule } from './modules/line/line.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { EventConsumerModule } from './modules/event-consumer/event-consumer.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
     LineModule,
     NotificationsModule,
     WebhooksModule,
+    EventConsumerModule,
   ],
   providers: [RedisProvider, SqsProvider],
   exports: [REDIS_CLIENT, SqsProvider],

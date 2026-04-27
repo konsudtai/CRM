@@ -1,55 +1,68 @@
 import React from 'react';
 
 /**
- * SF Pro Display (≥20px) / SF Pro Text (<20px) boundary.
- * Letter-spacing per Apple design system size tiers:
- *   96px: -0.015em, 80px: -0.015em, 64px: -0.012em,
- *   48px: -0.01em, 40px: -0.009em, 32px: -0.007em,
- *   28px: -0.005em, 24px: -0.003em, 21px: -0.002em,
- *   20px: -0.001em, 19px: -0.003em, 17px: -0.01em,
- *   14px: -0.006em, 12px: 0em
+ * Apple Design System Typography.
+ *
+ * SF Pro Display: ≥20px (headings, display text)
+ * SF Pro Text: <20px (body, captions, buttons)
+ *
+ * Negative letter-spacing at ALL sizes — Apple tracks tight universally.
+ * Extreme line-height range: 1.07 (headlines) to 1.47 (body).
  */
 
 export interface HeadingProps {
   as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-  size?: 'hero' | 'headline' | 'title' | 'subtitle';
+  size?: 'hero' | 'section' | 'headline' | 'tile' | 'title' | 'subtitle';
   children: React.ReactNode;
   className?: string;
 }
 
-const headingSizes: Record<string, string> = {
-  hero: 'text-5xl tracking-[-0.01em]',       // 48px
-  headline: 'text-[32px] tracking-[-0.007em]', // 32px
-  title: 'text-2xl tracking-[-0.003em]',       // 24px
-  subtitle: 'text-xl tracking-[-0.001em]',     // 20px
+const headingStyles: Record<string, string> = {
+  hero:     'text-[56px] font-semibold leading-[1.07] tracking-[-0.28px]',
+  section:  'text-[40px] font-semibold leading-[1.10] tracking-normal',
+  headline: 'text-[28px] font-semibold leading-[1.14] tracking-[0.196px]',
+  tile:     'text-[28px] font-normal leading-[1.14] tracking-[0.196px]',
+  title:    'text-[21px] font-bold leading-[1.19] tracking-[0.231px]',
+  subtitle: 'text-[21px] font-normal leading-[1.19] tracking-[0.231px]',
 };
 
-/** Heading component — uses SF Pro Display (≥20px) */
-export function Heading({ as: Tag = 'h2', size = 'headline', children, className = '' }: HeadingProps) {
+export function Heading({
+  as: Tag = 'h2',
+  size = 'headline',
+  children,
+  className = '',
+}: HeadingProps) {
   return (
-    <Tag className={`font-sf-pro-display font-semibold ${headingSizes[size]} ${className}`}>
+    <Tag className={`font-sf-pro-display text-[#1d1d1f] ${headingStyles[size]} ${className}`}>
       {children}
     </Tag>
   );
 }
 
 export interface BodyProps {
-  size?: 'large' | 'default' | 'small' | 'caption';
+  size?: 'large' | 'default' | 'emphasis' | 'small' | 'caption' | 'caption-bold' | 'micro' | 'nano';
   children: React.ReactNode;
   className?: string;
 }
 
-const bodySizes: Record<string, string> = {
-  large: 'text-[19px] tracking-[-0.003em]',
-  default: 'text-[17px] tracking-[-0.01em]',
-  small: 'text-sm tracking-[-0.006em]',       // 14px
-  caption: 'text-xs tracking-[0em]',           // 12px
+const bodyStyles: Record<string, string> = {
+  large:         'text-[19px] font-normal leading-[1.42] tracking-[-0.374px]',
+  default:       'text-[17px] font-normal leading-[1.47] tracking-[-0.374px]',
+  emphasis:      'text-[17px] font-semibold leading-[1.24] tracking-[-0.374px]',
+  small:         'text-[14px] font-normal leading-[1.29] tracking-[-0.224px]',
+  caption:       'text-[14px] font-normal leading-[1.29] tracking-[-0.224px]',
+  'caption-bold':'text-[14px] font-semibold leading-[1.29] tracking-[-0.224px]',
+  micro:         'text-[12px] font-normal leading-[1.33] tracking-[-0.12px]',
+  nano:          'text-[10px] font-normal leading-[1.47] tracking-[-0.08px]',
 };
 
-/** Body text component — uses SF Pro Text (<20px) */
-export function Body({ size = 'default', children, className = '' }: BodyProps) {
+export function Body({
+  size = 'default',
+  children,
+  className = '',
+}: BodyProps) {
   return (
-    <p className={`font-sf-pro-text ${bodySizes[size]} ${className}`}>
+    <p className={`font-sf-pro-text text-[#1d1d1f] ${bodyStyles[size]} ${className}`}>
       {children}
     </p>
   );

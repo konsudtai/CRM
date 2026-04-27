@@ -1,0 +1,13 @@
+<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — สินค้า</title><link rel="stylesheet" href="../css/app.css"/></head><body>
+<div class="bg-pattern"></div><div id="nav"></div>
+<div class="page anim">
+  <div class="page-header"><div><div class="page-title">แคตตาล็อกสินค้า</div><div class="page-subtitle">จัดการสินค้าและบริการ</div></div><button class="btn btn-primary">+ เพิ่มสินค้า</button></div>
+  <input class="search-input" id="search" placeholder="ค้นหาสินค้า / SKU..." style="margin-bottom:20px;max-width:360px" oninput="render()"/>
+  <div class="card"><table><thead><tr><th>ชื่อสินค้า</th><th>SKU</th><th>ราคาต่อหน่วย</th><th>หน่วย</th><th>WHT %</th><th>สถานะ</th></tr></thead><tbody id="tbody"></tbody></table></div>
+</div>
+<script src="../js/helpers.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
+<script>
+document.getElementById('nav').innerHTML=renderNav('products');
+function render(){const q=(document.getElementById('search').value||'').toLowerCase();const f=PRODUCTS.filter(p=>p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q));document.getElementById('tbody').innerHTML=f.map(p=>`<tr><td style="font-weight:500">${p.name}</td><td style="color:var(--text2)">${p.sku}</td><td style="font-weight:500;color:var(--sf-blue)">${fmt(p.price)}</td><td style="color:var(--text2)">${p.unit}</td><td style="color:var(--text2)">${p.wht}%</td><td><span class="status-badge" style="background:${p.active?'rgba(48,209,88,.12)':'rgba(128,128,128,.1)'};color:${p.active?'#1a7d39':'var(--text2)'}">${p.active?'ใช้งาน':'ปิดใช้งาน'}</span></td></tr>`).join('');}
+render();
+</script></body></html>

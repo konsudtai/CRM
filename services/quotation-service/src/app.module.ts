@@ -9,6 +9,7 @@ import { RedisProvider, REDIS_CLIENT } from './providers/redis.provider';
 import { S3Provider, S3_CLIENT } from './providers/s3.provider';
 import { ProductsModule } from './modules/products/products.module';
 import { QuotationsModule } from './modules/quotations/quotations.module';
+import { EventBusModule } from './modules/event-bus/event-bus.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { QuotationsModule } from './modules/quotations/quotations.module';
     }),
     ProductsModule,
     QuotationsModule,
+    EventBusModule,
   ],
   providers: [RedisProvider, S3Provider],
   exports: [REDIS_CLIENT, S3_CLIENT],

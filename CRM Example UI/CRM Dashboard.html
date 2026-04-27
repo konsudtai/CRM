@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>2PCRM — Thai SMB CRM Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+/* ─── TOKENS ─── */
+:root{
+  --blue:#0284C7; --blue-d:#0369A1; --blue-l:#38BDF8;
+  --green:#059669; --green-d:#047857; --green-l:#34D399;
+  --teal:#0891B2; --teal-l:#22D3EE;
+  --orange:#D97706; --red:#DC2626; --purple:#7C3AED;
+  --nav-h:52px; --tab-h:40px; --total-nav:92px;
+  --nav-grad:linear-gradient(135deg,#0B3D62 0%,#0C6B58 55%,#054F3C 100%);
+}
+[data-theme="light"]{
+  --bg:#EFF9F6; --surface:#fff; --surface2:#F4FBF8; --surface3:#E6F4EE;
+  --text:#0F2820; --text2:#4B6B5D; --text3:#8AADA0;
+  --border:#D1E8DF; --border2:#B8D9CC;
+  --topbar-bg:#fff; --topbar-border:#D1E8DF;
+  --tab-bg:#E2F0EB; --tab-active-bg:#fff; --tab-text:#4B6B5D; --tab-active-text:#0284C7;
+  --shadow:0 1px 4px rgba(5,150,105,0.06),0 4px 16px rgba(2,132,199,0.04);
+  --shadow-md:0 4px 20px rgba(5,150,105,0.12),0 1px 4px rgba(0,0,0,0.05);
+  --shadow-lg:0 8px 40px rgba(5,150,105,0.15);
+  --row-hover:rgba(2,132,199,0.04); --kanban-col:#EFF9F6;
+  --nav-text:rgba(255,255,255,0.78); --nav-active:rgba(255,255,255,0.18);
+  --nav-hover:rgba(255,255,255,0.1); --nav-text-active:#fff;
+  --dropdown-bg:#fff;
+}
+[data-theme="dark"]{
+  --bg:#050F0C; --surface:#0C1E18; --surface2:#112619; --surface3:#192E22;
+  --text:rgba(255,255,255,0.92); --text2:rgba(255,255,255,0.46); --text3:rgba(255,255,255,0.22);
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+  --topbar-bg:#0C1E18; --topbar-border:rgba(255,255,255,0.07);
+  --tab-bg:#0C1E18; --tab-active-bg:#112619; --tab-text:rgba(255,255,255,0.42); --tab-active-text:#38BDF8;
+  --shadow:0 1px 4px rgba(0,0,0,0.3),0 4px 16px rgba(0,0,0,0.2);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.45);
+  --shadow-lg:0 8px 40px rgba(0,0,0,0.55);
+  --row-hover:rgba(56,189,248,0.05); --kanban-col:rgba(255,255,255,0.03);
+  --nav-text:rgba(255,255,255,0.7); --nav-active:rgba(255,255,255,0.15);
+  --nav-hover:rgba(255,255,255,0.08); --nav-text-active:#fff;
+  --dropdown-bg:#112619;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:rgba(8,145,178,0.18);border-radius:3px}
+
+/* ─── NAVBAR ─── */
+.navbar{
+  position:fixed;top:0;left:0;right:0;z-index:200;height:var(--nav-h);
+  background:var(--nav-grad);
+  display:flex;align-items:center;
+  box-shadow:0 2px 16px rgba(5,79,60,0.35),0 1px 0 rgba(255,255,255,0.06);
+}
+.nav-left{display:flex;align-items:center;height:100%;flex-shrink:0}
+.app-launcher{width:50px;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;background:none;color:rgba(255,255,255,0.65);transition:all 0.15s;flex-shrink:0}
+.app-launcher:hover{background:var(--nav-hover);color:#fff}
+.brand-area{display:flex;align-items:center;gap:11px;padding:0 16px 0 6px;height:100%;border-right:1px solid rgba(255,255,255,0.1);cursor:pointer;text-decoration:none}
+.brand-name{font-size:17px;font-weight:900;color:#fff;letter-spacing:-0.6px;line-height:1}
+.brand-tag{font-size:9px;font-weight:500;color:rgba(255,255,255,0.42);letter-spacing:1.2px;text-transform:uppercase;margin-top:-1px}
+.nav-items{display:flex;align-items:center;height:100%;flex:1;overflow:hidden}
+.nav-item-wrap{position:relative;height:100%;display:flex;align-items:center}
+.nav-item{display:flex;align-items:center;gap:5px;height:100%;padding:0 14px;border:none;background:none;cursor:pointer;font-family:inherit;color:var(--nav-text);font-size:13px;font-weight:500;transition:all 0.14s;white-space:nowrap;position:relative}
+.nav-item:hover{background:var(--nav-hover);color:var(--nav-text-active)}
+.nav-item.active{background:var(--nav-active);color:var(--nav-text-active);font-weight:600}
+.nav-item.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--green-l);border-radius:2px 2px 0 0}
+.nav-caret{font-size:9px;opacity:0.55;transition:transform 0.15s;display:flex;align-items:center}
+.nav-item-wrap:hover .nav-caret{transform:rotate(180deg)}
+
+/* MEGA DROP */
+.mega-drop{
+  position:absolute;top:100%;left:0;min-width:520px;
+  background:var(--dropdown-bg);border-radius:12px;
+  box-shadow:var(--shadow-lg);border:1px solid var(--border);
+  padding:16px;z-index:300;
+  opacity:0;visibility:hidden;transform:translateY(-6px);
+  transition:opacity 0.18s,transform 0.18s,visibility 0.18s;
+  pointer-events:none;
+}
+.nav-item-wrap:hover .mega-drop{opacity:1;visibility:visible;transform:translateY(4px);pointer-events:all}
+.mega-hd{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+.mega-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.mega-item{display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:8px;cursor:pointer;transition:background 0.12s;border:none;background:none;width:100%;text-align:left;font-family:inherit}
+.mega-item:hover{background:var(--surface3)}
+.mega-icon{width:30px;height:30px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.mega-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:1px}
+.mega-desc{font-size:11px;color:var(--text3);line-height:1.3}
+.mega-divider{height:1px;background:var(--border);margin:10px 0}
+.mega-recents{display:flex;flex-wrap:wrap;gap:4px}
+.mega-rec{display:flex;align-items:center;gap:5px;padding:4px 9px;border-radius:20px;font-size:11px;font-weight:500;color:var(--text2);cursor:pointer;background:var(--surface3);border:none;font-family:inherit;transition:all 0.12s}
+.mega-rec:hover{background:var(--green);color:#fff}
+
+/* NAV RIGHT */
+.nav-right{display:flex;align-items:center;gap:4px;padding:0 12px;flex-shrink:0}
+.search-wrap{display:flex;align-items:center;gap:7px;padding:6px 12px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);border-radius:8px;cursor:text;min-width:200px;transition:all 0.18s}
+.search-wrap:focus-within{background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.38)}
+.search-wrap input{border:none;background:none;color:#fff;font-size:13px;outline:none;width:100%;font-family:inherit}
+.search-wrap input::placeholder{color:rgba(255,255,255,0.38)}
+.util-btn{width:34px;height:34px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.65);transition:all 0.14s;position:relative}
+.util-btn:hover{background:rgba(255,255,255,0.16);color:#fff}
+.notif-dot{position:absolute;top:6px;right:6px;width:6px;height:6px;background:#F87171;border-radius:50%;border:2px solid transparent}
+.user-pill{display:flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:9px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.16);cursor:pointer;transition:all 0.15s;font-family:inherit}
+.user-pill:hover{background:rgba(255,255,255,0.18)}
+.avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#34D399,#38BDF8);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#0F2820;flex-shrink:0}
+.user-name{font-size:12px;font-weight:600;color:#fff}
+.user-role{font-size:9px;color:rgba(255,255,255,0.42)}
+
+/* TABSTRIP */
+.tabstrip{position:fixed;top:var(--nav-h);left:0;right:0;z-index:190;height:var(--tab-h);background:var(--tab-bg);border-bottom:1px solid var(--border);display:flex;align-items:flex-end;padding:0 18px;gap:2px;overflow-x:auto}
+.tabstrip::-webkit-scrollbar{display:none}
+.ws-tab{display:flex;align-items:center;gap:7px;padding:0 14px;height:32px;border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;cursor:pointer;transition:all 0.15s;font-family:inherit;font-size:12px;font-weight:500;color:var(--tab-text);background:transparent;white-space:nowrap;flex-shrink:0}
+.ws-tab:hover{background:var(--surface3);color:var(--text)}
+.ws-tab.active{background:var(--tab-active-bg);color:var(--tab-active-text);font-weight:600;border-color:var(--border)}
+.ws-tab-close{width:14px;height:14px;border-radius:50%;border:none;background:none;cursor:pointer;color:var(--text3);display:flex;align-items:center;justify-content:center;font-size:11px;padding:0;line-height:1;transition:background 0.12s}
+.ws-tab-close:hover{background:var(--surface3);color:var(--text)}
+.tab-add{width:28px;height:28px;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:16px;transition:all 0.12s;align-self:center;margin-left:4px}
+.tab-add:hover{background:var(--surface3);color:var(--text)}
+
+/* APP LAUNCHER MODAL */
+.al-modal{position:fixed;top:var(--nav-h);left:0;z-index:400;width:340px;background:var(--dropdown-bg);border-radius:0 12px 12px 0;box-shadow:var(--shadow-lg);border:1px solid var(--border);padding:20px;opacity:0;visibility:hidden;transform:translateX(-16px);transition:all 0.2s}
+.al-modal.open{opacity:1;visibility:visible;transform:translateX(0)}
+.al-title{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px}
+.al-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.al-item{display:flex;flex-direction:column;align-items:center;gap:7px;padding:13px 8px;border-radius:10px;cursor:pointer;transition:background 0.13s;border:none;background:none;font-family:inherit}
+.al-item:hover{background:var(--surface3)}
+.al-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+.al-label{font-size:11px;font-weight:600;color:var(--text);text-align:center}
+
+/* MAIN */
+.main{padding-top:var(--total-nav);min-height:100vh}
+.page{padding:22px 26px 60px;max-width:1380px}
+.page-hd{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:21px;font-weight:800;letter-spacing:-0.4px;color:var(--text)}
+.page-sub{font-size:12px;color:var(--text2);margin-top:2px}
+
+/* BUTTONS */
+.btn-primary{display:flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#fff;background:var(--blue);box-shadow:0 2px 8px rgba(2,132,199,0.3);transition:all 0.15s;font-family:inherit}
+.btn-primary:hover{background:var(--blue-d);transform:translateY(-1px);box-shadow:0 4px 16px rgba(2,132,199,0.45)}
+.btn-ghost{display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);background:var(--surface);transition:all 0.14s;font-family:inherit}
+.btn-ghost:hover{border-color:var(--green);color:var(--green)}
+
+/* CARDS */
+.card{background:var(--surface);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow)}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:13px;margin-bottom:18px}
+.kpi-card{background:var(--surface);border-radius:12px;padding:18px 20px;border:1px solid var(--border);box-shadow:var(--shadow);cursor:default;transition:transform 0.18s,box-shadow 0.18s;overflow:hidden;position:relative}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.kpi-stripe{position:absolute;top:0;left:0;right:0;height:4px;border-radius:12px 12px 0 0}
+.kpi-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;margin-top:6px}
+.kpi-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.3px}
+.kpi-value{font-size:24px;font-weight:800;letter-spacing:-0.8px;color:var(--text);margin-top:4px;line-height:1}
+.kpi-foot{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap}
+.kpi-trend{font-size:11px;font-weight:600;padding:2px 6px;border-radius:20px}
+.kpi-trend.up{color:#059669;background:rgba(5,150,105,0.1)}
+.kpi-trend.down{color:#DC2626;background:rgba(220,38,38,0.1)}
+.kpi-sub{font-size:11px;color:var(--text3)}
+.kpi-prog{margin-top:8px;height:3px;background:var(--surface3);border-radius:2px}
+.kpi-bar{height:100%;border-radius:2px;transition:width 1.2s cubic-bezier(.25,.46,.45,.94)}
+
+/* PILLS */
+.pills{display:flex;flex-wrap:wrap;gap:5px}
+.pill{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.13s;font-family:inherit}
+.pill:hover{border-color:var(--blue);color:var(--blue)}
+.pill.on{border-color:var(--blue);background:rgba(2,132,199,0.07);color:var(--blue);font-weight:600}
+.pill.on-g{border-color:var(--green);background:rgba(5,150,105,0.07);color:var(--green);font-weight:600}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;padding:0 12px 10px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:11px 12px;font-size:13px;color:var(--text);border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tbody tr{cursor:pointer;transition:background 0.1s}
+tbody tr:hover{background:var(--row-hover)}
+.tlink{color:var(--blue);font-weight:600;text-decoration:none}
+.tlink:hover{text-decoration:underline}
+.tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(8,145,178,0.08);color:var(--teal);margin:1px 2px}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.b-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.b-new{background:rgba(2,132,199,0.09);color:#0284C7}
+.b-contacted{background:rgba(8,145,178,0.09);color:#0891B2}
+.b-qualified{background:rgba(5,150,105,0.1);color:#059669}
+.b-proposal{background:rgba(217,119,6,0.09);color:#D97706}
+.b-negotiation{background:rgba(220,38,38,0.09);color:#DC2626}
+.b-won,.b-active,.b-approved,.b-completed,.b-resolved{background:rgba(5,150,105,0.1);color:#059669}
+.b-lost,.b-inactive,.b-rejected{background:rgba(107,114,128,0.08);color:var(--text2)}
+.b-renewal{background:rgba(124,58,237,0.1);color:#7C3AED}
+.b-atrisk,.b-critical{background:rgba(220,38,38,0.1);color:#DC2626}
+.b-high{background:rgba(220,38,38,0.1);color:#DC2626}
+.b-medium{background:rgba(217,119,6,0.09);color:#D97706}
+.b-low{background:rgba(5,150,105,0.1);color:#059669}
+.b-draft{background:rgba(107,114,128,0.08);color:var(--text2)}
+.b-sent{background:rgba(2,132,199,0.09);color:#0284C7}
+.b-accepted{background:rgba(5,150,105,0.12);color:#059669}
+.b-inprogress{background:rgba(8,145,178,0.09);color:#0891B2}
+.b-open{background:rgba(217,119,6,0.09);color:#D97706}
+.b-assigned{background:rgba(5,150,105,0.08);color:#059669}
+.b-waiting{background:rgba(124,58,237,0.09);color:#7C3AED}
+
+/* KANBAN */
+.kanban-wrap{display:flex;gap:11px;overflow-x:auto;padding-bottom:14px}
+.kanban-col{flex-shrink:0;width:220px;background:var(--kanban-col);border-radius:10px;padding:10px;border:1px solid var(--border)}
+.kk-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.kk-title{font-size:12px;font-weight:700;color:var(--text)}
+.kk-count{font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;background:var(--surface3);color:var(--text2)}
+.kk-total{font-size:11px;color:var(--text3);padding:0 2px;margin-bottom:8px}
+.kk-card{background:var(--surface);border-radius:8px;padding:11px 12px;margin-bottom:7px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(5,150,105,0.05);cursor:grab;transition:transform 0.16s,box-shadow 0.16s}
+.kk-card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(2,132,199,0.1)}
+.kk-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.3}
+.kk-company{font-size:11px;color:var(--text2);margin-top:2px}
+.kk-foot{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.kk-amount{font-size:12px;font-weight:700;color:var(--blue)}
+.kk-date{font-size:10px;color:var(--text3)}
+.kk-owner{display:flex;align-items:center;gap:5px;margin-top:6px}
+.mini-av{width:18px;height:18px;border-radius:50%;font-size:8px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kk-add{width:100%;padding:7px;border-radius:7px;border:none;background:none;color:var(--text3);font-size:12px;cursor:pointer;transition:background 0.13s;font-family:inherit;margin-top:4px}
+.kk-add:hover{background:var(--surface);color:var(--text2)}
+
+/* TIMELINE */
+.tl{list-style:none}
+.tl-item{display:flex;gap:11px;padding-bottom:14px;position:relative}
+.tl-item:last-child{padding-bottom:0}
+.tl-item::before{content:'';position:absolute;left:14px;top:29px;bottom:0;width:1px;background:var(--border)}
+.tl-item:last-child::before{display:none}
+.tl-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tl-body{flex:1;padding-top:3px}
+.tl-title{font-size:13px;font-weight:500;color:var(--text)}
+.tl-meta{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* QA GRID */
+.qa-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-bottom:18px}
+.qa-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:14px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-weight:500;color:var(--text2);font-family:inherit;transition:all 0.15s}
+.qa-btn:hover{border-color:var(--blue);color:var(--blue);transform:translateY(-2px);box-shadow:var(--shadow)}
+.qa-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center}
+
+/* STAT ROW */
+.stat-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.stat-row:last-child{border-bottom:none}
+.stat-bar-wrap{width:120px;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.stat-bar{height:100%;border-radius:3px;transition:width 1s ease}
+.stat-val{font-size:12px;font-weight:700;color:var(--text);width:70px;text-align:right}
+
+/* SLA */
+.sla{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.sla-ok{background:rgba(5,150,105,0.1);color:#059669}
+.sla-breach{background:rgba(220,38,38,0.1);color:#DC2626}
+
+/* SECTION */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-title{font-size:15px;font-weight:700;color:var(--text)}
+.sec-more{font-size:12px;font-weight:500;color:var(--blue);cursor:pointer;border:none;background:none;font-family:inherit}
+.sec-more:hover{text-decoration:underline}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp 0.32s cubic-bezier(.25,.46,.45,.94) both}
+.d1{animation-delay:.04s}.d2{animation-delay:.08s}.d3{animation-delay:.12s}
+.d4{animation-delay:.16s}.d5{animation-delay:.2s}.d6{animation-delay:.24s}
+
+@media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:1000px){.qa-grid{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ─── SVG ICON SYSTEM ─── */
+const Svg = ({ d, w=16, h=16, sw=1.8, fill='none', stroke='currentColor' }) => (
+  <svg width={w} height={h} viewBox="0 0 24 24" fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+    {[].concat(d).map((p,i)=><path key={i} d={p}/>)}
+  </svg>
+);
+const IGrid    = () => <svg width="17" height="17" viewBox="0 0 17 17" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="7" height="6" rx="1.5"/><rect x="1" y="9" width="7" height="7" rx="1.5"/><rect x="10" y="9" width="6" height="7" rx="1.5"/></svg>;
+const ISearch  = () => <Svg d={["M21 21l-4.35-4.35","M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0"]}/>;
+const IBell    = () => <Svg d={["M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9","M13.73 21a2 2 0 0 1-3.46 0"]}/>;
+const IHelp    = () => <Svg d={["M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10z","M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3","M12 17h.01"]}/>;
+const IGear    = () => <Svg d={["M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z","M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"]}/>;
+const IPlus    = () => <Svg d={["M12 5v14","M5 12h14"]}/>;
+const ISun     = () => <Svg d={["M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z","M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"]}/>;
+const IMoon    = () => <Svg d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>;
+const IChevD   = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 9l6 6 6-6"/></svg>;
+const IPhone   = () => <Svg d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 11.3 19.79 19.79 0 0 1 1.61 2.68a2 2 0 0 1 1.99-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.87-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16z"/>;
+const IMail    = () => <Svg d={["M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z","M22 6l-10 7L2 6"]}/>;
+const IUsers   = () => <Svg d={["M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2","M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8","M23 21v-2a4 4 0 0 0-3-3.87","M16 3.13a4 4 0 0 1 0 7.75"]}/>;
+const ITarget  = () => <Svg d={["M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10z","M12 18c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6z","M12 14c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"]}/>;
+const IDoc     = () => <Svg d={["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z","M14 2v6h6","M16 13H8","M16 17H8","M10 9H8"]}/>;
+const ITicket  = () => <Svg d={["M15 5v2","M15 11v2","M15 17v2","M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"]}/>;
+const ITask    = () => <Svg d={["M9 11l3 3L22 4","M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"]}/>;
+const IReport  = () => <Svg d={["M18 20V10","M12 20V4","M6 20v-6"]}/>;
+const ICalendar= () => <Svg d={["M19 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z","M16 2v4","M8 2v4","M3 10h18"]}/>;
+const ILead    = () => <Svg d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>;
+const INote    = () => <Svg d={["M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7","M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"]}/>;
+const IMeeting = () => <Svg d={["M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2","M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8","M23 11l-4 4-2-2"]}/>;
+
+/* ─── 2PCRM LOGO ─── */
+function Logo2P({ size=34 }) {
+  const id = 'lg2p';
+  return (
+    <svg width={size} height={size} viewBox="0 0 36 36" fill="none">
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#0369A1"/>
+          <stop offset="45%" stopColor="#0891B2"/>
+          <stop offset="100%" stopColor="#047857"/>
+        </linearGradient>
+        <linearGradient id={id+'s'} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.18)"/>
+          <stop offset="100%" stopColor="rgba(255,255,255,0)"/>
+        </linearGradient>
+      </defs>
+      {/* Base */}
+      <rect width="36" height="36" rx="9" fill={`url(#${id})`}/>
+      {/* Top shine */}
+      <rect x="0" y="0" width="36" height="16" rx="9" fill={`url(#${id}s)`}/>
+      {/* Border ring */}
+      <rect x="0.75" y="0.75" width="34.5" height="34.5" rx="8.5" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5"/>
+      {/* "2" letterform */}
+      <path d="M6 15 C6 11 8.5 8.5 12 8.5 C15.5 8.5 18 10.5 18 13.5 C18 16 16.5 17.5 14 19 L6 24.5 L18.5 24.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      {/* "P" letterform */}
+      <path d="M21.5 8.5 L21.5 24.5" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M21.5 8.5 C25.5 8.5 30 10 30 13.5 C30 17 25.5 18.5 21.5 18.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function LogoWordmark() {
+  const id = 'lgw';
+  return (
+    <svg width="94" height="28" viewBox="0 0 94 28" fill="none">
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#fff"/>
+          <stop offset="100%" stopColor="rgba(255,255,255,0.82)"/>
+        </linearGradient>
+      </defs>
+      <text x="0" y="20" fontFamily="Inter,sans-serif" fontSize="20" fontWeight="900" letterSpacing="-0.7" fill="white">2P</text>
+      <text x="30" y="20" fontFamily="Inter,sans-serif" fontSize="20" fontWeight="600" letterSpacing="-0.3" fill="rgba(255,255,255,0.65)">CRM</text>
+    </svg>
+  );
+}
+
+/* ─── DATA ─── */
+const fmtB = n => n>=1e6?`฿${(n/1e6).toFixed(1)}M`:n>=1e3?`฿${(n/1e3).toFixed(0)}K`:`฿${n.toLocaleString()}`;
+const MONTHLY = [2.1,2.8,3.2,2.9,3.8,4.1,3.5,4.6,5.2,4.8,5.9,4.3];
+const MONTHS  = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const OC = {'New Lead':'#64748B','Qualification':'#0284C7','Needs Analysis':'#0891B2','Proposal':'#D97706','Negotiation':'#DC2626','Closed Won':'#059669','Closed Lost':'#9CA3AF'};
+
+const LEADS=[
+  {id:1,name:'Khun Nicha Poonak',company:'ProClinic Group',source:'Website',status:'Qualified',owner:'สมชาย',score:88,budget:850000,industry:'Healthcare'},
+  {id:2,name:'Khun Somkit Arree',company:'Thai Foods Group',source:'Facebook',status:'Contacted',owner:'วิไล',score:72,budget:420000,industry:'Food'},
+  {id:3,name:'Khun Apinya Tan',company:'Eastern Logistics',source:'Referral',status:'New',owner:'อรุณ',score:65,budget:680000,industry:'Logistics'},
+  {id:4,name:'Khun Wanchai Mak',company:'Unique Mfg Co.',source:'Event',status:'Proposal',owner:'สมชาย',score:91,budget:1200000,industry:'Manufacturing'},
+  {id:5,name:'Khun Nattaya Suk',company:'Srisomboon Group',source:'Referral',status:'Negotiation',owner:'วิไล',score:95,budget:2500000,industry:'Retail'},
+  {id:6,name:'Khun Prasong Dee',company:'Pornchai Materials',source:'Walk-in',status:'New',owner:'มณี',score:41,budget:320000,industry:'Construction'},
+];
+const CUSTOMERS=[
+  {id:1,name:'ProClinic Group',contact:'Khun Nicha',phone:'081-234-5678',status:'Active',revenue:4200000,owner:'สมชาย',industry:'Healthcare',province:'กรุงเทพฯ',lastContact:'25 เม.ย.'},
+  {id:2,name:'Thai Foods Group',contact:'Khun Somkit',phone:'089-345-6789',status:'Active',revenue:2800000,owner:'วิไล',industry:'Food',province:'เชียงใหม่',lastContact:'24 เม.ย.'},
+  {id:3,name:'Eastern Logistics',contact:'Khun Apinya',phone:'081-456-7890',status:'Renewal',revenue:3600000,owner:'อรุณ',industry:'Logistics',province:'ชลบุรี',lastContact:'23 เม.ย.'},
+  {id:4,name:'Unique Mfg Co.',contact:'Khun Wanchai',phone:'043-567-8901',status:'At Risk',revenue:1950000,owner:'สมชาย',industry:'Manufacturing',province:'อยุธยา',lastContact:'20 เม.ย.'},
+  {id:5,name:'Srisomboon Group',contact:'Khun Nattaya',phone:'02-678-9012',status:'Active',revenue:6100000,owner:'วิไล',industry:'Retail',province:'กรุงเทพฯ',lastContact:'25 เม.ย.'},
+  {id:6,name:'Petdee International',contact:'Khun Tanit',phone:'02-901-2345',status:'Active',revenue:5400000,owner:'สมชาย',industry:'Import/Export',province:'กรุงเทพฯ',lastContact:'22 เม.ย.'},
+];
+const OPPS={
+  'New Lead':[{id:1,name:'CRM — Pornchai Materials',company:'Pornchai Materials',amount:320000,close:'30 มิ.ย.',owner:'มณี',oc:'#D97706',oi:'มท'}],
+  'Qualification':[{id:2,name:'Cloud POS — Thai Foods',company:'Thai Foods Group',amount:680000,close:'15 พ.ค.',owner:'วิไล',oc:'#0891B2',oi:'วร'},{id:3,name:'AI Platform — EL',company:'Eastern Logistics',amount:950000,close:'20 พ.ค.',owner:'อรุณ',oc:'#059669',oi:'อส'}],
+  'Needs Analysis':[{id:4,name:'CRM+Support — Sukjai',company:'Sukjai Hospital',amount:1200000,close:'31 พ.ค.',owner:'อรุณ',oc:'#059669',oi:'อส'}],
+  'Proposal':[{id:5,name:'CRM — ProClinic',company:'ProClinic Group',amount:850000,close:'30 พ.ค.',owner:'สมชาย',oc:'#0284C7',oi:'สจ'},{id:6,name:'ERP+CRM — Unique',company:'Unique Mfg Co.',amount:1800000,close:'10 มิ.ย.',owner:'สมชาย',oc:'#0284C7',oi:'สจ'}],
+  'Negotiation':[{id:7,name:'Enterprise CRM — Srisomboon',company:'Srisomboon Group',amount:2500000,close:'05 พ.ค.',owner:'วิไล',oc:'#0891B2',oi:'วร'}],
+  'Closed Won':[{id:8,name:'CRM Platform — Petdee',company:'Petdee International',amount:1800000,close:'25 เม.ย.',owner:'สมชาย',oc:'#0284C7',oi:'สจ'}],
+  'Closed Lost':[],
+};
+const TICKETS=[
+  {id:1,no:'TK-0001',customer:'ProClinic Group',subject:'Cannot access dashboard',priority:'High',status:'In Progress',sla:'26 เม.ย. 17:00',breach:false},
+  {id:2,no:'TK-0002',customer:'Thai Foods Group',subject:'Report export not working',priority:'Medium',status:'New',sla:'27 เม.ย. 12:00',breach:false},
+  {id:3,no:'TK-0003',customer:'Eastern Logistics',subject:'Data sync issue with POS',priority:'Critical',status:'Assigned',sla:'25 เม.ย. 18:00',breach:true},
+  {id:4,no:'TK-0004',customer:'Unique Mfg Co.',subject:'Quotation PDF wrong format',priority:'Low',status:'Waiting Customer',sla:'28 เม.ย. 09:00',breach:false},
+  {id:5,no:'TK-0005',customer:'Srisomboon Group',subject:'User cannot login after reset',priority:'High',status:'Resolved',sla:'24 เม.ย. 17:00',breach:false},
+];
+const QUOTATIONS=[
+  {id:1,no:'QT-0001',customer:'ProClinic Group',total:856000,issued:'20 เม.ย.',expiry:'20 พ.ค.',status:'Sent'},
+  {id:2,no:'QT-0002',customer:'Unique Mfg Co.',total:1926000,issued:'22 เม.ย.',expiry:'22 พ.ค.',status:'Draft'},
+  {id:3,no:'QT-0003',customer:'Srisomboon Group',total:2675000,issued:'18 เม.ย.',expiry:'18 พ.ค.',status:'Approved'},
+  {id:4,no:'QT-0004',customer:'Petdee International',total:1926000,issued:'10 เม.ย.',expiry:'10 พ.ค.',status:'Accepted'},
+];
+const TASKS=[
+  {id:1,name:'Schedule demo — ProClinic Group',type:'Demo',due:'26 เม.ย.',priority:'High',status:'Open',owner:'สมชาย'},
+  {id:2,name:'Follow-up quotation — Unique Mfg',type:'Call',due:'26 เม.ย.',priority:'High',status:'In Progress',owner:'สมชาย'},
+  {id:3,name:'Revised proposal — Eastern Logistics',type:'Email',due:'27 เม.ย.',priority:'Medium',status:'Open',owner:'อรุณ'},
+  {id:4,name:'Renewal meeting — Thai Foods',type:'Meeting',due:'28 เม.ย.',priority:'Medium',status:'Open',owner:'วิไล'},
+  {id:5,name:'SLA review — Petdee International',type:'Call',due:'25 เม.ย.',priority:'Low',status:'Completed',owner:'มณี'},
+];
+const ACTIVITIES=[
+  {type:'call',color:'rgba(2,132,199,0.12)',textColor:'#0284C7',label:'โท',title:'โทรติดตามผล — ProClinic Group',owner:'สมชาย',time:'วันนี้ 10:30'},
+  {type:'email',color:'rgba(8,145,178,0.12)',textColor:'#0891B2',label:'อี',title:'ส่ง quotation ฉบับแก้ไข — Unique Mfg',owner:'สมชาย',time:'วันนี้ 09:15'},
+  {type:'meeting',color:'rgba(5,150,105,0.12)',textColor:'#059669',label:'นั',title:'นัดประชุม — Eastern Logistics',owner:'อรุณ',time:'เมื่อวาน 14:00'},
+  {type:'note',color:'rgba(217,119,6,0.12)',textColor:'#D97706',label:'บั',title:'บันทึกการเจรจา — Srisomboon Group',owner:'วิไล',time:'เมื่อวาน 11:30'},
+  {type:'ticket',color:'rgba(220,38,38,0.12)',textColor:'#DC2626',label:'ทิ',title:'เปิด Ticket ด่วน — Eastern Logistics',owner:'ทีมซัพพอร์ต',time:'เมื่อวาน 09:00'},
+];
+
+/* ─── ANIMATED NUMBER ─── */
+function AN({ value, fmt, sfx='' }) {
+  const [n,setN]=useState(0);
+  useEffect(()=>{
+    let raf,start;
+    const run=ts=>{if(!start)start=ts;const p=Math.min((ts-start)/900,1),e=1-Math.pow(1-p,3);setN(Math.round(e*value));if(p<1)raf=requestAnimationFrame(run);};
+    raf=requestAnimationFrame(run);
+    return()=>cancelAnimationFrame(raf);
+  },[value]);
+  return <span>{fmt?fmt(n):n.toLocaleString()}{sfx}</span>;
+}
+
+/* ─── REV CHART ─── */
+function RevChart({ data }) {
+  const W=420,H=100,P=16,max=Math.max(...data);
+  const pts=data.map((v,i)=>[P+(i/(data.length-1))*(W-P*2),H-P-(v/max)*(H-P*2)]);
+  const line=pts.map((p,i)=>`${i===0?'M':'L'}${p[0]},${p[1]}`).join(' ');
+  const area=`${line} L${pts[pts.length-1][0]},${H-P} L${pts[0][0]},${H-P} Z`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:100}}>
+      <defs>
+        <linearGradient id="rg2p" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#0891B2" stopOpacity="0.2"/>
+          <stop offset="100%" stopColor="#059669" stopOpacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#rg2p)"/>
+      <path d={line} fill="none" stroke="url(#rg2p_stroke)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <defs>
+        <linearGradient id="rg2p_stroke" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#0284C7"/>
+          <stop offset="100%" stopColor="#059669"/>
+        </linearGradient>
+      </defs>
+      {pts.map(([x,y],i)=><circle key={i} cx={x} cy={y} r={i===data.length-1?4:2.5} fill={i===data.length-1?'#059669':'#0284C7'} opacity={i===data.length-1?1:0.4}/>)}
+      {data.map((_,i)=>{const x=P+(i/(data.length-1))*(W-P*2);return <text key={i} x={x} y={H-1} textAnchor="middle" fontSize="8" fill="var(--text3)" fontFamily="Inter">{MONTHS[i]}</text>;})}
+    </svg>
+  );
+}
+
+/* ─── PIPELINE CHART ─── */
+function PipeChart() {
+  const rows=Object.entries(OPPS).map(([k,v])=>({name:k,total:v.reduce((s,o)=>s+o.amount,0),color:OC[k]}));
+  const max=Math.max(...rows.map(r=>r.total));
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:7}}>
+      {rows.map(r=>(
+        <div key={r.name} style={{display:'flex',alignItems:'center',gap:8}}>
+          <div style={{width:96,fontSize:11,color:'var(--text2)',fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.name}</div>
+          <div style={{flex:1,height:22,background:'var(--surface3)',borderRadius:6,overflow:'hidden'}}>
+            {r.total>0&&<div style={{width:`${(r.total/max)*100}%`,height:'100%',background:r.color,borderRadius:6,display:'flex',alignItems:'center',paddingLeft:8,minWidth:50,transition:'width 1s ease'}}>
+              <span style={{fontSize:11,fontWeight:700,color:'#fff',whiteSpace:'nowrap'}}>{fmtB(r.total)}</span>
+            </div>}
+          </div>
+          <div style={{width:20,fontSize:11,color:'var(--text3)',textAlign:'right'}}>{OPPS[r.name].length}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── STATUS BADGE ─── */
+const BMAP={'New':'new','Contacted':'contacted','Qualified':'qualified','Proposal':'proposal','Negotiation':'negotiation','Won':'won','Lost':'lost','Active':'won','Renewal':'renewal','At Risk':'atrisk','Inactive':'inactive','High':'high','Medium':'medium','Low':'low','Critical':'critical','Draft':'draft','Approved':'won','Sent':'sent','Accepted':'accepted','Rejected':'rejected','In Progress':'inprogress','Resolved':'won','Open':'open','Assigned':'assigned','Waiting Customer':'waiting','Completed':'completed','New Lead':'new','Qualification':'contacted','Needs Analysis':'qualified','Closed Won':'won','Closed Lost':'lost'};
+const BDOT={'new':'#0284C7','contacted':'#0891B2','qualified':'#059669','proposal':'#D97706','negotiation':'#DC2626','won':'#059669','lost':'#9CA3AF','active':'#059669','renewal':'#7C3AED','atrisk':'#DC2626','inactive':'#9CA3AF','high':'#DC2626','medium':'#D97706','low':'#059669','critical':'#DC2626','draft':'#9CA3AF','approved':'#059669','sent':'#0284C7','accepted':'#059669','rejected':'#DC2626','inprogress':'#0891B2','resolved':'#059669','open':'#D97706','assigned':'#059669','waiting':'#7C3AED','completed':'#059669'};
+function Bdg({ s }) {
+  const c=BMAP[s]||'draft';
+  return <span className={`badge b-${c}`}><span className="b-dot" style={{background:BDOT[c]||'#9CA3AF'}}/>{s}</span>;
+}
+
+/* ─── SCORE BADGE ─── */
+function Score({ n }) {
+  const cls = n>=75?{bg:'rgba(5,150,105,0.1)',c:'#059669'}:n>=50?{bg:'rgba(217,119,6,0.09)',c:'#D97706'}:{bg:'rgba(107,114,128,0.08)',c:'var(--text2)'};
+  return <span style={{fontSize:11,fontWeight:700,padding:'2px 7px',borderRadius:20,background:cls.bg,color:cls.c}}>{n}</span>;
+}
+
+/* ─── PAGES ─── */
+function Dashboard() {
+  const totalPipe=Object.values(OPPS).flat().reduce((s,o)=>s+o.amount,0);
+  const wonAmt=OPPS['Closed Won'].reduce((s,o)=>s+o.amount,0);
+  const openTk=TICKETS.filter(t=>t.status!=='Resolved').length;
+  const kpis=[
+    {l:'มูลค่า Pipeline',v:totalPipe,fmt:fmtB,c:'#0284C7',tr:'+18%',dir:'up',sub:'รวมทุกขั้นตอน',prog:72,icon:<ITarget/>},
+    {l:'ปิดการขายแล้ว',v:wonAmt,fmt:fmtB,c:'#059669',tr:'+24%',dir:'up',sub:'vs เดือนที่แล้ว',prog:85,icon:<IDoc/>},
+    {l:'ลูกค้าใช้งาน',v:CUSTOMERS.filter(c=>c.status==='Active').length,c:'#0891B2',tr:'+3',dir:'up',sub:'จาก '+CUSTOMERS.length+' บัญชี',icon:<IUsers/>},
+    {l:'Ticket ค้างอยู่',v:openTk,c:'#DC2626',tr:TICKETS.filter(t=>t.breach).length+' SLA breach',dir:'down',sub:'ต้องจัดการด่วน',icon:<ITicket/>},
+    {l:'Conversion Rate',v:27,sfx:'%',c:'#D97706',tr:'+2.4pt',dir:'up',sub:'Benchmark 22%',prog:27,icon:<IReport/>},
+  ];
+  return (
+    <div className="page">
+      <div className="page-hd fu">
+        <div><div className="page-title">ภาพรวมการขาย</div><div className="page-sub">อัปเดต 25 เม.ย. 2569 · ไตรมาส 2/2026</div></div>
+        <div style={{display:'flex',gap:8}}>
+          {['เดือนนี้','ไตรมาสนี้','ปีนี้'].map((l,i)=><button key={l} className={`pill${i===1?' on':''}`}>{l}</button>)}
+          <button className="btn-primary"><IPlus/> ลีดใหม่</button>
+        </div>
+      </div>
+      {/* Quick Actions */}
+      <div className="qa-grid fu d1">
+        {[
+          {l:'สร้างลีดใหม่',c:'#0284C7',bg:'rgba(2,132,199,0.08)',icon:<ILead/>},
+          {l:'เพิ่มลูกค้า',c:'#059669',bg:'rgba(5,150,105,0.08)',icon:<IUsers/>},
+          {l:'โอกาสการขาย',c:'#0891B2',bg:'rgba(8,145,178,0.08)',icon:<ITarget/>},
+          {l:'ใบเสนอราคา',c:'#D97706',bg:'rgba(217,119,6,0.08)',icon:<IDoc/>},
+          {l:'แจ้ง Ticket',c:'#DC2626',bg:'rgba(220,38,38,0.07)',icon:<ITicket/>},
+          {l:'บันทึกกิจกรรม',c:'#7C3AED',bg:'rgba(124,58,237,0.07)',icon:<INote/>},
+        ].map(q=>(
+          <button key={q.l} className="qa-btn">
+            <div className="qa-icon" style={{background:q.bg,color:q.c}}>{q.icon}</div>
+            <span style={{color:q.c,fontWeight:600}}>{q.l}</span>
+          </button>
+        ))}
+      </div>
+      {/* KPI */}
+      <div className="kpi-grid">
+        {kpis.map((k,i)=>(
+          <div key={k.l} className={`kpi-card fu d${i+1}`}>
+            <div className="kpi-stripe" style={{background:k.c}}/>
+            <div className="kpi-icon" style={{background:`${k.c}14`,color:k.c,marginTop:6}}>{k.icon}</div>
+            <div className="kpi-label">{k.l}</div>
+            <div className="kpi-value"><AN value={k.v} fmt={k.fmt} sfx={k.sfx||''}/></div>
+            <div className="kpi-foot">
+              <span className={`kpi-trend ${k.dir}`}>{k.dir==='up'?'↑':'↓'} {k.tr}</span>
+              <span className="kpi-sub">{k.sub}</span>
+            </div>
+            {k.prog!=null&&<div className="kpi-prog"><div className="kpi-bar" style={{width:`${k.prog}%`,background:k.c}}/></div>}
+          </div>
+        ))}
+      </div>
+      {/* Charts */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:14}}>
+        <div className="card fu d3" style={{padding:'18px 20px'}}>
+          <div className="sec-hd"><div className="sec-title">Pipeline ตามขั้นตอน</div><button className="sec-more">ดูทั้งหมด →</button></div>
+          <PipeChart/>
+        </div>
+        <div className="card fu d4" style={{padding:'18px 20px'}}>
+          <div className="sec-hd"><div className="sec-title">รายได้รายเดือน 2026</div><span style={{fontSize:11,color:'var(--text3)'}}>หน่วย: ล้านบาท</span></div>
+          <RevChart data={MONTHLY}/>
+          <div style={{display:'flex',justifyContent:'space-between',marginTop:4}}>
+            <span style={{fontSize:11,color:'var(--text3)'}}>ม.ค. 2026</span>
+            <span style={{fontSize:11,fontWeight:700,color:'var(--green)'}}>YTD ฿{MONTHLY.slice(0,4).reduce((s,v)=>+(s+v).toFixed(1),0)}M</span>
+            <span style={{fontSize:11,color:'var(--text3)'}}>เม.ย. 2026</span>
+          </div>
+        </div>
+      </div>
+      {/* Kanban mini */}
+      <div className="card fu d5" style={{padding:'18px 20px',marginBottom:14}}>
+        <div className="sec-hd"><div className="sec-title">Opportunity Pipeline</div><button className="sec-more">เปิด Kanban →</button></div>
+        <div className="kanban-wrap">
+          {Object.entries(OPPS).slice(0,5).map(([stage,opps])=>(
+            <div key={stage} className="kanban-col">
+              <div className="kk-head"><div style={{display:'flex',alignItems:'center',gap:5}}><div style={{width:7,height:7,borderRadius:'50%',background:OC[stage]}}/><span className="kk-title">{stage}</span></div><span className="kk-count">{opps.length}</span></div>
+              <div className="kk-total">{fmtB(opps.reduce((s,o)=>s+o.amount,0))}</div>
+              {opps.map(o=>(
+                <div key={o.id} className="kk-card">
+                  <div className="kk-name">{o.name}</div>
+                  <div className="kk-company">{o.company}</div>
+                  <div className="kk-foot"><span className="kk-amount">{fmtB(o.amount)}</span><span className="kk-date">{o.close}</span></div>
+                  <div className="kk-owner"><div className="mini-av" style={{background:o.oc}}>{o.oi}</div><span style={{fontSize:10,color:'var(--text2)'}}>{o.owner}</span></div>
+                </div>
+              ))}
+              {opps.length===0&&<div style={{textAlign:'center',padding:'16px 0',color:'var(--text3)',fontSize:12}}>ว่าง</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Bottom row */}
+      <div style={{display:'grid',gridTemplateColumns:'3fr 2fr',gap:14}}>
+        <div className="card fu d5" style={{padding:'18px 20px'}}>
+          <div className="sec-hd"><div className="sec-title">ลูกค้าและรายได้</div><button className="sec-more">ดูทั้งหมด →</button></div>
+          <table><thead><tr><th>บริษัท</th><th>สถานะ</th><th>รายได้</th><th>ติดต่อล่าสุด</th></tr></thead>
+            <tbody>{CUSTOMERS.slice(0,5).map(c=>(
+              <tr key={c.id}>
+                <td><div style={{fontWeight:600}}>{c.name}</div><div style={{fontSize:11,color:'var(--text2)'}}>{c.contact}</div></td>
+                <td><Bdg s={c.status}/></td>
+                <td style={{fontWeight:700,color:'var(--blue)'}}>{fmtB(c.revenue)}</td>
+                <td style={{fontSize:12,color:'var(--text3)'}}>{c.lastContact}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div className="card fu d6" style={{padding:'18px 20px'}}>
+          <div className="sec-hd"><div className="sec-title">กิจกรรมล่าสุด</div><button className="sec-more">ดูทั้งหมด →</button></div>
+          <ul className="tl">
+            {ACTIVITIES.map((a,i)=>(
+              <li key={i} className="tl-item">
+                <div className="tl-icon" style={{background:a.color}}>
+                  <span style={{fontSize:10,fontWeight:800,color:a.textColor}}>{a.label}</span>
+                </div>
+                <div className="tl-body">
+                  <div className="tl-title">{a.title}</div>
+                  <div className="tl-meta">{a.owner} · {a.time}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LeadsPage() {
+  const [view,setView]=useState('list');
+  const [search,setSearch]=useState('');
+  const [sf,setSf]=useState('ทั้งหมด');
+  const sts=['ทั้งหมด','New','Contacted','Qualified','Proposal','Negotiation','Won','Lost'];
+  const f=LEADS.filter(l=>{const q=search.toLowerCase();return (l.name.toLowerCase().includes(q)||l.company.toLowerCase().includes(q))&&(sf==='ทั้งหมด'||l.status===sf);});
+  return (
+    <div className="page">
+      <div className="page-hd fu"><div><div className="page-title">ลีด</div><div className="page-sub">{f.length} รายการ</div></div>
+        <div style={{display:'flex',gap:8}}>
+          <div className="pills">{[['list','รายการ'],['kanban','Kanban']].map(([k,l])=><button key={k} className={`pill${view===k?' on':''}`} onClick={()=>setView(k)}>{l}</button>)}</div>
+          <button className="btn-primary"><IPlus/> ลีดใหม่</button>
+        </div>
+      </div>
+      <div style={{display:'flex',gap:8,marginBottom:14,flexWrap:'wrap'}}>
+        {sts.map(s=><button key={s} className={`pill${sf===s?' on':''}`} onClick={()=>setSf(s)}>{s}</button>)}
+        <div style={{marginLeft:'auto'}}><input style={{padding:'6px 12px',borderRadius:8,border:'1.5px solid var(--border)',background:'var(--surface)',fontSize:13,color:'var(--text)',outline:'none',fontFamily:'inherit',width:220}} placeholder="ค้นหา..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      </div>
+      {view==='list'?(
+        <div className="card fu"><table><thead><tr><th>ชื่อ</th><th>บริษัท</th><th>อุตสาหกรรม</th><th>แหล่งที่มา</th><th>สถานะ</th><th>เจ้าของ</th><th>งบประมาณ</th><th>AI Score</th></tr></thead>
+          <tbody>{f.map(l=>(
+            <tr key={l.id}><td><a href="#" className="tlink">{l.name}</a></td><td style={{color:'var(--text2)'}}>{l.company}</td><td style={{fontSize:12,color:'var(--text3)'}}>{l.industry}</td><td><span className="tag">{l.source}</span></td><td><Bdg s={l.status}/></td><td style={{fontSize:12}}>{l.owner}</td><td style={{fontWeight:700,color:'var(--blue)'}}>{fmtB(l.budget)}</td><td><Score n={l.score}/></td>
+            </tr>
+          ))}</tbody>
+        </table></div>
+      ):(
+        <div className="kanban-wrap fu">
+          {['New','Contacted','Qualified','Proposal','Negotiation','Won','Lost'].map(stage=>{
+            const leads=f.filter(l=>l.status===stage);
+            return (
+              <div key={stage} className="kanban-col">
+                <div className="kk-head"><div style={{display:'flex',alignItems:'center',gap:5}}><div style={{width:7,height:7,borderRadius:'50%',background:OC[stage]||'#9CA3AF'}}/><span className="kk-title">{stage}</span></div><span className="kk-count">{leads.length}</span></div>
+                {leads.map(l=>(
+                  <div key={l.id} className="kk-card">
+                    <div className="kk-name">{l.name}</div><div className="kk-company">{l.company}</div>
+                    <div style={{fontSize:11,color:'var(--text3)',marginTop:4}}>{l.industry}</div>
+                    <div className="kk-foot"><span className="kk-amount">{fmtB(l.budget)}</span><Score n={l.score}/></div>
+                  </div>
+                ))}
+                {leads.length===0&&<div style={{textAlign:'center',padding:'14px 0',color:'var(--text3)',fontSize:12}}>ว่าง</div>}
+                <button className="kk-add">+ เพิ่มลีด</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CustomersPage() {
+  const [s,setS]=useState('');
+  const [sf,setSf]=useState('ทั้งหมด');
+  const f=CUSTOMERS.filter(c=>(c.name.toLowerCase().includes(s)||c.contact.toLowerCase().includes(s))&&(sf==='ทั้งหมด'||c.status===sf));
+  return (
+    <div className="page">
+      <div className="page-hd fu"><div><div className="page-title">ลูกค้า</div><div className="page-sub">{f.length} บัญชี</div></div><button className="btn-primary"><IPlus/> ลูกค้าใหม่</button></div>
+      <div style={{display:'flex',gap:8,marginBottom:14,flexWrap:'wrap'}}>
+        {['ทั้งหมด','Active','Renewal','At Risk','Inactive'].map(x=><button key={x} className={`pill${sf===x?' on':''}`} onClick={()=>setSf(x)}>{x}</button>)}
+        <div style={{marginLeft:'auto'}}><input style={{padding:'6px 12px',borderRadius:8,border:'1.5px solid var(--border)',background:'var(--surface)',fontSize:13,color:'var(--text)',outline:'none',fontFamily:'inherit',width:240}} placeholder="ค้นหา..." value={s} onChange={e=>setS(e.target.value)}/></div>
+      </div>
+      <div className="card fu"><table><thead><tr><th>ชื่อบริษัท</th><th>ผู้ติดต่อ</th><th>อุตสาหกรรม</th><th>จังหวัด</th><th>สถานะ</th><th>รายได้รวม</th><th>เจ้าของ</th><th>ติดต่อล่าสุด</th></tr></thead>
+        <tbody>{f.map(c=>(
+          <tr key={c.id}><td><a href="#" className="tlink" style={{fontWeight:700}}>{c.name}</a></td><td style={{fontSize:12,color:'var(--text2)'}}>{c.contact}</td><td style={{fontSize:12,color:'var(--text3)'}}>{c.industry}</td><td style={{fontSize:12,color:'var(--text3)'}}>{c.province}</td><td><Bdg s={c.status}/></td><td style={{fontWeight:700,color:'var(--blue)'}}>{fmtB(c.revenue)}</td><td style={{fontSize:12}}>{c.owner}</td><td style={{fontSize:12,color:'var(--text3)'}}>{c.lastContact}</td>
+          </tr>
+        ))}</tbody>
+      </table></div>
+    </div>
+  );
+}
+
+function OpportunitiesPage() {
+  const total=Object.values(OPPS).flat().reduce((s,o)=>s+o.amount,0);
+  return (
+    <div className="page">
+      <div className="page-hd fu"><div><div className="page-title">โอกาสการขาย</div><div className="page-sub">Pipeline รวม {fmtB(total)} · {Object.values(OPPS).flat().length} ดีล</div></div><button className="btn-primary"><IPlus/> โอกาสใหม่</button></div>
+      <div style={{display:'flex',gap:9,marginBottom:16,overflowX:'auto',paddingBottom:4}}>
+        {Object.entries(OPPS).map(([s,opps])=>(
+          <div key={s} style={{flexShrink:0,background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'10px 14px',minWidth:128,boxShadow:'var(--shadow)'}}>
+            <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:4}}><div style={{width:7,height:7,borderRadius:'50%',background:OC[s]}}/><span style={{fontSize:11,fontWeight:600,color:'var(--text2)'}}>{s}</span></div>
+            <div style={{fontSize:18,fontWeight:800,color:'var(--text)'}}>{opps.length}</div>
+            <div style={{fontSize:11,color:'var(--text3)'}}>{fmtB(opps.reduce((a,o)=>a+o.amount,0))}</div>
+          </div>
+        ))}
+      </div>
+      <div className="kanban-wrap fu">
+        {Object.entries(OPPS).map(([stage,opps])=>(
+          <div key={stage} className="kanban-col" style={{width:226}}>
+            <div className="kk-head"><div style={{display:'flex',alignItems:'center',gap:5}}><div style={{width:7,height:7,borderRadius:'50%',background:OC[stage]}}/><span className="kk-title">{stage}</span></div><span className="kk-count">{opps.length}</span></div>
+            <div className="kk-total">{fmtB(opps.reduce((s,o)=>s+o.amount,0))}</div>
+            {opps.map(o=>(
+              <div key={o.id} className="kk-card">
+                <div className="kk-name">{o.name}</div><div className="kk-company">{o.company}</div>
+                <div className="kk-foot"><span className="kk-amount">{fmtB(o.amount)}</span><span className="kk-date">{o.close}</span></div>
+                <div className="kk-owner"><div className="mini-av" style={{background:o.oc}}>{o.oi}</div><span style={{fontSize:10,color:'var(--text2)'}}>{o.owner}</span></div>
+              </div>
+            ))}
+            {opps.length===0&&<div style={{textAlign:'center',padding:'16px 0',color:'var(--text3)',fontSize:12}}>ว่าง</div>}
+            <button className="kk-add">+ เพิ่มดีล</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QuotationsPage() {
+  return (
+    <div className="page">
+      <div className="page-hd fu"><div><div className="page-title">ใบเสนอราคา</div><div className="page-sub">{QUOTATIONS.length} รายการ</div></div><button className="btn-primary"><IPlus/> ใบเสนอราคาใหม่</button></div>
+      <div style={{display:'flex',gap:8,marginBottom:14}}>{['ทั้งหมด','Draft','Approved','Sent','Accepted'].map(s=><button key={s} className={`pill${s==='ทั้งหมด'?' on':''}`}>{s}</button>)}</div>
+      <div className="card fu"><table><thead><tr><th>เลขที่</th><th>ลูกค้า</th><th>วันที่ออก</th><th>วันหมดอายุ</th><th>มูลค่า</th><th>สถานะ</th><th>การดำเนินการ</th></tr></thead>
+        <tbody>{QUOTATIONS.map(q=>(
+          <tr key={q.id}><td><a href="#" className="tlink">{q.no}</a></td><td style={{fontWeight:600}}>{q.customer}</td><td style={{fontSize:12,color:'var(--text3)'}}>{q.issued}</td><td style={{fontSize:12,color:'var(--text3)'}}>{q.expiry}</td><td style={{fontWeight:700,color:'var(--blue)'}}>{fmtB(q.total)}</td><td><Bdg s={q.status}/></td>
+            <td><div style={{display:'flex',gap:5}}>
+              <button style={{fontSize:11,padding:'3px 9px',border:'1px solid var(--border)',borderRadius:6,background:'none',cursor:'pointer',color:'var(--text2)',fontFamily:'inherit'}}>ดู</button>
+              {q.status==='Draft'&&<button style={{fontSize:11,padding:'3px 9px',border:'1px solid var(--blue)',borderRadius:6,background:'rgba(2,132,199,0.05)',cursor:'pointer',color:'var(--blue)',fontFamily:'inherit'}}>อนุมัติ</button>}
+            </div></td>
+          </tr>
+        ))}</tbody>
+      </table></div>
+    </div>
+  );
+}
+
+function TicketsPage() {
+  const [pf,setPf]=useState('ทั้งหมด');
+  const f=TICKETS.filter(t=>pf==='ทั้งหมด'||t.priority===pf);
+  const counts=[{l:'ทิคเก็ตทั้งหมด',v:TICKETS.length,c:'#0284C7'},{l:'กำลังดำเนินการ',v:TICKETS.filter(t=>['In Progress','Assigned'].includes(t.status)).length,c:'#D97706'},{l:'SLA เกินกำหนด',v:TICKETS.filter(t=>t.breach).length,c:'#DC2626'},{l:'แก้ไขแล้ว',v:TICKETS.filter(t=>t.status==='Resolved').length,c:'#059669'}];
+  return (
+    <div className="page">
+      <div className="page-hd fu"><div><div className="page-title">ทิคเก็ตซัพพอร์ต</div><div className="page-sub">{TICKETS.filter(t=>t.breach).length} SLA เกินกำหนด</div></div><button className="btn-primary"><IPlus/> แจ้งปัญหาใหม่</button></div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:18}}>
+        {counts.map(s=><div key={s.l} className="card fu" style={{padding:'14px 18px'}}><div style={{fontSize:11,color:'var(--text2)',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.3px'}}>{s.l}</div><div style={{fontSize:28,fontWeight:800,color:s.c,letterSpacing:'-0.8px',marginTop:4}}>{s.v}</div></div>)}
+      </div>
+      <div style={{display:'flex',gap:8,marginBottom:14}}>{['ทั้งหมด','Critical','High','Medium','Low'].map(p=><button key={p} className={`pill${pf===p?' on':''}`} onClick={()=>setPf(p)}>{p}</button>)}</div>
+      <div className="card fu"><table><thead><tr><th>เลขที่</th><th>ลูกค้า</th><th>หัวเรื่อง</th><th>ความสำคัญ</th><th>สถานะ</th><th>SLA ครบกำหนด</th></tr></thead>
+        <tbody>{f.map(t=>(
+          <tr key={t.id}><td><a href="#" className="tlink">{t.no}</a></td><td style={{fontWeight:600}}>{t.customer}</td><td style={{color:'var(--text2)',maxWidth:260}}>{t.subject}</td><td><Bdg s={t.priority}/></td><td><Bdg s={t.status}/></td><td><span className={`sla ${t.breach?'sla-breach':'sla-ok'}`}>{t.breach?'! ':''}{t.sla}</span></td>
+          </tr>
+        ))}</tbody>
+      </table></div>
+    </div>
+  );
+}
+
+function TasksPage() {
+  return (
+    <div className="page">
+      <div className="page-hd fu"><div><div className="page-title">งาน &amp; กิจกรรม</div><div className="page-sub">{TASKS.filter(t=>t.status!=='Completed').length} งานรอดำเนินการ</div></div><button className="btn-primary"><IPlus/> งานใหม่</button></div>
+      <div className="card fu"><table><thead><tr><th>ชื่องาน</th><th>ประเภท</th><th>วันครบกำหนด</th><th>ความสำคัญ</th><th>สถานะ</th><th>ผู้รับผิดชอบ</th></tr></thead>
+        <tbody>{TASKS.map(t=>(
+          <tr key={t.id}><td><a href="#" className="tlink">{t.name}</a></td><td><span className="tag">{t.type}</span></td><td style={{fontSize:12,color:t.status!=='Completed'?'#DC2626':'var(--text3)',fontWeight:t.status!=='Completed'?600:400}}>{t.due}</td><td><Bdg s={t.priority}/></td><td><Bdg s={t.status}/></td><td style={{fontSize:12,color:'var(--text2)'}}>{t.owner}</td>
+          </tr>
+        ))}</tbody>
+      </table></div>
+    </div>
+  );
+}
+
+function ReportsPage() {
+  const sr=Object.entries(OPPS).map(([k,v])=>({name:k,total:v.reduce((s,o)=>s+o.amount,0),color:OC[k]}));
+  const maxT=Math.max(...sr.map(s=>s.total));
+  return (
+    <div className="page">
+      <div className="page-hd fu"><div><div className="page-title">รายงาน</div><div className="page-sub">ไตรมาส 2/2026</div></div><div style={{display:'flex',gap:8}}><button className="btn-ghost">ส่งออก CSV</button><button className="btn-primary">บันทึกรายงาน</button></div></div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:14}}>
+        <div className="card fu d1" style={{padding:'18px 20px'}}><div className="sec-hd"><div className="sec-title">Pipeline ตามขั้นตอน</div></div>
+          {sr.map(s=><div key={s.name} className="stat-row"><div style={{display:'flex',alignItems:'center',gap:5,flex:1}}><div style={{width:7,height:7,borderRadius:'50%',background:s.color}}/><span style={{fontSize:12,color:'var(--text)'}}>{s.name}</span></div><div className="stat-bar-wrap"><div className="stat-bar" style={{width:`${maxT>0?(s.total/maxT)*100:0}%`,background:s.color}}/></div><span className="stat-val">{fmtB(s.total)}</span></div>)}
+        </div>
+        <div className="card fu d2" style={{padding:'18px 20px'}}><div className="sec-hd"><div className="sec-title">รายได้รายเดือน</div></div><RevChart data={MONTHLY}/></div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+        <div className="card fu d3" style={{padding:'18px 20px'}}><div className="sec-hd"><div className="sec-title">แหล่งที่มาของลีด</div></div>
+          {[{n:'Website',c:3,col:'#0284C7'},{n:'Referral',c:3,col:'#059669'},{n:'Facebook',c:1,col:'#0891B2'},{n:'Event',c:1,col:'#D97706'}].map(s=>(
+            <div key={s.n} className="stat-row"><span style={{flex:1,fontSize:12,color:'var(--text)'}}>{s.n}</span><div className="stat-bar-wrap"><div className="stat-bar" style={{width:`${(s.c/6)*100}%`,background:s.col}}/></div><span className="stat-val">{s.c} ลีด</span></div>
+          ))}
+        </div>
+        <div className="card fu d4" style={{padding:'18px 20px'}}><div className="sec-hd"><div className="sec-title">ลูกค้าตามรายได้</div></div>
+          {[...CUSTOMERS].sort((a,b)=>b.revenue-a.revenue).map(c=>(
+            <div key={c.id} className="stat-row"><span style={{flex:1,fontSize:12,fontWeight:500,color:'var(--text)'}}>{c.name}</span><div className="stat-bar-wrap"><div className="stat-bar" style={{width:`${(c.revenue/6100000)*100}%`,background:'linear-gradient(90deg,#0284C7,#059669)'}}/></div><span className="stat-val">{fmtB(c.revenue)}</span></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── NAV CONFIG ─── */
+const NAV_MENUS=[
+  {key:'dashboard',label:'แดชบอร์ด',items:[{icon:<IReport/>,iconBg:'rgba(2,132,199,0.1)',iconC:'#0284C7',name:'ภาพรวมการขาย',desc:'KPI และ Pipeline สรุป',page:'dashboard'},{icon:<IUsers/>,iconBg:'rgba(8,145,178,0.1)',iconC:'#0891B2',name:'ผลงานทีมขาย',desc:'ประสิทธิภาพทีม',page:'dashboard'},{icon:<ITarget/>,iconBg:'rgba(5,150,105,0.1)',iconC:'#059669',name:'การคาดการณ์รายได้',desc:'Forecast Q2/2026',page:'dashboard'}],recent:['ภาพรวม Q2','Pipeline รายงาน']},
+  {key:'customers',label:'ลูกค้า',items:[{icon:<IUsers/>,iconBg:'rgba(2,132,199,0.1)',iconC:'#0284C7',name:'บัญชีลูกค้า',desc:'จัดการบัญชีทั้งหมด',page:'customers'},{icon:<INote/>,iconBg:'rgba(8,145,178,0.1)',iconC:'#0891B2',name:'ผู้ติดต่อ',desc:'รายชื่อผู้ติดต่อ',page:'customers'},{icon:<ITarget/>,iconBg:'rgba(5,150,105,0.1)',iconC:'#059669',name:'Customer 360',desc:'ภาพรวมลูกค้า',page:'customers'},{icon:<IReport/>,iconBg:'rgba(217,119,6,0.09)',iconC:'#D97706',name:'ประวัติรายได้',desc:'Revenue history',page:'reports'},{icon:<ICalendar/>,iconBg:'rgba(124,58,237,0.09)',iconC:'#7C3AED',name:'Renewal Pipeline',desc:'ลูกค้าใกล้หมดสัญญา',page:'customers'},{icon:<IMeeting/>,iconBg:'rgba(220,38,38,0.08)',iconC:'#DC2626',name:'กลุ่มลูกค้า',desc:'Segment และ Tier',page:'customers'}],recent:['ProClinic Group','Srisomboon Group','Petdee International']},
+  {key:'leads',label:'ลีด &amp; โอกาส',items:[{icon:<ILead/>,iconBg:'rgba(2,132,199,0.1)',iconC:'#0284C7',name:'ลีดทั้งหมด',desc:'บริหารจัดการลีด',page:'leads'},{icon:<ITarget/>,iconBg:'rgba(8,145,178,0.1)',iconC:'#0891B2',name:'Pipeline Kanban',desc:'Drag & Drop pipeline',page:'opportunities'},{icon:<IReport/>,iconBg:'rgba(5,150,105,0.1)',iconC:'#059669',name:'โอกาสการขาย',desc:'Opportunity management',page:'opportunities'},{icon:<INote/>,iconBg:'rgba(217,119,6,0.09)',iconC:'#D97706',name:'AI Lead Score',desc:'คะแนนและแนะนำลีด',page:'leads'},{icon:<IDoc/>,iconBg:'rgba(124,58,237,0.09)',iconC:'#7C3AED',name:'นำเข้าลีด',desc:'Import CSV, Excel',page:'leads'},{icon:<IGear/>,iconBg:'rgba(220,38,38,0.08)',iconC:'#DC2626',name:'กฎการแจกจ่าย',desc:'Assignment rules',page:'leads'}],recent:['Unique Mfg — Proposal','Srisomboon — Negotiation']},
+  {key:'quotations',label:'เอกสาร',items:[{icon:<IDoc/>,iconBg:'rgba(2,132,199,0.1)',iconC:'#0284C7',name:'ใบเสนอราคา',desc:'สร้างและจัดการ',page:'quotations'},{icon:<ITask/>,iconBg:'rgba(5,150,105,0.1)',iconC:'#059669',name:'รอการอนุมัติ',desc:'Approval workflow',page:'quotations'},{icon:<INote/>,iconBg:'rgba(217,119,6,0.09)',iconC:'#D97706',name:'Template เอกสาร',desc:'แม่แบบใบเสนอราคา',page:'quotations'},{icon:<IReport/>,iconBg:'rgba(124,58,237,0.09)',iconC:'#7C3AED',name:'Price Book',desc:'รายการสินค้าและราคา',page:'quotations'}],recent:['QT-0001 — ProClinic','QT-0003 — Srisomboon']},
+  {key:'tickets',label:'ซัพพอร์ต',items:[{icon:<ITicket/>,iconBg:'rgba(220,38,38,0.08)',iconC:'#DC2626',name:'ทิคเก็ตทั้งหมด',desc:'จัดการปัญหา',page:'tickets'},{icon:<IReport/>,iconBg:'rgba(217,119,6,0.09)',iconC:'#D97706',name:'SLA Monitor',desc:'ติดตามเวลา',page:'tickets'},{icon:<INote/>,iconBg:'rgba(5,150,105,0.1)',iconC:'#059669',name:'คลังความรู้',desc:'Knowledge base',page:'tickets'},{icon:<IGear/>,iconBg:'rgba(8,145,178,0.1)',iconC:'#0891B2',name:'Auto-Response',desc:'ตอบกลับอัตโนมัติ',page:'tickets'}],recent:['TK-0003 — Eastern Logistics','TK-0001 — ProClinic']},
+  {key:'tasks',label:'งาน',items:[{icon:<ITask/>,iconBg:'rgba(2,132,199,0.1)',iconC:'#0284C7',name:'งานของฉัน',desc:'Tasks & follow-ups',page:'tasks'},{icon:<ICalendar/>,iconBg:'rgba(8,145,178,0.1)',iconC:'#0891B2',name:'ปฏิทินกิจกรรม',desc:'Calendar view',page:'tasks'},{icon:<IPhone/>,iconBg:'rgba(5,150,105,0.1)',iconC:'#059669',name:'บันทึกการโทร',desc:'Call logs',page:'tasks'},{icon:<IMail/>,iconBg:'rgba(217,119,6,0.09)',iconC:'#D97706',name:'อีเมลและนัดหมาย',desc:'Email integration',page:'tasks'}],recent:[]},
+  {key:'reports',label:'รายงาน',items:[{icon:<IReport/>,iconBg:'rgba(2,132,199,0.1)',iconC:'#0284C7',name:'รายงานการขาย',desc:'Sales performance',page:'reports'},{icon:<ITicket/>,iconBg:'rgba(220,38,38,0.08)',iconC:'#DC2626',name:'รายงานซัพพอร์ต',desc:'Ticket & SLA',page:'reports'},{icon:<IUsers/>,iconBg:'rgba(5,150,105,0.1)',iconC:'#059669',name:'แดชบอร์ดผู้บริหาร',desc:'Executive overview',page:'reports'},{icon:<IDoc/>,iconBg:'rgba(217,119,6,0.09)',iconC:'#D97706',name:'ส่งออกข้อมูล',desc:'Export CSV, Excel, PDF',page:'reports'}],recent:[]},
+];
+
+const AL_APPS=[
+  {l:'Sales',c:'#0284C7',bg:'rgba(2,132,199,0.1)',icon:<ILead/>},
+  {l:'Service',c:'#DC2626',bg:'rgba(220,38,38,0.08)',icon:<ITicket/>},
+  {l:'Analytics',c:'#059669',bg:'rgba(5,150,105,0.1)',icon:<IReport/>},
+  {l:'Marketing',c:'#7C3AED',bg:'rgba(124,58,237,0.09)',icon:<IMail/>},
+  {l:'Calendar',c:'#D97706',bg:'rgba(217,119,6,0.09)',icon:<ICalendar/>},
+  {l:'Tasks',c:'#0891B2',bg:'rgba(8,145,178,0.1)',icon:<ITask/>},
+  {l:'Documents',c:'#059669',bg:'rgba(5,150,105,0.1)',icon:<IDoc/>},
+  {l:'Contacts',c:'#0284C7',bg:'rgba(2,132,199,0.1)',icon:<IUsers/>},
+  {l:'Setup',c:'#6B7280',bg:'rgba(107,114,128,0.08)',icon:<IGear/>},
+];
+
+const PAGE_LABELS={dashboard:'แดชบอร์ด',leads:'ลีด',customers:'ลูกค้า',opportunities:'โอกาสการขาย',quotations:'ใบเสนอราคา',tickets:'ทิคเก็ต',tasks:'งาน',reports:'รายงาน'};
+
+/* ─── APP ─── */
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{"theme":"light"}/*EDITMODE-END*/;
+
+function App() {
+  const [theme,setTheme]=useState(()=>localStorage.getItem('2pcrm-theme')||'light');
+  const [page,setPage]=useState(()=>localStorage.getItem('2pcrm-page')||'dashboard');
+  const [tabs,setTabs]=useState([()=>localStorage.getItem('2pcrm-page')||'dashboard'].map(f=>typeof f==='function'?f():f));
+  const [launcherOpen,setLauncherOpen]=useState(false);
+  const [tweaksOpen,setTweaksOpen]=useState(false);
+  const launcherRef=useRef(null);
+
+  useEffect(()=>{document.documentElement.setAttribute('data-theme',theme);localStorage.setItem('2pcrm-theme',theme);},[theme]);
+  useEffect(()=>{ localStorage.setItem('2pcrm-page',page); },[page]);
+  useEffect(()=>{
+    const h=e=>{if(e.data?.type==='__activate_edit_mode') setTweaksOpen(true);if(e.data?.type==='__deactivate_edit_mode') setTweaksOpen(false);};
+    window.addEventListener('message',h);window.parent.postMessage({type:'__edit_mode_available'},'*');
+    return ()=>window.removeEventListener('message',h);
+  },[]);
+  useEffect(()=>{
+    const h=e=>{ if(launcherRef.current&&!launcherRef.current.contains(e.target)) setLauncherOpen(false); };
+    document.addEventListener('mousedown',h);return ()=>document.removeEventListener('mousedown',h);
+  },[]);
+
+  const goto=useCallback(p=>{setPage(p);setTabs(prev=>prev.includes(p)?prev:[...prev.slice(-4),p]);},[]);
+  const closeTab=useCallback((p,e)=>{e.stopPropagation();const next=tabs.filter(t=>t!==p);setTabs(next.length?next:['dashboard']);if(page===p)setPage(next[next.length-1]||'dashboard');},[tabs,page]);
+  const activeMenu=NAV_MENUS.find(m=>m.key===page||m.items?.some(i=>i.page===page))?.key;
+
+  return (
+    <>
+      {/* NAVBAR */}
+      <nav className="navbar">
+        <div className="nav-left">
+          <div ref={launcherRef} style={{height:'100%',position:'relative'}}>
+            <button className="app-launcher" onClick={()=>setLauncherOpen(o=>!o)} title="App Launcher"><IGrid/></button>
+            <div className={`al-modal${launcherOpen?' open':''}`}>
+              <div className="al-title">App Launcher</div>
+              <div className="al-grid">
+                {AL_APPS.map(a=>(
+                  <button key={a.l} className="al-item">
+                    <div className="al-icon" style={{background:a.bg,color:a.c}}>{a.icon}</div>
+                    <div className="al-label">{a.l}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <a href="CRM Landing.html" className="brand-area">
+            <Logo2P size={34}/>
+            <div><div className="brand-name">2PCRM</div><div className="brand-tag">Thai SMB CRM</div></div>
+          </a>
+          <div className="nav-items">
+            {NAV_MENUS.map(menu=>(
+              <div key={menu.key} className="nav-item-wrap">
+                <button className={`nav-item${activeMenu===menu.key?' active':''}`} onClick={()=>goto(menu.items[0].page)}>
+                  <span dangerouslySetInnerHTML={{__html:menu.label}}/>
+                  <span className="nav-caret"><IChevD/></span>
+                </button>
+                <div className="mega-drop" style={{minWidth:menu.items.length>=5?580:380}}>
+                  <div className="mega-hd"><span dangerouslySetInnerHTML={{__html:menu.label}}/></div>
+                  <div className="mega-grid" style={{gridTemplateColumns:`repeat(${menu.items.length>=4?3:2},1fr)`}}>
+                    {menu.items.map(item=>(
+                      <button key={item.name} className="mega-item" onClick={()=>goto(item.page)}>
+                        <div className="mega-icon" style={{background:item.iconBg,color:item.iconC}}>{item.icon}</div>
+                        <div><div className="mega-name">{item.name}</div><div className="mega-desc">{item.desc}</div></div>
+                      </button>
+                    ))}
+                  </div>
+                  {menu.recent?.length>0&&<>
+                    <div className="mega-divider"/>
+                    <div style={{fontSize:10,fontWeight:700,color:'var(--text3)',letterSpacing:'0.8px',textTransform:'uppercase',marginBottom:8}}>เปิดล่าสุด</div>
+                    <div className="mega-recents">{menu.recent.map(r=><button key={r} className="mega-rec"><span style={{fontSize:9,opacity:0.6}}>↺</span>{r}</button>)}</div>
+                  </>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="nav-right">
+          <div className="search-wrap"><ISearch/><input placeholder="ค้นหาทุกอย่าง... (Ctrl+K)"/></div>
+          <button className="util-btn" style={{position:'relative'}} title="การแจ้งเตือน"><IBell/><div className="notif-dot"/></button>
+          <button className="util-btn" title="ช่วยเหลือ"><IHelp/></button>
+          <button className="util-btn" onClick={()=>setTheme(t=>t==='light'?'dark':'light')}>{theme==='light'?<IMoon/>:<ISun/>}</button>
+          <button className="util-btn" title="Setup"><IGear/></button>
+          <button className="user-pill">
+            <div className="avatar">สจ</div>
+            <div style={{textAlign:'left'}}><div className="user-name">สมชาย ใจดี</div><div className="user-role">Sales Manager</div></div>
+            <span style={{color:'rgba(255,255,255,0.4)',marginLeft:2,display:'flex'}}><IChevD/></span>
+          </button>
+        </div>
+      </nav>
+
+      {/* TAB STRIP */}
+      <div className="tabstrip">
+        {tabs.map(t=>(
+          <button key={t} className={`ws-tab${page===t?' active':''}`} onClick={()=>goto(t)}>
+            <span>{PAGE_LABELS[t]||t}</span>
+            {tabs.length>1&&<button className="ws-tab-close" onClick={e=>closeTab(t,e)}>×</button>}
+          </button>
+        ))}
+        <button className="tab-add" title="เปิดแท็บใหม่" onClick={()=>goto('dashboard')}>+</button>
+      </div>
+
+      {/* MAIN */}
+      <div className="main">
+        {page==='dashboard'     &&<Dashboard/>}
+        {page==='leads'         &&<LeadsPage/>}
+        {page==='customers'     &&<CustomersPage/>}
+        {page==='opportunities' &&<OpportunitiesPage/>}
+        {page==='quotations'    &&<QuotationsPage/>}
+        {page==='tickets'       &&<TicketsPage/>}
+        {page==='tasks'         &&<TasksPage/>}
+        {page==='reports'       &&<ReportsPage/>}
+      </div>
+
+      {/* TWEAKS */}
+      {tweaksOpen&&(
+        <div style={{position:'fixed',bottom:20,right:20,zIndex:500,background:'var(--surface)',borderRadius:14,padding:20,width:250,boxShadow:'var(--shadow-lg)',border:'1px solid var(--border)'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+            <span style={{fontSize:13,fontWeight:700,color:'var(--text)'}}>Tweaks</span>
+            <button onClick={()=>{setTweaksOpen(false);window.parent.postMessage({type:'__edit_mode_dismissed'},'*')}} style={{border:'none',background:'none',cursor:'pointer',color:'var(--text2)',fontSize:18,lineHeight:1}}>×</button>
+          </div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:11,fontWeight:600,color:'var(--text2)',marginBottom:8}}>Theme</div>
+            <div style={{display:'flex',gap:6}}>
+              {[['light','Light'],['dark','Dark']].map(([v,l])=>(
+                <button key={v} onClick={()=>setTheme(v)} style={{flex:1,padding:'7px',borderRadius:8,border:`1.5px solid ${theme===v?'var(--blue)':'var(--border)'}`,background:theme===v?'rgba(2,132,199,0.06)':'none',cursor:'pointer',fontSize:12,color:theme===v?'var(--blue)':'var(--text2)',fontFamily:'inherit',fontWeight:theme===v?600:400}}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{fontSize:11,color:'var(--text3)',textAlign:'center',marginTop:12,borderTop:'1px solid var(--border)',paddingTop:12}}>2PCRM v2.0 · Blue · Green · White</div>
+        </div>
+      )}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

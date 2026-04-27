@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>2PCRM — Thai SMB CRM Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:#040E0B;color:#fff;overflow-x:hidden}
+:root{
+  --blue:#0284C7;--blue-l:#38BDF8;--green:#059669;--green-l:#34D399;
+  --teal:#0891B2;--surface:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.07);
+}
+/* BG */
+.bg-mesh{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 80% 55% at 10% -5%,rgba(2,132,199,0.2) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 90% 95%,rgba(5,150,105,0.16) 0%,transparent 60%),radial-gradient(ellipse 40% 40% at 55% 45%,rgba(8,145,178,0.07) 0%,transparent 55%),#040E0B}
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.22;background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:56px 56px}
+
+/* TOPBAR */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:64px;background:rgba(4,14,11,0.8);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid rgba(255,255,255,0.06)}
+.logo-area{display:flex;align-items:center;gap:11px;text-decoration:none;cursor:pointer}
+.logo-box{width:36px;height:36px;border-radius:10px;flex-shrink:0;position:relative;overflow:hidden}
+.logo-box svg{display:block}
+.logo-text{font-size:19px;font-weight:900;color:#fff;letter-spacing:-0.7px;line-height:1}
+.logo-tag{font-size:9px;font-weight:500;color:rgba(255,255,255,0.38);letter-spacing:1.5px;text-transform:uppercase;margin-top:-1px}
+.nav-links{display:flex;align-items:center;gap:2px}
+.nav-link{padding:7px 14px;border-radius:8px;border:none;background:none;cursor:pointer;font-size:14px;font-weight:500;color:rgba(255,255,255,0.55);transition:all 0.15s;font-family:'Inter',sans-serif}
+.nav-link:hover{color:#fff;background:rgba(255,255,255,0.06)}
+.top-ctas{display:flex;align-items:center;gap:8px}
+.btn-ghost-nav{padding:8px 18px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:none;cursor:pointer;font-size:14px;font-weight:500;color:rgba(255,255,255,0.65);transition:all 0.15s;font-family:'Inter',sans-serif}
+.btn-ghost-nav:hover{border-color:rgba(255,255,255,0.36);color:#fff}
+.btn-primary-nav{padding:9px 22px;border-radius:9px;border:none;cursor:pointer;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(135deg,#0284C7,#0891B2,#059669);box-shadow:0 4px 18px rgba(2,132,199,0.38);transition:all 0.18s;font-family:'Inter',sans-serif}
+.btn-primary-nav:hover{transform:translateY(-1px);box-shadow:0 6px 26px rgba(5,150,105,0.45)}
+
+/* HERO */
+.hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:130px 24px 80px;text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:20px;background:rgba(8,145,178,0.1);border:1px solid rgba(8,145,178,0.25);font-size:12px;font-weight:600;color:var(--teal);letter-spacing:0.5px;margin-bottom:28px}
+.eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--green-l);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+.hero-title{font-size:clamp(46px,7vw,82px);font-weight:900;letter-spacing:-2.5px;line-height:1.05;margin-bottom:24px}
+.grad-text{background:linear-gradient(135deg,#38BDF8 0%,#34D399 55%,#86EFAC 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(15px,2vw,19px);color:rgba(255,255,255,0.46);max-width:580px;margin:0 auto 40px;line-height:1.75;font-weight:400}
+.hero-ctas{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:52px;flex-wrap:wrap}
+.hero-btn-p{padding:14px 34px;border-radius:12px;border:none;cursor:pointer;font-size:16px;font-weight:700;color:#fff;font-family:'Inter',sans-serif;background:linear-gradient(135deg,#0369A1,#0891B2,#047857);box-shadow:0 8px 32px rgba(8,145,178,0.42);transition:all 0.2s}
+.hero-btn-p:hover{transform:translateY(-2px);box-shadow:0 12px 42px rgba(5,150,105,0.52)}
+.hero-btn-g{padding:13px 28px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.04);cursor:pointer;font-size:16px;font-weight:600;color:rgba(255,255,255,0.78);font-family:'Inter',sans-serif;transition:all 0.18s;backdrop-filter:blur(8px)}
+.hero-btn-g:hover{border-color:rgba(255,255,255,0.38);background:rgba(255,255,255,0.08);color:#fff}
+.hero-stats{display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap}
+.hero-stat{text-align:center}
+.hero-stat-n{font-size:22px;font-weight:800;letter-spacing:-0.6px;color:#fff}
+.hero-stat-l{font-size:12px;color:rgba(255,255,255,0.38);margin-top:2px}
+.hero-sep{width:1px;height:32px;background:rgba(255,255,255,0.1)}
+
+/* TRUST */
+.trust{position:relative;z-index:1;padding:0 24px 80px;text-align:center}
+.trust-lbl{font-size:11px;font-weight:600;color:rgba(255,255,255,0.22);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:22px}
+.trust-row{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.trust-chip{padding:9px 18px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);font-size:13px;font-weight:600;color:rgba(255,255,255,0.28);letter-spacing:-0.2px}
+
+/* PRODUCT PREVIEW */
+.preview-section{position:relative;z-index:1;padding:0 24px 90px;display:flex;justify-content:center}
+.preview-outer{position:relative;max-width:1080px;width:100%}
+.preview-glow{position:absolute;inset:-60px;background:radial-gradient(ellipse at 50% 50%,rgba(8,145,178,0.12),transparent 70%);pointer-events:none;z-index:0}
+.preview-frame{position:relative;z-index:1;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);box-shadow:0 40px 120px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.05)}
+.pf-chrome{background:rgba(10,20,16,0.97);padding:11px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.pf-dot{width:11px;height:11px;border-radius:50%}
+.pf-bar{height:22px;border-radius:6px;background:rgba(255,255,255,0.06);flex:1;max-width:280px;margin:0 auto}
+.pf-body{background:#06100D}
+.pf-nav{padding:10px 18px;display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#0B3D62 0%,#0C6B58 55%,#054F3C 100%)}
+.pf-logo{font-size:13px;font-weight:900;color:#fff;letter-spacing:-0.5px}
+.pf-ni{font-size:11px;color:rgba(255,255,255,0.55);font-weight:500}
+.pf-ni.a{color:#fff;font-weight:600}
+.pf-content{padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
+.pf-kpi{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:9px;padding:12px}
+.pf-kpi-stripe{height:3px;border-radius:3px;margin-bottom:10px}
+.pf-kpi-v{font-size:16px;font-weight:800;color:#fff;letter-spacing:-0.4px}
+.pf-kpi-l{font-size:9px;color:rgba(255,255,255,0.38);margin-top:2px;font-weight:500}
+.pf-kpi-t{font-size:8px;font-weight:700;margin-top:5px}
+.pf-charts{display:grid;grid-template-columns:2fr 1fr;gap:10px;padding:0 16px 16px}
+.pf-chart{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:9px;padding:12px;height:88px;position:relative;overflow:hidden}
+.pf-chart-title{font-size:9px;font-weight:600;color:rgba(255,255,255,0.35);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
+.pf-glow{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 55%,rgba(4,14,11,0.85) 100%);pointer-events:none;border-radius:18px;z-index:2}
+
+/* FEATURES */
+.section{position:relative;z-index:1;padding:80px 24px;max-width:1200px;margin:0 auto}
+.sec-eyebrow{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px}
+.sec-title{font-size:clamp(30px,4vw,46px);font-weight:900;letter-spacing:-1.4px;color:#fff;margin-bottom:14px;line-height:1.1}
+.sec-sub{font-size:16px;color:rgba(255,255,255,0.42);max-width:540px;line-height:1.75}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:52px}
+.feat-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:28px;transition:all 0.22s;position:relative;overflow:hidden;cursor:default}
+.feat-card::after{content:'';position:absolute;inset:0;opacity:0;transition:opacity 0.22s;border-radius:16px;background:radial-gradient(ellipse at top left,rgba(8,145,178,0.08) 0%,transparent 65%)}
+.feat-card:hover{border-color:rgba(8,145,178,0.3);transform:translateY(-3px)}
+.feat-card:hover::after{opacity:1}
+.feat-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.feat-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-0.3px}
+.feat-desc{font-size:13px;color:rgba(255,255,255,0.42);line-height:1.7}
+.feat-tag{display:inline-block;margin-top:14px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px}
+
+/* STATS */
+.stats-sec{position:relative;z-index:1;padding:20px 24px 80px}
+.stats-inner{max-width:960px;margin:0 auto;border-radius:20px;padding:52px;display:grid;grid-template-columns:repeat(4,1fr);gap:32px;text-align:center;position:relative;overflow:hidden}
+.stats-inner::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(2,132,199,0.08),rgba(5,150,105,0.08));border-radius:20px}
+.stats-inner::after{content:'';position:absolute;inset:0;border:1px solid rgba(8,145,178,0.18);border-radius:20px}
+.stat-num{font-size:40px;font-weight:900;letter-spacing:-1.5px;background:linear-gradient(135deg,#38BDF8,#34D399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;position:relative;z-index:1}
+.stat-lbl{font-size:13px;color:rgba(255,255,255,0.42);margin-top:6px;font-weight:500;position:relative;z-index:1}
+
+/* PRICING */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:48px}
+.p-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:30px;transition:all 0.2s}
+.p-card.featured{background:rgba(8,145,178,0.07);border-color:rgba(8,145,178,0.3);position:relative}
+.p-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#0369A1,#047857);padding:4px 16px;border-radius:20px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap}
+.p-name{font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.p-price{font-size:40px;font-weight:900;letter-spacing:-1.5px;color:#fff;line-height:1}
+.p-period{font-size:13px;color:rgba(255,255,255,0.38);margin-top:4px;margin-bottom:18px}
+.p-div{height:1px;background:rgba(255,255,255,0.07);margin:18px 0}
+.p-features{list-style:none;display:flex;flex-direction:column;gap:9px}
+.p-feat{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:rgba(255,255,255,0.55)}
+.p-check{width:16px;height:16px;border-radius:50%;background:rgba(5,150,105,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.p-check svg{display:block}
+.p-btn{width:100%;margin-top:22px;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.18s;font-family:'Inter',sans-serif}
+.p-btn-outline{background:none;border:1.5px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.65)}
+.p-btn-outline:hover{border-color:rgba(255,255,255,0.36);color:#fff}
+.p-btn-solid{background:linear-gradient(135deg,#0369A1,#0891B2,#047857);border:none;color:#fff;box-shadow:0 4px 18px rgba(8,145,178,0.38)}
+.p-btn-solid:hover{transform:translateY(-1px);box-shadow:0 6px 26px rgba(5,150,105,0.45)}
+
+/* CTA */
+.cta-sec{position:relative;z-index:1;padding:60px 24px 100px;text-align:center}
+.cta-inner{max-width:680px;margin:0 auto}
+.cta-title{font-size:clamp(34px,5vw,54px);font-weight:900;letter-spacing:-1.5px;color:#fff;margin-bottom:18px;line-height:1.1}
+.cta-sub{font-size:16px;color:rgba(255,255,255,0.42);margin-bottom:34px}
+
+/* FOOTER */
+footer{position:relative;z-index:1;border-top:1px solid rgba(255,255,255,0.06);padding:48px 48px 32px;max-width:1200px;margin:0 auto}
+.ft-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px}
+.ft-brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ft-brand-name{font-size:18px;font-weight:900;color:#fff;letter-spacing:-0.5px}
+.ft-desc{font-size:13px;color:rgba(255,255,255,0.32);line-height:1.7;max-width:260px}
+.ft-col-title{font-size:10px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:1.1px;text-transform:uppercase;margin-bottom:14px}
+.ft-link{display:block;font-size:13px;color:rgba(255,255,255,0.42);margin-bottom:8px;cursor:pointer;transition:color 0.13s;text-decoration:none}
+.ft-link:hover{color:#fff}
+.ft-bottom{display:flex;align-items:center;justify-content:space-between;padding-top:22px;border-top:1px solid rgba(255,255,255,0.06);font-size:12px;color:rgba(255,255,255,0.22)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green-l);animation:pulse 2s infinite}
+
+/* ANIMS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.fu{animation:fadeUp 0.55s cubic-bezier(.25,.46,.45,.94) both}
+.d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}.d4{animation-delay:.32s}
+.float{animation:floatY 5s ease-in-out infinite}
+
+@media(max-width:900px){.features-grid,.pricing-grid{grid-template-columns:1fr}.stats-inner{grid-template-columns:repeat(2,1fr)}.ft-top{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.topbar{padding:0 20px}.stats-inner{padding:28px}.hero-stat{min-width:100px}}
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+<div class="bg-grid"></div>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <a href="#" class="logo-area">
+    <div class="logo-box">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <defs>
+          <linearGradient id="navLg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#0369A1"/>
+            <stop offset="45%" stop-color="#0891B2"/>
+            <stop offset="100%" stop-color="#047857"/>
+          </linearGradient>
+          <linearGradient id="navSh" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(255,255,255,0.18)"/>
+            <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+          </linearGradient>
+        </defs>
+        <rect width="36" height="36" rx="9" fill="url(#navLg)"/>
+        <rect x="0" y="0" width="36" height="16" rx="9" fill="url(#navSh)"/>
+        <rect x="0.75" y="0.75" width="34.5" height="34.5" rx="8.5" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+        <path d="M6 15 C6 11 8.5 8.5 12 8.5 C15.5 8.5 18 10.5 18 13.5 C18 16 16.5 17.5 14 19 L6 24.5 L18.5 24.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M21.5 8.5 L21.5 24.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <path d="M21.5 8.5 C25.5 8.5 30 10 30 13.5 C30 17 25.5 18.5 21.5 18.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">2PCRM</div>
+      <div class="logo-tag">Thai SMB CRM</div>
+    </div>
+  </a>
+  <nav class="nav-links">
+    <button class="nav-link">ฟีเจอร์</button>
+    <button class="nav-link">ราคา</button>
+    <button class="nav-link">ลูกค้า</button>
+    <button class="nav-link">ทรัพยากร</button>
+    <button class="nav-link">บริษัท</button>
+  </nav>
+  <div class="top-ctas">
+    <a href="CRM Login.html"><button class="btn-ghost-nav">เข้าสู่ระบบ</button></a>
+    <a href="CRM Login.html"><button class="btn-primary-nav">ทดลองใช้ฟรี 30 วัน</button></a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="eyebrow fu"><span class="eyebrow-dot"></span> CRM อันดับ 1 สำหรับ SMB ไทย · 3,000+ บริษัทไว้วางใจ</div>
+  <h1 class="hero-title fu d1">
+    <span style="color:#fff">CRM ที่ออกแบบมา<br/>เพื่อ</span>
+    <span class="grad-text"> ธุรกิจไทย</span>
+  </h1>
+  <p class="hero-sub fu d2">จัดการลีด ปิดดีล ดูแลลูกค้า และติดตามผลการขายได้ในที่เดียว พร้อม AI ช่วยวิเคราะห์โอกาส รองรับภาษาไทยอย่างสมบูรณ์</p>
+  <div class="hero-ctas fu d3">
+    <a href="CRM Login.html"><button class="hero-btn-p">เริ่มใช้งานฟรี 30 วัน</button></a>
+    <a href="CRM Dashboard.html"><button class="hero-btn-g">ดูตัวอย่างระบบ</button></a>
+  </div>
+  <div class="hero-stats fu d4">
+    <div class="hero-stat"><div class="hero-stat-n">3,000+</div><div class="hero-stat-l">บริษัทที่ใช้งาน</div></div>
+    <div class="hero-sep"></div>
+    <div class="hero-stat"><div class="hero-stat-n">฿2.8B+</div><div class="hero-stat-l">มูลค่าดีลในระบบ</div></div>
+    <div class="hero-sep"></div>
+    <div class="hero-stat"><div class="hero-stat-n">98%</div><div class="hero-stat-l">ความพึงพอใจ</div></div>
+    <div class="hero-sep"></div>
+    <div class="hero-stat"><div class="hero-stat-n">4.9</div><div class="hero-stat-l">คะแนนจากผู้ใช้งาน</div></div>
+  </div>
+</section>
+
+<!-- TRUST -->
+<section class="trust">
+  <div class="trust-lbl">ได้รับความไว้วางใจจากธุรกิจชั้นนำทั่วไทย</div>
+  <div class="trust-row">
+    <div class="trust-chip">ProClinic Group</div>
+    <div class="trust-chip">Thai Foods Group</div>
+    <div class="trust-chip">Eastern Logistics</div>
+    <div class="trust-chip">Srisomboon Group</div>
+    <div class="trust-chip">Petdee International</div>
+    <div class="trust-chip">Unique Mfg Co.</div>
+  </div>
+</section>
+
+<!-- PRODUCT PREVIEW -->
+<section class="preview-section">
+  <div class="preview-outer float">
+    <div class="preview-glow"></div>
+    <div class="preview-frame">
+      <div class="pf-chrome">
+        <div class="pf-dot" style="background:#EF4444"></div>
+        <div class="pf-dot" style="background:#F59E0B"></div>
+        <div class="pf-dot" style="background:#22C55E"></div>
+        <div class="pf-bar"></div>
+      </div>
+      <div class="pf-body">
+        <div class="pf-nav">
+          <svg width="28" height="18" viewBox="0 0 60 18" fill="none"><text x="0" y="15" font-family="Inter,sans-serif" font-size="16" font-weight="900" fill="white" letter-spacing="-0.5">2PCRM</text></svg>
+          <span class="pf-ni a">แดชบอร์ด</span>
+          <span class="pf-ni">ลูกค้า</span>
+          <span class="pf-ni">ลีด &amp; โอกาส</span>
+          <span class="pf-ni">เอกสาร</span>
+          <span class="pf-ni">ซัพพอร์ต</span>
+          <span class="pf-ni">รายงาน</span>
+        </div>
+        <div class="pf-content">
+          <div class="pf-kpi"><div class="pf-kpi-stripe" style="background:linear-gradient(90deg,#0284C7,#0891B2)"></div><div class="pf-kpi-v">฿8.1M</div><div class="pf-kpi-l">มูลค่า Pipeline</div><div class="pf-kpi-t" style="color:#34D399">↑ +18%</div></div>
+          <div class="pf-kpi"><div class="pf-kpi-stripe" style="background:linear-gradient(90deg,#059669,#34D399)"></div><div class="pf-kpi-v">฿1.8M</div><div class="pf-kpi-l">ปิดการขายแล้ว</div><div class="pf-kpi-t" style="color:#34D399">↑ +24%</div></div>
+          <div class="pf-kpi"><div class="pf-kpi-stripe" style="background:linear-gradient(90deg,#0891B2,#22D3EE)"></div><div class="pf-kpi-v">5</div><div class="pf-kpi-l">ลูกค้าใช้งาน</div><div class="pf-kpi-t" style="color:#34D399">↑ +3</div></div>
+          <div class="pf-kpi"><div class="pf-kpi-stripe" style="background:linear-gradient(90deg,#D97706,#FCD34D)"></div><div class="pf-kpi-v">27%</div><div class="pf-kpi-l">Conversion Rate</div><div class="pf-kpi-t" style="color:#34D399">↑ +2.4pt</div></div>
+        </div>
+        <div class="pf-charts">
+          <div class="pf-chart">
+            <div class="pf-chart-title">รายได้รายเดือน 2026</div>
+            <svg viewBox="0 0 300 52" style="width:100%;height:40px;position:absolute;bottom:10px;left:10px;right:10px">
+              <defs>
+                <linearGradient id="pgrd" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0284C7"/><stop offset="100%" stop-color="#059669"/></linearGradient>
+                <linearGradient id="parea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0891B2" stop-opacity="0.3"/><stop offset="100%" stop-color="#059669" stop-opacity="0"/></linearGradient>
+              </defs>
+              <path d="M0 42 L25 36 L50 30 L75 34 L100 22 L125 17 L150 26 L175 10 L200 4 L225 8 L250 2 L275 14 L300 42 Z" fill="url(#parea)"/>
+              <path d="M0 42 L25 36 L50 30 L75 34 L100 22 L125 17 L150 26 L175 10 L200 4 L225 8 L250 2 L275 14" fill="none" stroke="url(#pgrd)" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="pf-chart">
+            <div class="pf-chart-title">Pipeline</div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+              <div style="display:flex;align-items:center;gap:5px"><div style="width:65%;height:7px;background:linear-gradient(90deg,#0284C7,#0891B2);border-radius:4px"></div><span style="font-size:8px;color:rgba(255,255,255,0.35)">฿2.5M</span></div>
+              <div style="display:flex;align-items:center;gap:5px"><div style="width:48%;height:7px;background:linear-gradient(90deg,#0891B2,#059669);border-radius:4px"></div><span style="font-size:8px;color:rgba(255,255,255,0.35)">฿1.8M</span></div>
+              <div style="display:flex;align-items:center;gap:5px"><div style="width:32%;height:7px;background:linear-gradient(90deg,#059669,#34D399);border-radius:4px"></div><span style="font-size:8px;color:rgba(255,255,255,0.35)">฿1.2M</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pf-glow"></div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section">
+  <div class="sec-eyebrow" style="color:var(--teal)">ฟีเจอร์หลัก</div>
+  <h2 class="sec-title">ทุกเครื่องมือที่คุณต้องการ<br/>อยู่ในที่เดียว</h2>
+  <p class="sec-sub">ระบบ CRM ครบวงจรสำหรับ SMB ไทย ตั้งแต่จัดการลีดถึงดูแลหลังการขาย</p>
+  <div class="features-grid">
+    <!-- Feature cards -->
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(2,132,199,0.12)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="1.8" stroke-linecap="round"><path d="M8.5 14.5s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01M22 12c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2s10 4.48 10 10z"/></svg>
+      </div>
+      <div class="feat-title">Sales Pipeline Kanban</div>
+      <div class="feat-desc">จัดการดีลด้วย Drag &amp; Drop Kanban ติดตามทุกขั้นตอนตั้งแต่ New Lead จนถึง Closed Won พร้อม AI Scoring</div>
+      <span class="feat-tag" style="background:rgba(2,132,199,0.1);color:#38BDF8">AI-Powered</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(8,145,178,0.12)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="1.8" stroke-linecap="round"><path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z"/></svg>
+      </div>
+      <div class="feat-title">AI Sales Assistant</div>
+      <div class="feat-desc">วิเคราะห์โอกาสปิดดีล แนะนำ Next Best Action และคาดการณ์รายได้ด้วย Machine Learning</div>
+      <span class="feat-tag" style="background:rgba(8,145,178,0.1);color:#22D3EE">Smart Insights</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(5,150,105,0.12)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="1.8" stroke-linecap="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      </div>
+      <div class="feat-title">รายงานและ Analytics</div>
+      <div class="feat-desc">Dashboard Real-time รายงานการขาย SLA Ticket พร้อมส่งออก CSV และ PDF ได้ทันที</div>
+      <span class="feat-tag" style="background:rgba(5,150,105,0.1);color:#34D399">Real-time</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(2,132,199,0.1)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="feat-title">Customer 360</div>
+      <div class="feat-desc">ดูประวัติทุกอย่างของลูกค้าในหน้าเดียว ทั้ง deal, ticket, quotation, communication timeline</div>
+      <span class="feat-tag" style="background:rgba(2,132,199,0.1);color:#38BDF8">360° View</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(217,119,6,0.1)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      </div>
+      <div class="feat-title">ใบเสนอราคาดิจิทัล</div>
+      <div class="feat-desc">สร้างและส่งใบเสนอราคาออนไลน์ มี Approval Workflow ลูกค้าเซ็นได้บนมือถือ รองรับ VAT ไทย</div>
+      <span class="feat-tag" style="background:rgba(217,119,6,0.1);color:#FCD34D">e-Signature</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(220,38,38,0.08)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
+      </div>
+      <div class="feat-title">Support &amp; SLA Management</div>
+      <div class="feat-desc">ระบบ Ticket ครบวงจร ตั้งค่า SLA อัตโนมัติ แจ้งเตือนก่อนเกินกำหนด พร้อม Knowledge Base</div>
+      <span class="feat-tag" style="background:rgba(220,38,38,0.1);color:#F87171">SLA Tracking</span>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats-sec">
+  <div class="stats-inner">
+    <div><div class="stat-num">3,000+</div><div class="stat-lbl">บริษัทไทยที่ใช้งาน</div></div>
+    <div><div class="stat-num">฿2.8B</div><div class="stat-lbl">มูลค่าดีลที่ปิดผ่านระบบ</div></div>
+    <div><div class="stat-num">98%</div><div class="stat-lbl">ลูกค้าพึงพอใจ</div></div>
+    <div><div class="stat-num">4.9</div><div class="stat-lbl">คะแนนจากผู้ใช้งาน</div></div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section" id="pricing">
+  <div class="sec-eyebrow" style="color:var(--green-l)">ราคา</div>
+  <h2 class="sec-title">เลือกแพ็กเกจที่เหมาะ<br/>กับธุรกิจคุณ</h2>
+  <p class="sec-sub">เริ่มต้นฟรี ไม่ต้องผูกสัญญา ยกเลิกได้ทุกเมื่อ</p>
+  <div class="pricing-grid">
+    <div class="p-card">
+      <div class="p-name">Starter</div>
+      <div class="p-price">ฟรี</div>
+      <div class="p-period">ตลอดไป · สูงสุด 3 ผู้ใช้</div>
+      <div class="p-div"></div>
+      <ul class="p-features">
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>ลีดและลูกค้า 500 รายการ</li>
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>Pipeline Kanban พื้นฐาน</li>
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>ใบเสนอราคา 10 ฉบับ/เดือน</li>
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>รายงานพื้นฐาน</li>
+      </ul>
+      <button class="p-btn p-btn-outline">เริ่มฟรี</button>
+    </div>
+    <div class="p-card featured">
+      <div class="p-badge">แนะนำ</div>
+      <div class="p-name">Professional</div>
+      <div class="p-price">฿1,490</div>
+      <div class="p-period">ต่อผู้ใช้/เดือน</div>
+      <div class="p-div"></div>
+      <ul class="p-features">
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>ข้อมูลไม่จำกัด</li>
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>AI Lead Scoring &amp; Forecasting</li>
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>Ticket &amp; SLA Management</li>
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>ใบเสนอราคา + e-Signature</li>
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>Analytics Dashboard</li>
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>API Integration</li>
+      </ul>
+      <button class="p-btn p-btn-solid" onclick="window.location='CRM Login.html'">ทดลองฟรี 30 วัน</button>
+    </div>
+    <div class="p-card">
+      <div class="p-name">Enterprise</div>
+      <div class="p-price">ติดต่อ</div>
+      <div class="p-period">ราคาพิเศษสำหรับทีมใหญ่</div>
+      <div class="p-div"></div>
+      <ul class="p-features">
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>ทุกอย่างใน Professional</li>
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>Custom Workflow &amp; Automation</li>
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>SSO &amp; Advanced Security</li>
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>Dedicated Customer Success</li>
+        <li class="p-feat"><div class="p-check"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"><path d="M2 6l3 3 5-5"/></svg></div>On-premise option</li>
+      </ul>
+      <button class="p-btn p-btn-outline">ติดต่อทีมขาย</button>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-sec">
+  <div class="cta-inner">
+    <h2 class="cta-title">พร้อมเพิ่มยอดขาย<br/><span class="grad-text">เริ่มได้เลยวันนี้</span></h2>
+    <p class="cta-sub">สมัครฟรี ไม่ต้องใส่บัตรเครดิต ทีมงานพร้อมช่วยเหลือตลอด</p>
+    <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap">
+      <a href="CRM Login.html"><button class="hero-btn-p" style="font-size:15px;padding:13px 30px">เริ่มใช้งานฟรี</button></a>
+      <button class="hero-btn-g" style="font-size:15px;padding:12px 26px">นัดสาธิตกับทีมงาน</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="ft-top">
+    <div>
+      <div class="ft-brand">
+        <svg width="30" height="30" viewBox="0 0 36 36" fill="none"><defs><linearGradient id="ftLg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0369A1"/><stop offset="50%" stop-color="#0891B2"/><stop offset="100%" stop-color="#047857"/></linearGradient></defs><rect width="36" height="36" rx="9" fill="url(#ftLg)"/><path d="M6 15 C6 11 8.5 8.5 12 8.5 C15.5 8.5 18 10.5 18 13.5 C18 16 16.5 17.5 14 19 L6 24.5 L18.5 24.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21.5 8.5 L21.5 24.5" stroke="white" stroke-width="2" stroke-linecap="round"/><path d="M21.5 8.5 C25.5 8.5 30 10 30 13.5 C30 17 25.5 18.5 21.5 18.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="ft-brand-name">2PCRM</div>
+      </div>
+      <p class="ft-desc">CRM สำหรับ SMB ไทย ออกแบบมาเพื่อภาษาและกระบวนการธุรกิจไทยโดยเฉพาะ</p>
+    </div>
+    <div><div class="ft-col-title">ผลิตภัณฑ์</div><a href="#" class="ft-link">Sales Pipeline</a><a href="#" class="ft-link">Customer 360</a><a href="#" class="ft-link">AI Assistant</a><a href="#" class="ft-link">Support Ticket</a><a href="#" class="ft-link">ใบเสนอราคา</a></div>
+    <div><div class="ft-col-title">ทรัพยากร</div><a href="#" class="ft-link">เอกสาร API</a><a href="#" class="ft-link">คลังความรู้</a><a href="#" class="ft-link">บล็อก</a><a href="#" class="ft-link">Case Studies</a></div>
+    <div><div class="ft-col-title">บริษัท</div><a href="#" class="ft-link">เกี่ยวกับเรา</a><a href="#" class="ft-link">ร่วมงานกับเรา</a><a href="#" class="ft-link">พาร์ทเนอร์</a><a href="#" class="ft-link">ติดต่อ</a></div>
+  </div>
+  <div class="ft-bottom">
+    <div style="display:flex;align-items:center;gap:8px"><span class="status-dot"></span><span>ระบบทำงานปกติ · 99.9% Uptime</span></div>
+    <span>© 2026 2PCRM Co., Ltd.</span>
+    <div style="display:flex;gap:16px"><a href="#" class="ft-link" style="margin:0">นโยบายความเป็นส่วนตัว</a><a href="#" class="ft-link" style="margin:0">ข้อกำหนดการใช้งาน</a></div>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — งาน</title><link rel="stylesheet" href="../css/app.css"/></head><body>
+<div class="bg-pattern"></div><div id="nav"></div>
+<div class="page anim">
+  <div class="page-header"><div><div class="page-title">งานและกิจกรรม</div><div class="page-subtitle">จัดการงาน นัดหมาย และบันทึกการโทร</div></div>
+    <div class="page-actions"><button class="btn btn-secondary">บันทึกการโทร</button><a href="calendar.html" class="btn btn-secondary">ปฏิทิน</a><button class="btn btn-primary">+ สร้างงาน</button></div></div>
+  <div class="filter-bar" style="margin-bottom:20px" id="task-filter">
+    <button class="filter-btn active" onclick="filterTasks('all',this)">ทั้งหมด</button>
+    <button class="filter-btn" onclick="filterTasks('Open',this)">เปิด</button>
+    <button class="filter-btn" onclick="filterTasks('In Progress',this)">กำลังดำเนินการ</button>
+    <button class="filter-btn" onclick="filterTasks('Completed',this)">เสร็จสิ้น</button>
+    <button class="filter-btn" onclick="filterTasks('Overdue',this)">เกินกำหนด</button>
+  </div>
+  <div class="card"><table><thead><tr><th>ชื่องาน</th><th>วันครบกำหนด</th><th>ความสำคัญ</th><th>สถานะ</th><th>บัญชี</th></tr></thead><tbody id="tbody"></tbody></table></div>
+</div>
+<script src="../js/helpers.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
+<script>
+document.getElementById('nav').innerHTML=renderNav('tasks');
+let taskFilter='all';
+function filterTasks(f,btn){taskFilter=f;document.querySelectorAll('#task-filter .filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render()}
+function render(){const f=taskFilter==='all'?TASKS:TASKS.filter(t=>t.status===taskFilter);document.getElementById('tbody').innerHTML=f.map(t=>{const ov=t.status==='Overdue';return`<tr style="${ov?'background:rgba(255,69,58,.04)':''}"><td style="font-weight:500;${ov?'color:var(--red)':''}">${t.title}</td><td style="${ov?'font-weight:600;color:var(--red)':'color:var(--text2)'}">${t.due}</td><td><span class="status-badge" style="background:${PRI_COLORS[t.priority]}18;color:${PRI_COLORS[t.priority]}">${t.priority==='High'?'สูง':t.priority==='Medium'?'กลาง':'ต่ำ'}</span></td><td><span class="status-badge" style="background:${TASK_COLORS[t.status]}18;color:${TASK_COLORS[t.status]}">${t.status==='Open'?'เปิด':t.status==='In Progress'?'กำลังดำเนินการ':t.status==='Completed'?'เสร็จสิ้น':'เกินกำหนด'}</span></td><td style="color:var(--text2);font-size:12px">${t.account||'—'}</td></tr>`}).join('');}
+render();
+</script></body></html>

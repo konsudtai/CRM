@@ -48,3 +48,41 @@ export interface TimelineEntry {
   timestamp: Date;
   metadata: Record<string, unknown>;
 }
+
+export interface Task {
+  id: string;
+  tenantId: string;
+  title: string;
+  description?: string;
+  dueDate: string;
+  priority: 'High' | 'Medium' | 'Low';
+  status: 'Open' | 'In Progress' | 'Completed' | 'Overdue';
+  assignedTo?: string;
+  accountId?: string;
+  contactId?: string;
+  opportunityId?: string;
+  completedAt?: string;
+  createdAt: string;
+}
+
+export interface CallLog {
+  id: string;
+  tenantId: string;
+  duration: number;
+  outcome: 'Connected' | 'No Answer' | 'Left Message' | 'Busy' | 'Wrong Number';
+  notes?: string;
+  accountId?: string;
+  contactId?: string;
+  userId: string;
+  createdAt: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  type: 'task' | 'appointment' | 'meeting';
+  date: string;
+  dueDate?: string;
+  priority?: 'High' | 'Medium' | 'Low';
+  status?: string;
+}

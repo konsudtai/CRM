@@ -1,0 +1,22 @@
+<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — ใบเสนอราคา</title><link rel="stylesheet" href="../css/app.css"/></head><body>
+<div class="bg-pattern"></div><div id="nav"></div>
+<div class="page anim">
+  <div class="page-header"><div><div class="page-title">ใบเสนอราคา</div><div class="page-subtitle">สร้างและจัดการใบเสนอราคา — VAT 7% / WHT อัตโนมัติ</div></div><button class="btn btn-primary">+ สร้างใบเสนอราคา</button></div>
+  <div class="filter-bar" style="margin-bottom:20px" id="qt-filter">
+    <button class="filter-btn active" onclick="filterQt('all',this)">ทั้งหมด</button>
+    <button class="filter-btn" onclick="filterQt('draft',this)">ร่าง</button>
+    <button class="filter-btn" onclick="filterQt('pending_approval',this)">รออนุมัติ</button>
+    <button class="filter-btn" onclick="filterQt('sent',this)">ส่งแล้ว</button>
+    <button class="filter-btn" onclick="filterQt('accepted',this)">ยอมรับ</button>
+    <button class="filter-btn" onclick="filterQt('rejected',this)">ปฏิเสธ</button>
+  </div>
+  <div class="card"><table><thead><tr><th>เลขที่</th><th>ลูกค้า</th><th>สถานะ</th><th>ยอดรวม</th><th>VAT 7%</th><th>WHT</th><th>ยอดสุทธิ</th><th>วันที่</th></tr></thead><tbody id="tbody"></tbody></table></div>
+</div>
+<script src="../js/helpers.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
+<script>
+document.getElementById('nav').innerHTML=renderNav('quotations');
+let qtFilter='all';
+function filterQt(f,btn){qtFilter=f;document.querySelectorAll('#qt-filter .filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render()}
+function render(){const f=qtFilter==='all'?QUOTATIONS:QUOTATIONS.filter(q=>q.status===qtFilter);document.getElementById('tbody').innerHTML=f.map(q=>`<tr><td><a href="#" class="table-link">${q.number}</a></td><td style="color:var(--text2);font-size:12px">${q.account}</td><td><span class="status-badge" style="background:${STATUS_COLORS[q.status]}18;color:${STATUS_COLORS[q.status]}">${STATUS_LABELS[q.status]||q.status}</span></td><td>${fmt(q.subtotal)}</td><td>${fmt(q.vat)}</td><td style="color:var(--red)">-${fmt(q.wht)}</td><td style="font-weight:600;color:var(--sf-blue)">${fmt(q.grand)}</td><td style="color:var(--text2)">${q.date}</td></tr>`).join('');}
+render();
+</script></body></html>

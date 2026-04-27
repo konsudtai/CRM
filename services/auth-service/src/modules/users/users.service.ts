@@ -99,4 +99,60 @@ export class UsersService {
 
     return { userId, roleIds };
   }
+
+  async listUsers(tenantId: string, search?: string): Promise<Omit<User, 'passwordHash'>[]> {
+    const qb = this.userRepo.createQueryBuilder('u')
+      .where('u.tenant_id = :tenantId', { tenantId });
+    if (search) {
+      qb.andWhere('(u.email ILIKE :q OR u.first_name ILIKE :q OR u.last_name ILIKE :q)', { q: `%${search}%` });
+    }
+    qb.orderBy('u.created_at', 'DESC');
+    const users = await qb.getMany();
+    return users.map(({ passwordHash, ...rest }) => rest as Omit<User, 'passwordHash'>);
+  }
+
+  async getUser(tenantId: string, userId: string): Promise<Omit<User, 'passwordHash'>> {
+    const user = await this.userRepo.findOne({ where: { id: userId, tenantId } });
+    if (!user) throw new NotFoundException('User not found');
+    const { passwordHash, ...rest } = user;
+    return rest as Omit<User, 'passwordHash'>;
+  }
+
+  async updateUser(tenantId: string, userId: string, dto: Partial<CreateUserDto>): Promise<Omit<User, 'passwordHash'>> {
+    const user = await this.userRepo.findOne({ where: { id: userId, tenantId } });
+    if (!user) throw new NotFoundException('User not found');
+    if (dto.firstName !== undefined) user.firstName = dto.firstName;
+    if (dto.lastName !== undefined) user.lastName = dto.lastName;
+    if (dto.phone !== undefined) user.phone = dto.phone || null;
+    if (dto.lineId !== undefined) user.lineId = dto.lineId || null;
+    const saved = await this.userRepo.save(user);
+    const { passwordHash, ...rest } = saved;
+    return rest as Omit<User, 'passwordHash'>;
+  }
+
+  async deactivateUser(tenantId: string, userId: string): Promise<{ id: string; isActive: boolean }> {
+    const user = await this.userRepo.findOne({ where: { id: userId, tenantId } });
+    if (!user) throw new NotFoundException('User not found');
+    user.isActive = false;
+    await this.userRepo.save(user);
+    await this.redis.del(`permissions:${userId}`);
+    return { id: userId, isActive: false };
+  }
+
+  async activateUser(tenantId: string, userId: string): Promise<{ id: string; isActive: boolean }> {
+    const user = await this.userRepo.findOne({ where: { id: userId, tenantId } });
+    if (!user) throw new NotFoundException('User not found');
+    user.isActive = true;
+    await this.userRepo.save(user);
+    return { id: userId, isActive: true };
+  }
+
+  async resetPassword(tenantId: string, userId: string, newPassword: string): Promise<{ id: string; message: string }> {
+    const user = await this.userRepo.findOne({ where: { id: userId, tenantId } });
+    if (!user) throw new NotFoundException('User not found');
+    user.passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
+    await this.userRepo.save(user);
+    this.logger.log(`Password reset for user=${userId} by admin`);
+    return { id: userId, message: 'Password reset successfully' };
+  }
 }

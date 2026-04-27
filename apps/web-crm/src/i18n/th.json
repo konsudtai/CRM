@@ -14,7 +14,21 @@
     "delete": "ลบ",
     "edit": "แก้ไข",
     "create": "สร้าง",
-    "loading": "กำลังโหลด..."
+    "loading": "กำลังโหลด...",
+    "back": "กลับ",
+    "confirm": "ยืนยัน",
+    "active": "ใช้งาน",
+    "inactive": "ไม่ใช้งาน",
+    "enabled": "เปิดใช้งาน",
+    "disabled": "ปิดใช้งาน",
+    "status": "สถานะ",
+    "actions": "การดำเนินการ",
+    "add": "เพิ่ม",
+    "remove": "ลบออก",
+    "connect": "เชื่อมต่อ",
+    "disconnect": "ยกเลิกการเชื่อมต่อ",
+    "connected": "เชื่อมต่อแล้ว",
+    "notConnected": "ยังไม่เชื่อมต่อ"
   },
   "auth": {
     "login": "เข้าสู่ระบบ",
@@ -26,5 +40,132 @@
     "title": "ภาพรวม",
     "revenue": "รายได้",
     "pipeline": "ไปป์ไลน์"
+  },
+  "search": {
+    "placeholder": "ค้นหาบัญชี, ผู้ติดต่อ, ลีด, โอกาส...",
+    "noResults": "ไม่พบผลลัพธ์",
+    "searching": "กำลังค้นหา...",
+    "accounts": "บัญชีลูกค้า",
+    "contacts": "ผู้ติดต่อ",
+    "leads": "ลีด",
+    "opportunities": "โอกาสการขาย",
+    "tasks": "งาน",
+    "notes": "บันทึก"
+  },
+  "settings": {
+    "title": "ตั้งค่า",
+    "subtitle": "จัดการการตั้งค่าระบบ",
+    "roles": {
+      "title": "บทบาทและสิทธิ์",
+      "description": "จัดการบทบาทและกำหนดสิทธิ์การเข้าถึง",
+      "createRole": "สร้างบทบาท",
+      "editRole": "แก้ไขบทบาท",
+      "roleName": "ชื่อบทบาท",
+      "permissions": "สิทธิ์การเข้าถึง",
+      "defaultRole": "บทบาทเริ่มต้น",
+      "customRole": "บทบาทกำหนดเอง",
+      "module": "โมดูล",
+      "modules": {
+        "leads": "ลีด",
+        "opportunities": "โอกาสการขาย",
+        "accounts": "บัญชีลูกค้า",
+        "contacts": "ผู้ติดต่อ",
+        "quotations": "ใบเสนอราคา",
+        "tasks": "งาน",
+        "reports": "รายงาน",
+        "settings": "ตั้งค่า"
+      },
+      "actionLabels": {
+        "create": "สร้าง",
+        "read": "ดู",
+        "update": "แก้ไข",
+        "delete": "ลบ"
+      }
+    },
+    "integrations": {
+      "title": "การเชื่อมต่อ",
+      "description": "จัดการการเชื่อมต่อกับบริการภายนอก",
+      "lineOa": {
+        "title": "LINE Official Account",
+        "channelAccessToken": "Channel Access Token",
+        "channelSecret": "Channel Secret"
+      },
+      "gmail": {
+        "title": "Gmail",
+        "description": "ซิงค์อีเมลจาก Gmail"
+      },
+      "outlook": {
+        "title": "Outlook",
+        "description": "ซิงค์อีเมลจาก Outlook"
+      },
+      "googleCalendar": {
+        "title": "Google Calendar",
+        "description": "ซิงค์ปฏิทินจาก Google Calendar",
+        "syncInterval": "ช่วงเวลาซิงค์"
+      },
+      "microsoftCalendar": {
+        "title": "Microsoft 365 Calendar",
+        "description": "ซิงค์ปฏิทินจาก Microsoft 365",
+        "syncInterval": "ช่วงเวลาซิงค์"
+      },
+      "syncStatus": "สถานะการซิงค์",
+      "lastSync": "ซิงค์ล่าสุด",
+      "every5min": "ทุก 5 นาที"
+    },
+    "webhooks": {
+      "title": "Webhooks",
+      "description": "จัดการ Webhook endpoints และดูบันทึกการส่ง",
+      "createWebhook": "สร้าง Webhook",
+      "editWebhook": "แก้ไข Webhook",
+      "url": "URL",
+      "secret": "HMAC Secret",
+      "eventTypes": "ประเภทเหตุการณ์",
+      "entityTypes": "ประเภทข้อมูล",
+      "deliveryLogs": "บันทึกการส่ง",
+      "timestamp": "เวลา",
+      "responseStatus": "สถานะตอบกลับ",
+      "attempts": "จำนวนครั้ง",
+      "noLogs": "ยังไม่มีบันทึกการส่ง"
+    },
+    "security": {
+      "title": "ความปลอดภัย",
+      "description": "จัดการการตั้งค่าความปลอดภัย",
+      "ipAllowlist": {
+        "title": "IP Allowlist",
+        "description": "จำกัดการเข้าถึงจาก IP ที่อนุญาตเท่านั้น",
+        "addIp": "เพิ่ม IP หรือ CIDR",
+        "placeholder": "เช่น 192.168.1.0/24",
+        "noIps": "ยังไม่มี IP ที่อนุญาต"
+      },
+      "mfa": {
+        "title": "การยืนยันตัวตนสองขั้นตอน (MFA)",
+        "requireForTenant": "บังคับใช้ MFA สำหรับทุกผู้ใช้",
+        "userStatus": "สถานะ MFA ของผู้ใช้",
+        "mfaEnabled": "เปิดใช้ MFA",
+        "mfaDisabled": "ยังไม่เปิด MFA"
+      }
+    },
+    "pdpa": {
+      "title": "PDPA",
+      "description": "จัดการความยินยอมและบันทึกการตรวจสอบตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล",
+      "consentRecords": "บันทึกความยินยอม",
+      "auditLog": "บันทึกการตรวจสอบ",
+      "contactName": "ชื่อผู้ติดต่อ",
+      "purpose": "วัตถุประสงค์",
+      "consentStatus": "สถานะความยินยอม",
+      "granted": "ให้ความยินยอม",
+      "withdrawn": "ถอนความยินยอม",
+      "grantedDate": "วันที่ให้ความยินยอม",
+      "withdrawnDate": "วันที่ถอนความยินยอม",
+      "expiresDate": "วันหมดอายุ",
+      "requestDeletion": "ขอลบข้อมูล",
+      "deletionNote": "การลบข้อมูลจะดำเนินการภายใน 30 วัน",
+      "user": "ผู้ใช้",
+      "entity": "ข้อมูล",
+      "action": "การดำเนินการ",
+      "oldValue": "ค่าเดิม",
+      "newValue": "ค่าใหม่",
+      "noRecords": "ยังไม่มีบันทึก"
+    }
   }
 }

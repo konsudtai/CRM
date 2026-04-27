@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SalesFAST 7 — Admin Portal</title>
+<link rel="stylesheet" href="../css/app.css"/>
+<style>
+.admin-shell{display:flex;min-height:calc(100vh - 52px)}
+.admin-sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:16px 12px;flex-shrink:0}
+.admin-sidebar-title{font-size:10px;font-weight:700;color:var(--text3,#939393);letter-spacing:1px;text-transform:uppercase;padding:0 12px;margin-bottom:8px;margin-top:16px}
+.admin-sidebar-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2,#5C5C5C);cursor:pointer;transition:all .15s;margin-bottom:2px}
+.admin-sidebar-item:hover{background:var(--surface2,#F4F6F9);color:var(--text,#181818)}
+.admin-sidebar-item.active{background:rgba(1,118,211,.08);color:#0176D3}
+.admin-content{flex:1;padding:28px 32px}
+.admin-card{background:var(--surface);border-radius:12px;padding:24px;border:1px solid var(--border);box-shadow:var(--card-shadow);margin-bottom:20px}
+.admin-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.admin-stat{background:var(--surface);border-radius:12px;padding:20px;border:1px solid var(--border)}
+.admin-stat-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px}
+.admin-stat-value{font-size:28px;font-weight:800;letter-spacing:-.8px;margin-top:4px}
+.admin-stat-sub{font-size:11px;color:var(--text3);margin-top:4px}
+@media(max-width:768px){.admin-shell{flex-direction:column}.admin-sidebar{width:100%;border-right:none;border-bottom:1px solid var(--border)}.admin-stat-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+<nav class="glass-nav">
+  <div class="nav-left">
+    <a href="../app/dashboard.html" class="nav-brand">SalesFAST <span style="color:#4BCA81">7</span></a>
+    <span style="font-size:11px;color:rgba(255,255,255,.4);padding:3px 10px;border:1px solid rgba(255,255,255,.15);border-radius:6px;margin-left:8px">ADMIN</span>
+  </div>
+  <div class="nav-right">
+    <a href="../app/dashboard.html" class="icon-btn" title="Back to CRM"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <button class="icon-btn" onclick="document.documentElement.setAttribute('data-theme',document.documentElement.getAttribute('data-theme')==='light'?'dark':'light')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
+    <div class="nav-avatar" style="font-size:7px">SF<span style="color:#4BCA81">7</span></div>
+  </div>
+</nav>
+
+<div class="admin-shell">
+  <div class="admin-sidebar">
+    <div class="admin-sidebar-title">Overview</div>
+    <div class="admin-sidebar-item active" onclick="showSection('overview')">Dashboard</div>
+    <div class="admin-sidebar-title">Management</div>
+    <div class="admin-sidebar-item" onclick="showSection('tenants')">Tenants</div>
+    <div class="admin-sidebar-item" onclick="showSection('users')">Users</div>
+    <div class="admin-sidebar-item" onclick="showSection('roles')">Roles & Permissions</div>
+    <div class="admin-sidebar-title">Security</div>
+    <div class="admin-sidebar-item" onclick="showSection('security')">Security Settings</div>
+    <div class="admin-sidebar-item" onclick="showSection('apikeys')">API Keys</div>
+    <div class="admin-sidebar-item" onclick="showSection('audit')">Audit Logs</div>
+    <div class="admin-sidebar-title">Integrations</div>
+    <div class="admin-sidebar-item" onclick="showSection('integrations')">Connections</div>
+    <div class="admin-sidebar-item" onclick="showSection('webhooks')">Webhooks</div>
+    <div class="admin-sidebar-item" onclick="showSection('line')">LINE OA</div>
+    <div class="admin-sidebar-title">Compliance</div>
+    <div class="admin-sidebar-item" onclick="showSection('pdpa')">PDPA</div>
+    <div class="admin-sidebar-title">System</div>
+    <div class="admin-sidebar-item" onclick="showSection('system')">System Health</div>
+  </div>
+  <div class="admin-content" id="admin-content"></div>
+</div>
+
+<script>
+let currentSection='overview';
+function showSection(s){
+  currentSection=s;
+  document.querySelectorAll('.admin-sidebar-item').forEach(el=>el.classList.remove('active'));
+  event.target.classList.add('active');
+  render();
+}
+function render(){
+  const el=document.getElementById('admin-content');
+  el.innerHTML=sections[currentSection]||sections.overview;
+}
+
+const sections={
+overview:`
+<h2 style="font-size:21px;font-weight:800;letter-spacing:-.4px;margin-bottom:20px">Admin Dashboard</h2>
+<div class="admin-stat-grid">
+  <div class="admin-stat"><div class="admin-stat-label">Total Tenants</div><div class="admin-stat-value">12</div><div class="admin-stat-sub">3 active this month</div></div>
+  <div class="admin-stat"><div class="admin-stat-label">Total Users</div><div class="admin-stat-value">156</div><div class="admin-stat-sub">18 active today</div></div>
+  <div class="admin-stat"><div class="admin-stat-label">API Requests (24h)</div><div class="admin-stat-value">24.3K</div><div class="admin-stat-sub">Avg 1,012/hr</div></div>
+  <div class="admin-stat"><div class="admin-stat-label">System Health</div><div class="admin-stat-value" style="color:#2E844A">OK</div><div class="admin-stat-sub">All services running</div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="admin-card"><div style="font-size:15px;font-weight:700;margin-bottom:14px">Service Status</div>
+    ${['Auth Service','CRM Service','Sales Service','Quotation Service','Notification Service'].map(s=>'<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px">'+s+'</span><span style="font-size:11px;font-weight:600;color:#2E844A;background:rgba(46,132,74,.1);padding:2px 8px;border-radius:20px">Running</span></div>').join('')}
+  </div>
+  <div class="admin-card"><div style="font-size:15px;font-weight:700;margin-bottom:14px">Recent Activity</div>
+    ${[{t:'New tenant created',d:'Somjai Tech Co.',m:'2 hours ago'},{t:'User login',d:'admin@salesfast7.com',m:'3 hours ago'},{t:'API key generated',d:'Production key',m:'1 day ago'},{t:'Webhook configured',d:'ERP integration',m:'2 days ago'}].map(a=>'<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="font-size:13px;font-weight:500">'+a.t+'</div><div style="font-size:11px;color:var(--text2)">'+a.d+' &middot; '+a.m+'</div></div>').join('')}
+  </div>
+</div>`,
+
+tenants:`
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  <h2 style="font-size:21px;font-weight:800;letter-spacing:-.4px">Tenant Management</h2>
+  <button class="btn btn-primary" style="padding:7px 16px;font-size:13px">+ New Tenant</button>
+</div>
+<div class="admin-card">
+  <input class="search-input" placeholder="Search tenants..." style="margin-bottom:16px;max-width:320px"/>
+  <table><thead><tr><th>Tenant Name</th><th>Slug</th><th>Users</th><th>Status</th><th>Created</th><th>LINE</th></tr></thead><tbody>
+    ${[{n:'Somjai Technology',s:'somjai-tech',u:18,active:true,d:'Jan 2026',line:true},{n:'Thai Foods Group',s:'thai-foods',u:12,active:true,d:'Jan 2026',line:true},{n:'Sukjai Hospital',s:'sukjai',u:8,active:true,d:'Feb 2026',line:false},{n:'Eastern Logistics',s:'eastern-log',u:15,active:true,d:'Feb 2026',line:true},{n:'Pornchai Materials',s:'pornchai',u:5,active:false,d:'Mar 2026',line:false}].map(t=>'<tr><td><a href="#" class="table-link">'+t.n+'</a></td><td style="color:var(--text2);font-size:12px;font-family:monospace">'+t.s+'</td><td>'+t.u+'</td><td><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:'+(t.active?'rgba(46,132,74,.1);color:#2E844A':'rgba(147,147,147,.12);color:var(--text3)')+'">'+(t.active?'Active':'Inactive')+'</span></td><td style="color:var(--text2);font-size:12px">'+t.d+'</td><td>'+(t.line?'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(6,199,85,.1);color:#06C755">Connected</span>':'<span style="font-size:10px;color:var(--text3)">Not set</span>')+'</td></tr>').join('')}
+  </tbody></table>
+</div>`,
+
+users:`
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  <h2 style="font-size:21px;font-weight:800;letter-spacing:-.4px">User Management</h2>
+  <button class="btn btn-primary" style="padding:7px 16px;font-size:13px" onclick="document.getElementById('create-user-form').style.display=document.getElementById('create-user-form').style.display==='none'?'block':'none'">+ New User</button>
+</div>
+<div id="create-user-form" class="admin-card" style="display:none;margin-bottom:20px">
+  <div style="font-size:15px;font-weight:700;margin-bottom:16px">Create New User</div>
+  <form onsubmit="event.preventDefault();alert('User created! Credentials will be sent to the email address.');document.getElementById('create-user-form').style.display='none';" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:600px">
+    <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">First Name *</label><input class="search-input" required placeholder="Somchai"/></div>
+    <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Last Name *</label><input class="search-input" required placeholder="Jaidee"/></div>
+    <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Email *</label><input class="search-input" type="email" required placeholder="user@company.co.th"/></div>
+    <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Tenant *</label><select class="search-input"><option>Somjai Technology</option><option>Thai Foods Group</option><option>Sukjai Hospital</option><option>Eastern Logistics</option></select></div>
+    <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Role *</label><select class="search-input"><option>Sales Rep</option><option>Sales Manager</option><option>Admin</option><option>Viewer</option></select></div>
+    <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Temporary Password *</label><input class="search-input" type="password" required placeholder="Min 8 characters"/></div>
+    <div style="grid-column:1/-1;display:flex;gap:8px;margin-top:4px">
+      <button type="submit" class="btn btn-primary" style="padding:8px 20px;font-size:13px">Create User</button>
+      <button type="button" class="btn btn-secondary" style="padding:8px 20px;font-size:13px" onclick="document.getElementById('create-user-form').style.display='none'">Cancel</button>
+    </div>
+  </form>
+</div>
+<div class="admin-card">
+  <input class="search-input" placeholder="Search users..." style="margin-bottom:16px;max-width:320px"/>
+  <table><thead><tr><th>Name</th><th>Email</th><th>Tenant</th><th>Role</th><th>MFA</th><th>Status</th><th>Last Login</th></tr></thead><tbody>
+    ${[{n:'Somchai Jaidee',e:'somchai@somjai.co.th',t:'Somjai Tech',r:'Admin',mfa:true,a:true,l:'Today'},{n:'Wilai Rakdee',e:'wilai@somjai.co.th',t:'Somjai Tech',r:'Sales Manager',mfa:true,a:true,l:'Today'},{n:'Arun Sangfa',e:'arun@thaifoods.co.th',t:'Thai Foods',r:'Sales Rep',mfa:false,a:true,l:'Yesterday'},{n:'Manee Thongkam',e:'manee@eastern.co.th',t:'Eastern Log',r:'Sales Rep',mfa:false,a:true,l:'3 days ago'},{n:'Pichai Yimswy',e:'pichai@sukjai.co.th',t:'Sukjai',r:'Admin',mfa:true,a:false,l:'1 week ago'}].map(u=>'<tr><td style="font-weight:500">'+u.n+'</td><td style="color:var(--text2);font-size:12px">'+u.e+'</td><td style="font-size:12px">'+u.t+'</td><td><span class="tag">'+u.r+'</span></td><td>'+(u.mfa?'<span style="color:#2E844A;font-size:11px;font-weight:600">On</span>':'<span style="color:var(--text3);font-size:11px">Off</span>')+'</td><td><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:'+(u.a?'rgba(46,132,74,.1);color:#2E844A':'rgba(194,57,52,.1);color:#C23934')+'">'+(u.a?'Active':'Locked')+'</span></td><td style="color:var(--text2);font-size:12px">'+u.l+'</td></tr>').join('')}
+  </tbody></table>
+</div>`,
+
+roles:`
+<h2 style="font-size:21px;font-weight:800;letter-spacing:-.4px;margin-bottom:20px">Roles & Permissions</h2>
+<div class="admin-card">
+  <table><thead><tr><th>Role</th><th>Type</th><th>Accounts</th><th>Contacts</th><th>Leads</th><th>Opportunities</th><th>Quotations</th><th>Tasks</th><th>Reports</th><th>Settings</th></tr></thead><tbody>
+    <tr><td style="font-weight:600">Admin</td><td><span class="tag">Default</span></td><td>CRUD</td><td>CRUD</td><td>CRUD</td><td>CRUD</td><td>CRUD</td><td>CRUD</td><td>CRUD</td><td>CRUD</td></tr>
+    <tr><td style="font-weight:600">Sales Manager</td><td><span class="tag">Default</span></td><td>CRU</td><td>CRU</td><td>CRUD</td><td>CRUD</td><td>CRU</td><td>CRUD</td><td>R</td><td>R</td></tr>
+    <tr><td style="font-weight:600">Sales Rep</td><td><span class="tag">Default</span></td><td>CR</td><td>CR</td><td>CRU</td><td>CRU</td><td>CR</td><td>CRU</td><td>R</td><td>-</td></tr>
+    <tr><td style="font-weight:600">Viewer</td><td><span style="font-size:10px;color:var(--text3)">Default</span></td><td>R</td><td>R</td><td>R</td><td>R</td><td>R</td><td>R</td><td>R</td><td>-</td></tr>
+  </tbody></table>
+  <button class="btn btn-secondary" style="margin-top:16px;padding:7px 16px;font-size:13px">+ Create Custom Role</button>
+</div>`,
+
+security:`
+<h2 style="font-size:21px;font-weight:800;letter-spacing:-.4px;margin-bottom:20px">Security Settings</h2>
+<div class="admin-card">
+  ${[{l:'MFA Enforcement',d:'Require MFA for all users across all tenants',on:true},{l:'IP Allowlist',d:'Restrict access to specific IP addresses per tenant',on:false},{l:'Session Timeout',d:'Auto-logout after 30 minutes of inactivity',on:true},{l:'Password Policy',d:'Minimum 8 characters, uppercase, number required',on:true},{l:'Rate Limiting',d:'1,000 API requests per minute per tenant',on:true},{l:'Brute Force Protection',d:'Lock account after 5 failed login attempts for 15 minutes',on:true}].map(s=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border)"><div><div style="font-size:14px;font-weight:500">'+s.l+'</div><div style="font-size:12px;color:var(--text2)">'+s.d+'</div></div><div style="width:44px;height:24px;border-radius:12px;background:'+(s.on?'#0176D3':'var(--surface3)')+';position:relative;cursor:pointer"><div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;'+(s.on?'right:2px':'left:2px')+';box-shadow:0 1px 3px rgba(0,0,0,.2)"></div></div></div>').join('')}
+</div>`,
+
+apikeys:`
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  <h2 style="font-size:21px;font-weight:800;letter-spacing:-.4px">API Keys</h2>
+  <button class="btn btn-primary" style="padding:7px 16px;font-size:13px">+ Generate Key</button>
+</div>
+<div class="admin-card">
+  <table><thead><tr><th>Name</th><th>Key Prefix</th><th>Tenant</th><th>Status</th><th>Last Used</th><th>Created</th></tr></thead><tbody>
+    ${[{n:'Production API',k:'sf7_live_sk_...3a7f',t:'Somjai Tech',a:true,l:'2 hours ago',d:'Jan 2026'},{n:'Test API',k:'sf7_test_sk_...9b2c',t:'Somjai Tech',a:true,l:'1 day ago',d:'Jan 2026'},{n:'ERP Integration',k:'sf7_live_sk_...f4e1',t:'Thai Foods',a:true,l:'5 hours ago',d:'Feb 2026'},{n:'Webhook Key',k:'sf7_live_sk_...2d8a',t:'Eastern Log',a:false,l:'Never',d:'Mar 2026'}].map(k=>'<tr><td style="font-weight:500">'+k.n+'</td><td style="font-family:monospace;font-size:12px;color:var(--text2)">'+k.k+'</td><td style="font-size:12px">'+k.t+'</td><td><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:'+(k.a?'rgba(46,132,74,.1);color:#2E844A':'rgba(147,147,147,.12);color:var(--text3)')+'">'+(k.a?'Active':'Revoked')+'</span></td><td style="color:var(--text2);font-size:12px">'+k.l+'</td><td style="color:var(--text2);font-size:12px">'+k.d+'</td></tr>').join('')}
+  </tbody></table>
+</div>
+<div class="admin-card" style="background:rgba(1,118,211,.03);border-color:rgba(1,118,211,.15)">
+  <div style="font-size:13px;font-weight:600;color:#0176D3">API Documentation</div>
+  <div style="font-size:12px;color:var(--text2);margin-top:4px">OpenAPI 3.0 docs: <code style="background:var(--surface3);padding:2px 6px;border-radius:4px;font-size:11px">/api/docs</code> &middot; Rate limit: 1,000 req/min per tenant</div>
+</div>`,
+
+audit:`
+<h2 style="font-size:21px;font-weight:800;letter-spacing:-.4px;margin-bottom:20px">Audit Logs</h2>
+<div class="admin-card">
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <input class="search-input" placeholder="Search by user, action, entity..." style="max-width:320px"/>
+    <select class="search-input" style="max-width:160px"><option>All Actions</option><option>Create</option><option>Update</option><option>Delete</option><option>Login</option></select>
+  </div>
+  <table><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th><th>IP</th></tr></thead><tbody>
+    ${[{ts:'2026-04-27 14:30',u:'somchai@somjai.co.th',a:'Update',e:'Opportunity',d:'Stage: Proposal > Negotiation',ip:'203.150.x.x'},{ts:'2026-04-27 14:15',u:'wilai@somjai.co.th',a:'Create',e:'Lead',d:'New lead: Khun Nicha',ip:'203.150.x.x'},{ts:'2026-04-27 13:45',u:'arun@thaifoods.co.th',a:'Create',e:'Quotation',d:'QT-2569-0005',ip:'110.168.x.x'},{ts:'2026-04-27 12:00',u:'admin@salesfast7.com',a:'Login',e:'Session',d:'MFA verified',ip:'58.137.x.x'},{ts:'2026-04-27 11:30',u:'manee@eastern.co.th',a:'Update',e:'Account',d:'Phone number changed',ip:'171.96.x.x'}].map(l=>'<tr><td style="font-size:12px;color:var(--text2);white-space:nowrap">'+l.ts+'</td><td style="font-size:12px">'+l.u+'</td><td><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(1,118,211,.08);color:#0176D3">'+l.a+'</span></td><td style="font-size:12px;font-weight:500">'+l.e+'</td><td style="font-size:12px;color:var(--text2)">'+l.d+'</td><td style="font-size:11px;color:var(--text3);font-family:monospace">'+l.ip+'</td></tr>').join('')}
+  </tbody></table>
+</div>`,
+
+integrations:`
+<h2 style="font-size:21px;font-weight:800;letter-spacing:-.4px;margin-bottom:20px">Integrations</h2>
+${[{n:'LINE OA',d:'Send notifications and messages via LINE Official Account',s:true,icon:'LINE'},{n:'Gmail',d:'Bidirectional email sync with Gmail',s:false,icon:'Gmail'},{n:'Google Calendar',d:'Sync calendar events with Google Calendar',s:true,icon:'GCal'},{n:'Microsoft 365',d:'Email and calendar sync with Microsoft 365',s:false,icon:'M365'},{n:'AWS Bedrock (AI)',d:'AI Lead Scoring, Chatbot, Meeting Summarization',s:true,icon:'AI'}].map(i=>'<div class="admin-card" style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center;gap:14px"><div style="width:44px;height:44px;border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text2)">'+i.icon+'</div><div><div style="font-size:14px;font-weight:600">'+i.n+'</div><div style="font-size:12px;color:var(--text2)">'+i.d+'</div></div></div><button class="btn '+(i.s?'btn-secondary':'btn-primary')+'" style="padding:7px 16px;font-size:12px">'+(i.s?'Connected':'Connect')+'</button></div>').join('')}`,
+
+webhooks:`
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  <h2 style="font-size:21px;font-weight:800;letter-spacing:-.4px">Webhooks</h2>
+  <button class="btn btn-primary" style="padding:7px 16px;font-size:13px">+ Add Webhook</button>
+</div>
+${[{u:'https://erp.somjai.co.th/webhook',e:'lead.created, opportunity.updated',a:true,d:142,f:2},{u:'https://accounting.thaifoods.co.th/api/hook',e:'quotation.accepted',a:true,d:38,f:0},{u:'https://notify.eastern.co.th/crm',e:'deal.stage_changed, task.overdue',a:false,d:0,f:5}].map(w=>'<div class="admin-card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:13px;font-weight:600;font-family:monospace">'+w.u+'</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Events: '+w.e+'</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Deliveries: '+w.d+' total &middot; '+w.f+' failed</div></div><div style="display:flex;gap:8px;align-items:center"><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:'+(w.a?'rgba(46,132,74,.1);color:#2E844A':'rgba(147,147,147,.12);color:var(--text3)')+'">'+(w.a?'Active':'Paused')+'</span><button class="btn btn-secondary" style="padding:5px 12px;font-size:11px">Edit</button></div></div></div>').join('')}`,
+
+line:`
+<h2 style="font-size:21px;font-weight:800;letter-spacing:-.4px;margin-bottom:20px">LINE OA Configuration</h2>
+<div class="admin-card">
+  <div style="font-size:15px;font-weight:700;margin-bottom:16px">Channel Settings</div>
+  <div style="display:flex;flex-direction:column;gap:14px;max-width:500px">
+    <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Channel Access Token</label><input class="search-input" type="password" value="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" style="max-width:100%"/></div>
+    <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Channel Secret</label><input class="search-input" type="password" value="xxxxxxxxxxxxxxxx" style="max-width:100%"/></div>
+    <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Webhook URL</label><input class="search-input" value="https://api.salesfast7.com/line/webhook" readonly style="max-width:100%;background:var(--surface2)"/></div>
+    <button class="btn btn-primary" style="padding:8px 20px;font-size:13px;width:fit-content">Save Configuration</button>
+  </div>
+</div>
+<div class="admin-card">
+  <div style="font-size:15px;font-weight:700;margin-bottom:14px">Message Log</div>
+  <table><thead><tr><th>Time</th><th>Direction</th><th>Recipient</th><th>Status</th><th>Type</th></tr></thead><tbody>
+    ${[{t:'14:30',dir:'Out',r:'Khun Nicha',s:'Delivered',type:'Quotation PDF'},{t:'13:15',dir:'In',r:'Khun Napa',s:'Received',type:'Text message'},{t:'12:00',dir:'Out',r:'Khun Somkit',s:'Delivered',type:'Lead notification'},{t:'11:30',dir:'Out',r:'Khun Wanchai',s:'Failed',type:'Task reminder'}].map(m=>'<tr><td style="font-size:12px;color:var(--text2)">'+m.t+'</td><td><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:'+(m.dir==='Out'?'rgba(1,118,211,.08);color:#0176D3':'rgba(46,132,74,.1);color:#2E844A')+'">'+m.dir+'</span></td><td style="font-size:12px">'+m.r+'</td><td><span style="font-size:10px;font-weight:600;color:'+(m.s==='Failed'?'#C23934':'#2E844A')+'">'+m.s+'</span></td><td style="font-size:12px;color:var(--text2)">'+m.type+'</td></tr>').join('')}
+  </tbody></table>
+</div>`,
+
+pdpa:`
+<h2 style="font-size:21px;font-weight:800;letter-spacing:-.4px;margin-bottom:20px">PDPA Compliance</h2>
+<div class="admin-stat-grid" style="grid-template-columns:repeat(3,1fr)">
+  <div class="admin-stat"><div class="admin-stat-label">Consent Records</div><div class="admin-stat-value">1,247</div><div class="admin-stat-sub">Immutable audit trail</div></div>
+  <div class="admin-stat"><div class="admin-stat-label">Active Purposes</div><div class="admin-stat-value">3</div><div class="admin-stat-sub">Marketing, Service, Analytics</div></div>
+  <div class="admin-stat"><div class="admin-stat-label">Deletion Requests</div><div class="admin-stat-value">0</div><div class="admin-stat-sub">Process within 30 days</div></div>
+</div>
+<div class="admin-card">
+  <div style="font-size:15px;font-weight:700;margin-bottom:14px">Consent Purposes</div>
+  ${[{n:'Marketing Communications',d:'Send promotional content via email and LINE',c:892,exp:'1 year'},{n:'Service Delivery',d:'Process and manage customer data for CRM services',c:1247,exp:'Duration of service'},{n:'Analytics & Improvement',d:'Analyze usage patterns to improve platform',c:634,exp:'2 years'}].map(p=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border)"><div><div style="font-size:14px;font-weight:500">'+p.n+'</div><div style="font-size:12px;color:var(--text2)">'+p.d+'</div><div style="font-size:11px;color:var(--text3);margin-top:2px">'+p.c+' consents &middot; Expires: '+p.exp+'</div></div><button class="btn btn-secondary" style="padding:5px 12px;font-size:11px">Edit</button></div>').join('')}
+  <button class="btn btn-secondary" style="margin-top:16px;padding:7px 16px;font-size:13px">+ Add Purpose</button>
+</div>`,
+
+system:`
+<h2 style="font-size:21px;font-weight:800;letter-spacing:-.4px;margin-bottom:20px">System Health</h2>
+<div class="admin-stat-grid">
+  <div class="admin-stat"><div class="admin-stat-label">Uptime</div><div class="admin-stat-value" style="color:#2E844A">99.9%</div><div class="admin-stat-sub">Last 30 days</div></div>
+  <div class="admin-stat"><div class="admin-stat-label">Avg Response</div><div class="admin-stat-value">142ms</div><div class="admin-stat-sub">P95: 380ms</div></div>
+  <div class="admin-stat"><div class="admin-stat-label">DB Connections</div><div class="admin-stat-value">24/100</div><div class="admin-stat-sub">PostgreSQL</div></div>
+  <div class="admin-stat"><div class="admin-stat-label">Redis Memory</div><div class="admin-stat-value">128MB</div><div class="admin-stat-sub">of 512MB</div></div>
+</div>
+<div class="admin-card">
+  <div style="font-size:15px;font-weight:700;margin-bottom:14px">Infrastructure</div>
+  <table><thead><tr><th>Component</th><th>Status</th><th>Version</th><th>Details</th></tr></thead><tbody>
+    ${[{n:'PostgreSQL',s:'Healthy',v:'16.2',d:'5 databases, RLS enabled'},{n:'Redis',s:'Healthy',v:'7.2',d:'Session store, rate limiting, cache'},{n:'OpenSearch',s:'Healthy',v:'2.11',d:'Thai tokenizer (ICU), full-text search'},{n:'S3',s:'Healthy',v:'-',d:'File storage, presigned URLs'},{n:'SQS',s:'Healthy',v:'-',d:'Event queues, notification delivery'},{n:'AWS Bedrock',s:'Healthy',v:'Claude 3',d:'AI inference, Thai language support'}].map(c=>'<tr><td style="font-weight:500">'+c.n+'</td><td><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(46,132,74,.1);color:#2E844A">'+c.s+'</span></td><td style="font-size:12px;color:var(--text2)">'+c.v+'</td><td style="font-size:12px;color:var(--text2)">'+c.d+'</td></tr>').join('')}
+  </tbody></table>
+</div>`
+};
+
+render();
+</script>
+</body>
+</html>

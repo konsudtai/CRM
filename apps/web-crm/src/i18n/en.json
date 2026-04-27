@@ -14,7 +14,21 @@
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "back": "Back",
+    "confirm": "Confirm",
+    "active": "Active",
+    "inactive": "Inactive",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "status": "Status",
+    "actions": "Actions",
+    "add": "Add",
+    "remove": "Remove",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "connected": "Connected",
+    "notConnected": "Not Connected"
   },
   "auth": {
     "login": "Sign In",
@@ -26,5 +40,132 @@
     "title": "Overview",
     "revenue": "Revenue",
     "pipeline": "Pipeline"
+  },
+  "search": {
+    "placeholder": "Search accounts, contacts, leads, opportunities...",
+    "noResults": "No results found",
+    "searching": "Searching...",
+    "accounts": "Accounts",
+    "contacts": "Contacts",
+    "leads": "Leads",
+    "opportunities": "Opportunities",
+    "tasks": "Tasks",
+    "notes": "Notes"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage system settings",
+    "roles": {
+      "title": "Roles & Permissions",
+      "description": "Manage roles and assign access permissions",
+      "createRole": "Create Role",
+      "editRole": "Edit Role",
+      "roleName": "Role Name",
+      "permissions": "Permissions",
+      "defaultRole": "Default Role",
+      "customRole": "Custom Role",
+      "module": "Module",
+      "modules": {
+        "leads": "Leads",
+        "opportunities": "Opportunities",
+        "accounts": "Accounts",
+        "contacts": "Contacts",
+        "quotations": "Quotations",
+        "tasks": "Tasks",
+        "reports": "Reports",
+        "settings": "Settings"
+      },
+      "actionLabels": {
+        "create": "Create",
+        "read": "Read",
+        "update": "Update",
+        "delete": "Delete"
+      }
+    },
+    "integrations": {
+      "title": "Integrations",
+      "description": "Manage external service connections",
+      "lineOa": {
+        "title": "LINE Official Account",
+        "channelAccessToken": "Channel Access Token",
+        "channelSecret": "Channel Secret"
+      },
+      "gmail": {
+        "title": "Gmail",
+        "description": "Sync emails from Gmail"
+      },
+      "outlook": {
+        "title": "Outlook",
+        "description": "Sync emails from Outlook"
+      },
+      "googleCalendar": {
+        "title": "Google Calendar",
+        "description": "Sync calendar from Google Calendar",
+        "syncInterval": "Sync Interval"
+      },
+      "microsoftCalendar": {
+        "title": "Microsoft 365 Calendar",
+        "description": "Sync calendar from Microsoft 365",
+        "syncInterval": "Sync Interval"
+      },
+      "syncStatus": "Sync Status",
+      "lastSync": "Last Sync",
+      "every5min": "Every 5 minutes"
+    },
+    "webhooks": {
+      "title": "Webhooks",
+      "description": "Manage webhook endpoints and view delivery logs",
+      "createWebhook": "Create Webhook",
+      "editWebhook": "Edit Webhook",
+      "url": "URL",
+      "secret": "HMAC Secret",
+      "eventTypes": "Event Types",
+      "entityTypes": "Entity Types",
+      "deliveryLogs": "Delivery Logs",
+      "timestamp": "Timestamp",
+      "responseStatus": "Response Status",
+      "attempts": "Attempts",
+      "noLogs": "No delivery logs yet"
+    },
+    "security": {
+      "title": "Security",
+      "description": "Manage security settings",
+      "ipAllowlist": {
+        "title": "IP Allowlist",
+        "description": "Restrict access to allowed IPs only",
+        "addIp": "Add IP or CIDR",
+        "placeholder": "e.g. 192.168.1.0/24",
+        "noIps": "No allowed IPs yet"
+      },
+      "mfa": {
+        "title": "Multi-Factor Authentication (MFA)",
+        "requireForTenant": "Require MFA for all users",
+        "userStatus": "User MFA Status",
+        "mfaEnabled": "MFA Enabled",
+        "mfaDisabled": "MFA Not Enabled"
+      }
+    },
+    "pdpa": {
+      "title": "PDPA",
+      "description": "Manage consent and audit logs per PDPA regulations",
+      "consentRecords": "Consent Records",
+      "auditLog": "Audit Log",
+      "contactName": "Contact Name",
+      "purpose": "Purpose",
+      "consentStatus": "Consent Status",
+      "granted": "Granted",
+      "withdrawn": "Withdrawn",
+      "grantedDate": "Granted Date",
+      "withdrawnDate": "Withdrawn Date",
+      "expiresDate": "Expires Date",
+      "requestDeletion": "Request Data Deletion",
+      "deletionNote": "Data deletion will be processed within 30 days",
+      "user": "User",
+      "entity": "Entity",
+      "action": "Action",
+      "oldValue": "Old Value",
+      "newValue": "New Value",
+      "noRecords": "No records yet"
+    }
   }
 }

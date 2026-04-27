@@ -12,6 +12,8 @@ import { LeadsModule } from './modules/leads/leads.module';
 import { OpportunitiesModule } from './modules/opportunities/opportunities.module';
 import { PipelineModule } from './modules/pipeline/pipeline.module';
 import { TargetsModule } from './modules/targets/targets.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { EventBusModule } from './modules/event-bus/event-bus.module';
 
 @Module({
   imports: [
@@ -35,6 +37,8 @@ import { TargetsModule } from './modules/targets/targets.module';
     OpportunitiesModule,
     PipelineModule,
     TargetsModule,
+    ReportsModule,
+    EventBusModule,
   ],
   providers: [RedisProvider],
   exports: [REDIS_CLIENT],

@@ -36,24 +36,30 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f5f5f7]">
-      <div className="w-full max-w-sm rounded-lg bg-white p-8 shadow-[0px_3px_5px_0px_rgba(0,0,0,0.22),0px_5px_30px_0px_rgba(0,0,0,0.22)]">
-        <h1 className="font-sf-pro-display text-2xl font-semibold tracking-[-0.003em] text-[#1d1d1f]">
+    <div className="flex min-h-screen items-center justify-center bg-black">
+      <div className="w-full max-w-[380px] rounded-[12px] bg-white p-8 shadow-[3px_5px_30px_0px_rgba(0,0,0,0.22)]">
+        {/* Header */}
+        <h1 className="font-sf-pro-display text-[28px] font-semibold leading-[1.14] tracking-[0.196px] text-[#1d1d1f]">
           เข้าสู่ระบบ
         </h1>
-        <p className="mt-1 font-sf-pro-text text-sm text-gray-500">
+        <p className="mt-1 font-sf-pro-text text-[14px] leading-[1.29] tracking-[-0.224px] text-[rgba(0,0,0,0.48)]">
           Thai SMB CRM Platform
         </p>
 
+        {/* Error */}
         {error && (
-          <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          <div className="mt-4 rounded-[8px] bg-red-50 px-4 py-3 font-sf-pro-text text-[14px] tracking-[-0.224px] text-red-600">
             {error}
           </div>
         )}
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label htmlFor="email" className="block font-sf-pro-text text-xs font-medium text-gray-700">
+            <label
+              htmlFor="email"
+              className="block font-sf-pro-text text-[12px] font-semibold tracking-[-0.12px] text-[rgba(0,0,0,0.8)]"
+            >
               อีเมล
             </label>
             <input
@@ -63,11 +69,14 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@company.com"
               autoComplete="email"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 font-sf-pro-text text-sm text-[#1d1d1f] placeholder:text-gray-400 focus:border-[#0071e3] focus:outline-none focus:ring-1 focus:ring-[#0071e3]"
+              className="apple-input mt-1.5"
             />
           </div>
           <div>
-            <label htmlFor="password" className="block font-sf-pro-text text-xs font-medium text-gray-700">
+            <label
+              htmlFor="password"
+              className="block font-sf-pro-text text-[12px] font-semibold tracking-[-0.12px] text-[rgba(0,0,0,0.8)]"
+            >
               รหัสผ่าน
             </label>
             <input
@@ -77,27 +86,30 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               autoComplete="current-password"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 font-sf-pro-text text-sm text-[#1d1d1f] placeholder:text-gray-400 focus:border-[#0071e3] focus:outline-none focus:ring-1 focus:ring-[#0071e3]"
+              className="apple-input mt-1.5"
             />
           </div>
-          <Button type="submit" variant="primary" className="w-full" disabled={loading}>
+          <Button type="submit" variant="primary" className="!w-full" disabled={loading}>
             {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
           </Button>
         </form>
 
+        {/* Divider */}
         <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
+              <div className="w-full border-t border-black/[0.06]" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-3 font-sf-pro-text text-xs text-gray-400">หรือ</span>
+              <span className="bg-white px-3 font-sf-pro-text text-[12px] tracking-[-0.12px] text-[rgba(0,0,0,0.48)]">
+                หรือ
+              </span>
             </div>
           </div>
-          <div className="mt-4 space-y-3">
+          <div className="mt-4">
             <a
               href="/sso"
-              className="flex min-h-[44px] w-full items-center justify-center rounded-lg border border-gray-300 px-4 py-2 font-sf-pro-text text-sm font-medium text-[#1d1d1f] hover:bg-gray-50"
+              className="flex min-h-[44px] w-full items-center justify-center rounded-[8px] border border-black/[0.06] bg-[#fafafc] px-4 py-2 font-sf-pro-text text-[14px] font-medium tracking-[-0.224px] text-[#1d1d1f] transition-colors hover:bg-black/[0.04]"
             >
               เข้าสู่ระบบด้วย SSO
             </a>

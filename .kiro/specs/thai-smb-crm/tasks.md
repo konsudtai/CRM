@@ -315,7 +315,7 @@ This plan implements a multi-tenant SaaS CRM for Thai SMBs as a monorepo with Ne
     - `DELETE /contacts/:id/pdpa` — execute data deletion within 30 days, log completion
     - _Requirements: 12.6, 12.7, 12.8_
 
-- [ ] 15. Implement Frontend — Next.js App Router with Apple Design System
+- [x] 15. Implement Frontend — Next.js App Router with Apple Design System
   - [x] 15.1 Scaffold `apps/web-crm` Next.js application with App Router
     - Configure `next-intl` with Thai (th) default and English (en) locales
     - Set up Tailwind CSS with custom theme tokens for Apple design system
@@ -334,14 +334,14 @@ This plan implements a multi-tenant SaaS CRM for Thai SMBs as a monorepo with Ne
     - Touch targets minimum 44x44px
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7_
 
-  - [-] 15.3 Implement authentication pages
+  - [x] 15.3 Implement authentication pages
     - `(auth)/login` — email/password login form
     - `(auth)/mfa` — MFA verification page (TOTP/SMS)
     - `(auth)/sso` — SSO redirect flow for Google Workspace and Microsoft Entra ID
     - Wire to Auth Service API endpoints
     - _Requirements: 1.1, 1.2, 1.3_
 
-  - [~] 15.4 Implement Dashboard pages
+  - [x] 15.4 Implement Dashboard pages
     - `(dashboard)/overview` — revenue dashboard with closed-won by month/quarter/year vs targets
     - Pipeline dashboard: deal count and value per stage with drill-down
     - Lead conversion report: conversion rates between stages
@@ -352,7 +352,7 @@ This plan implements a multi-tenant SaaS CRM for Thai SMBs as a monorepo with Ne
     - Charts follow Apple design system (SF Pro typography, Apple Blue accent, `#f5f5f7` card backgrounds)
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8_
 
-  - [~] 15.5 Implement Customer 360 pages
+  - [x] 15.5 Implement Customer 360 pages
     - `(crm)/accounts` — account list with search and filters
     - `(crm)/accounts/[id]` — account detail page with company info, Thai address display, contacts list, activity timeline, notes with attachments, tags
     - `(crm)/contacts` — contact list and detail views
@@ -360,7 +360,7 @@ This plan implements a multi-tenant SaaS CRM for Thai SMBs as a monorepo with Ne
     - Tag management UI for segmentation
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.7_
 
-  - [~] 15.6 Implement Lead and Pipeline pages
+  - [x] 15.6 Implement Lead and Pipeline pages
     - `(crm)/leads` — lead list and Kanban board with configurable status pipeline
     - Lead detail page with status history, duplicate detection alerts, AI score display
     - Bulk operations UI (assign, update status, delete)
@@ -372,7 +372,7 @@ This plan implements a multi-tenant SaaS CRM for Thai SMBs as a monorepo with Ne
     - Sales targets page with progress visualization
     - _Requirements: 5.1, 5.2, 5.4, 5.5, 5.6, 5.7, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-  - [~] 15.7 Implement Quotation pages
+  - [x] 15.7 Implement Quotation pages
     - `(quotation)/catalog` — product catalog management UI
     - `(quotation)/quotations` — quotation list with status filters
     - Quotation creation page: product selection from catalog, quantity input, line-item and total discount controls
@@ -381,21 +381,21 @@ This plan implements a multi-tenant SaaS CRM for Thai SMBs as a monorepo with Ne
     - Send quotation modal: choose email or LINE OA delivery
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8_
 
-  - [~] 15.8 Implement Activity Manager pages
+  - [x] 15.8 Implement Activity Manager pages
     - Task list view sortable by due_date, priority, status with overdue highlighting
     - Task creation form with title, due_date, priority, account/contact/opportunity association
     - Calendar view (daily, weekly, monthly) displaying tasks, appointments, meetings
     - Call logging form with duration, outcome, notes
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-  - [~] 15.9 Implement Global Search (Command Palette)
+  - [x] 15.9 Implement Global Search (Command Palette)
     - Global search bar accessible via Cmd/Ctrl+K using `cmdk` library
     - Search across accounts, contacts, leads, opportunities, tasks, notes
     - Results grouped by entity type with relevance ranking
     - Navigate directly to selected record's detail page
     - _Requirements: 16.1, 16.2, 16.3, 16.5_
 
-  - [~] 15.10 Implement Settings pages
+  - [x] 15.10 Implement Settings pages
     - `(settings)/roles` — role management with granular permission assignment UI
     - `(settings)/integrations` — LINE OA, Gmail, Outlook, Google Calendar, Microsoft 365 Calendar configuration
     - `(settings)/webhooks` — webhook endpoint management with event type filtering and delivery logs
@@ -403,43 +403,43 @@ This plan implements a multi-tenant SaaS CRM for Thai SMBs as a monorepo with Ne
     - `(settings)/pdpa` — PDPA consent management and audit log viewer
     - _Requirements: 2.2, 10.1, 13.1, 13.2, 17.1, 17.6, 15.3, 12.6_
 
-- [ ] 16. Checkpoint — Ensure all tests pass
+- [x] 16. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 17. Implement Email and Calendar Integrations
-  - [ ] 17.1 Implement Gmail and Outlook email synchronization
+- [x] 17. Implement Email and Calendar Integrations
+  - [x] 17.1 Implement Gmail and Outlook email synchronization
     - Gmail API integration: bidirectional sync of sent/received emails, link to contacts by email address
     - Microsoft Graph API integration: bidirectional Outlook email sync, link to contacts by email address
     - Display synced emails in contact's activity timeline
     - Retry on sync failure: up to 3 times, notify user of persistent failures
     - _Requirements: 13.1, 13.2, 13.3, 13.6_
 
-  - [ ] 17.2 Implement Google Calendar and Microsoft 365 Calendar synchronization
+  - [x] 17.2 Implement Google Calendar and Microsoft 365 Calendar synchronization
     - Bidirectional calendar event sync within 5 minutes
     - Google Calendar API and Microsoft 365 Calendar API integration
     - _Requirements: 7.6, 13.4, 13.5_
 
-- [ ] 18. Wire all services together and implement cross-cutting concerns
-  - [ ] 18.1 Set up SQS event bus for inter-service communication
+- [x] 18. Wire all services together and implement cross-cutting concerns
+  - [x] 18.1 Set up SQS event bus for inter-service communication
     - Configure SQS queues for: lead assignment notifications, task overdue notifications, deal stage change notifications, webhook event dispatch
     - Implement `DomainEvent` envelope for all events (eventId, eventType, tenantId, userId, timestamp, payload, version)
     - Wire CRM, Sales, Quotation services to publish events; Notification service to consume
     - _Requirements: 10.2, 17.2_
 
-  - [ ] 18.2 Implement API Gateway with authentication, rate limiting, and OpenAPI documentation
+  - [x] 18.2 Implement API Gateway with authentication, rate limiting, and OpenAPI documentation
     - JWT validation on all routes
     - API key and OAuth 2.0 bearer token authentication for external API access
     - Rate limiting middleware (1000 req/min per tenant)
     - Generate OpenAPI 3.0 documentation for all core entity endpoints
     - _Requirements: 17.1, 17.3, 17.4_
 
-  - [ ] 18.3 Implement security hardening
+  - [x] 18.3 Implement security hardening
     - AES-256 encryption at rest (RDS, S3 encryption settings)
     - TLS 1.2+ enforcement for all data in transit
     - IP allowlisting per tenant (optional security policy)
     - _Requirements: 15.1, 15.2, 15.3_
 
-- [ ] 19. Final checkpoint — Ensure all tests pass
+- [x] 19. Final checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

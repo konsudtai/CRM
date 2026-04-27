@@ -1,0 +1,60 @@
+<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — ตั้งค่า</title><link rel="stylesheet" href="../css/app.css"/></head><body>
+<div class="bg-pattern"></div><div id="nav"></div>
+<div class="page anim">
+  <div class="page-header"><div><div class="page-title">ตั้งค่า</div><div class="page-subtitle">จัดการการตั้งค่าระบบ</div></div></div>
+  <div class="settings-layout">
+    <div class="settings-nav" id="settings-tabs"></div>
+    <div class="card" style="flex:1" id="settings-content"></div>
+  </div>
+</div>
+<script src="../js/helpers.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
+<script>
+document.getElementById('nav').innerHTML=renderNav('settings');
+const tabs=[
+  {id:'roles',label:'บทบาทและสิทธิ์'},
+  {id:'users',label:'ผู้ใช้งาน'},
+  {id:'security',label:'ความปลอดภัย'},
+  {id:'integrations',label:'การเชื่อมต่อ'},
+  {id:'webhooks',label:'Webhooks'},
+  {id:'pdpa',label:'PDPA'},
+  {id:'api',label:'API Keys'},
+  {id:'admin',label:'Admin Portal'},
+];
+let activeTab='roles';
+function setTab(id){activeTab=id;renderTabs();renderContent()}
+function renderTabs(){document.getElementById('settings-tabs').innerHTML=tabs.map(t=>`<div class="settings-nav-item${activeTab===t.id?' active':''}" onclick="setTab('${t.id}')">${t.label}</div>`).join('')}
+function renderContent(){
+  const c={
+    roles:`<div class="section-title">บทบาทและสิทธิ์</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">จัดการบทบาทและกำหนดสิทธิ์การเข้าถึง (RBAC)</p>
+      <table><thead><tr><th>บทบาท</th><th>ประเภท</th><th>สมาชิก</th><th>สิทธิ์</th></tr></thead><tbody>
+      <tr><td style="font-weight:500">Admin</td><td><span class="tag">ค่าเริ่มต้น</span></td><td>2</td><td>ทั้งหมด</td></tr>
+      <tr><td style="font-weight:500">Sales Manager</td><td><span class="tag">ค่าเริ่มต้น</span></td><td>3</td><td>อ่าน, สร้าง, แก้ไข</td></tr>
+      <tr><td style="font-weight:500">Sales Rep</td><td><span class="tag">ค่าเริ่มต้น</span></td><td>8</td><td>อ่าน, สร้าง</td></tr>
+      <tr><td style="font-weight:500">Viewer</td><td><span class="status-badge" style="background:var(--surface3);color:var(--text2)">ค่าเริ่มต้น</span></td><td>5</td><td>อ่านเท่านั้น</td></tr>
+      </tbody></table><button class="btn btn-secondary" style="margin-top:16px">+ สร้างบทบาทใหม่</button>`,
+    users:`<div class="section-title">ผู้ใช้งาน</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">จัดการผู้ใช้งานในระบบ</p>
+      <table><thead><tr><th>ชื่อ</th><th>อีเมล</th><th>บทบาท</th><th>สถานะ</th></tr></thead><tbody>
+      ${REPS.map(r=>`<tr><td style="font-weight:500">${r.name}</td><td style="color:var(--text2)">${r.name.split(' ')[0].toLowerCase()}@ppcrm.co.th</td><td><span class="tag">Sales Rep</span></td><td><span class="status-badge" style="background:rgba(48,209,88,.12);color:#1a7d39">Active</span></td></tr>`).join('')}
+      </tbody></table><button class="btn btn-primary" style="margin-top:16px">+ เพิ่มผู้ใช้</button>`,
+    security:`<div class="section-title">ความปลอดภัย</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">จัดการนโยบายความปลอดภัย</p>
+      ${[{label:'MFA (การยืนยันตัวตน 2 ขั้นตอน)',desc:'บังคับใช้ MFA สำหรับผู้ใช้ทุกคน',on:true},{label:'IP Allowlist',desc:'จำกัดการเข้าถึงจาก IP ที่กำหนด',on:false},{label:'Session Timeout (30 นาที)',desc:'ออกจากระบบอัตโนมัติหลังไม่มีกิจกรรม',on:true},{label:'Password Policy',desc:'รหัสผ่านขั้นต่ำ 8 ตัวอักษร + ตัวพิมพ์ใหญ่ + ตัวเลข',on:true}].map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:8px"><div><div style="font-size:14px;font-weight:500">${s.label}</div><div style="font-size:12px;color:var(--text2)">${s.desc}</div></div><div style="width:44px;height:24px;border-radius:12px;background:${s.on?'var(--sf-blue)':'var(--surface3)'};position:relative;cursor:pointer"><div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;${s.on?'right:2px':'left:2px'};box-shadow:0 1px 3px rgba(0,0,0,.2)"></div></div></div>`).join('')}`,
+    integrations:`<div class="section-title">การเชื่อมต่อ</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">เชื่อมต่อกับบริการภายนอก</p>
+      ${[{name:'LINE OA',desc:'ส่งข้อความและแจ้งเตือนผ่าน LINE',icon:'',on:true},{name:'Gmail',desc:'ซิงค์อีเมลกับ Gmail',icon:'',on:false},{name:'Google Calendar',desc:'ซิงค์ปฏิทินกับ Google',icon:'',on:true},{name:'Microsoft 365',desc:'ซิงค์อีเมลและปฏิทิน',icon:'',on:false},{name:'AWS Bedrock (AI)',desc:'AI Lead Scoring, Chatbot, Summarization',icon:'',on:true}].map(i=>`<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:8px"><div style="display:flex;align-items:center;gap:12px"><span style="font-size:24px">${i.icon}</span><div><div style="font-size:14px;font-weight:500">${i.name}</div><div style="font-size:12px;color:var(--text2)">${i.desc}</div></div></div><button class="btn ${i.on?'btn-secondary':'btn-primary'}" style="padding:6px 14px;font-size:12px">${i.on?' เชื่อมต่อแล้ว':'เชื่อมต่อ'}</button></div>`).join('')}`,
+    webhooks:`<div class="section-title">Webhooks</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">ส่ง event ไปยัง URL ภายนอกเมื่อมีการเปลี่ยนแปลงข้อมูล</p>
+      <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:500">https://erp.company.co.th/webhook</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Events: lead.created, opportunity.updated · <span class="status-badge" style="background:rgba(48,209,88,.12);color:#1a7d39">Active</span></div></div><button class="btn btn-secondary" style="padding:6px 14px;font-size:12px">แก้ไข</button></div></div>
+      <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:500">https://accounting.co.th/api/hook</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Events: quotation.accepted · <span class="status-badge" style="background:rgba(48,209,88,.12);color:#1a7d39">Active</span></div></div><button class="btn btn-secondary" style="padding:6px 14px;font-size:12px">แก้ไข</button></div></div>
+      <button class="btn btn-secondary" style="margin-top:8px">+ เพิ่ม Webhook</button>`,
+    pdpa:`<div class="section-title">PDPA (พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล)</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">จัดการความยินยอมและนโยบายข้อมูลส่วนบุคคล</p>
+      ${[{label:'วัตถุประสงค์การเก็บข้อมูล',desc:'3 วัตถุประสงค์ที่กำหนด · ความยินยอม 245 รายการ'},{label:'Audit Log',desc:'บันทึกการเข้าถึงข้อมูลทั้งหมด · 1,234 รายการเดือนนี้'},{label:'คำขอลบข้อมูล',desc:'0 คำขอที่รอดำเนินการ · ดำเนินการภายใน 30 วัน'},{label:'Consent Records',desc:'บันทึกความยินยอมแบบ immutable · ไม่สามารถแก้ไขหรือลบได้'}].map(s=>`<div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:8px"><div style="font-size:14px;font-weight:500">${s.label}</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${s.desc}</div></div>`).join('')}
+      <button class="btn btn-secondary" style="margin-top:8px">+ เพิ่มวัตถุประสงค์</button>`,
+    api:`<div class="section-title">API Keys</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">จัดการ API Keys สำหรับเชื่อมต่อระบบภายนอก (REST API + OAuth 2.0)</p>
+      <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:500">Production API Key</div><div style="font-size:11px;color:var(--text2);margin-top:4px;font-family:monospace">ppcrm_live_sk_••••••••••••3a7f</div><div style="font-size:11px;color:var(--text3);margin-top:2px">สร้างเมื่อ 1 ม.ค. 2569 · Rate limit: 1,000 req/min</div></div><button class="btn btn-secondary" style="padding:6px 14px;font-size:12px">Regenerate</button></div></div>
+      <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:500">Test API Key</div><div style="font-size:11px;color:var(--text2);margin-top:4px;font-family:monospace">ppcrm_test_sk_••••••••••••9b2c</div><div style="font-size:11px;color:var(--text3);margin-top:2px">สร้างเมื่อ 15 ม.ค. 2569</div></div><button class="btn btn-secondary" style="padding:6px 14px;font-size:12px">Regenerate</button></div></div>
+      <button class="btn btn-primary" style="margin-top:8px">+ สร้าง API Key ใหม่</button>
+      <div style="margin-top:24px;padding:16px;background:rgba(0,113,227,.04);border-radius:10px;border:1px solid rgba(0,113,227,.1)"><div style="font-size:13px;font-weight:600;color:var(--sf-blue)"> API Documentation</div><div style="font-size:12px;color:var(--text2);margin-top:4px">OpenAPI 3.0 docs available at <code style="background:var(--surface3);padding:2px 6px;border-radius:4px;font-size:11px">/api/docs</code></div></div>`,
+    admin:`<div class="section-title">Admin Portal</div><p style="font-size:13px;color:var(--text2);margin-bottom:20px">Access the full admin portal for tenant management, system health, and advanced configuration.</p><a href="../admin/index.html" class="btn btn-primary" style="padding:10px 24px;font-size:14px;text-decoration:none">Open Admin Portal</a>`,
+  };
+  document.getElementById('settings-content').innerHTML=c[activeTab]||c.roles;
+}
+renderTabs();renderContent();
+</script></body></html>

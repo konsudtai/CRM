@@ -8,3 +8,4 @@ export * from './sales';
 export * from './quotation';
 export * from './notification';
 export * from './ai';
+export * from './events';
