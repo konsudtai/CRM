@@ -91,40 +91,150 @@ CREATE TABLE ip_allowlist_entries (
 -- 2. CRM — Accounts, Contacts, Activities
 -- ============================================================
 
+-- ============================================================
+-- 2. ACCOUNTS (Customer) — Core entity of the CRM
+-- ทุก module อ้างอิงกลับมาที่ Account เสมอ
+-- ============================================================
+
 CREATE TABLE accounts (
-  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  tenant_id     UUID NOT NULL REFERENCES tenants(id),
-  company_name  VARCHAR(255) NOT NULL,
-  industry      VARCHAR(255),
-  tax_id        VARCHAR(100),
-  phone         VARCHAR(50),
-  email         VARCHAR(255),
-  website       VARCHAR(512),
-  street        VARCHAR(512),
-  sub_district  VARCHAR(255),
-  district      VARCHAR(255),
-  province      VARCHAR(255),
-  postal_code   VARCHAR(20),
-  custom_fields JSONB DEFAULT '{}',
-  created_by    UUID REFERENCES users(id),
-  created_at    TIMESTAMPTZ DEFAULT NOW(),
-  updated_at    TIMESTAMPTZ DEFAULT NOW(),
-  deleted_at    TIMESTAMPTZ                       -- soft delete
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id         UUID NOT NULL REFERENCES tenants(id),
+
+  -- === Company Info ===
+  company_name      VARCHAR(255) NOT NULL,
+  company_name_en   VARCHAR(255),                   -- ชื่อภาษาอังกฤษ
+  company_type      VARCHAR(50),                    -- บจก., หจก., บมจ., ร้านค้า, บุคคลธรรมดา
+  industry          VARCHAR(255),
+  business_desc     TEXT,                           -- รายละเอียดธุรกิจ
+
+  -- === Tax & Registration ===
+  tax_id            VARCHAR(13),                    -- เลขประจำตัวผู้เสียภาษี (13 หลัก)
+  branch_code       VARCHAR(10) DEFAULT '00000',    -- รหัสสาขา (00000 = สำนักงานใหญ่)
+  branch_name       VARCHAR(100),                   -- ชื่อสาขา
+  registered_capital DECIMAL(15,2),                 -- ทุนจดทะเบียน (บาท)
+  registration_date DATE,                           -- วันที่จดทะเบียน
+  registration_no   VARCHAR(50),                    -- เลขทะเบียนนิติบุคคล
+
+  -- === Contact Info ===
+  phone             VARCHAR(50),
+  phone2            VARCHAR(50),                    -- เบอร์สำรอง
+  fax               VARCHAR(50),
+  email             VARCHAR(255),
+  website           VARCHAR(512),
+  line_oa_id        VARCHAR(100),                   -- LINE Official Account ID
+
+  -- === Address (Thai format) ===
+  address           TEXT,                           -- เลขที่ / อาคาร / ซอย / ถนน
+  sub_district      VARCHAR(255),                   -- ตำบล / แขวง
+  district          VARCHAR(255),                   -- อำเภอ / เขต
+  province          VARCHAR(255),                   -- จังหวัด
+  postal_code       VARCHAR(10),
+  country           VARCHAR(100) DEFAULT 'Thailand',
+
+  -- === Shipping Address (if different) ===
+  shipping_address      TEXT,
+  shipping_sub_district VARCHAR(255),
+  shipping_district     VARCHAR(255),
+  shipping_province     VARCHAR(255),
+  shipping_postal_code  VARCHAR(10),
+
+  -- === Sales Info ===
+  account_owner     UUID REFERENCES users(id),      -- เจ้าของบัญชี (Sales Rep)
+  account_status    VARCHAR(30) DEFAULT 'active',   -- active, inactive, prospect, churned
+  account_source    VARCHAR(100),                   -- แหล่งที่มา: website, referral, event, cold-call
+  account_tier      VARCHAR(20) DEFAULT 'standard', -- standard, silver, gold, platinum
+  credit_term       INTEGER DEFAULT 30,             -- เครดิตเทอม (วัน)
+  credit_limit      DECIMAL(15,2),                  -- วงเงินเครดิต
+  payment_method    VARCHAR(50),                    -- transfer, cheque, cash, credit
+
+  -- === Financial Summary (auto-calculated) ===
+  total_revenue     DECIMAL(15,2) DEFAULT 0,        -- รายได้รวมจาก closed-won deals
+  total_deals       INTEGER DEFAULT 0,
+  last_activity_at  TIMESTAMPTZ,
+
+  -- === Notes ===
+  internal_notes    TEXT,                           -- หมายเหตุภายใน
+  custom_fields     JSONB DEFAULT '{}',             -- ฟิลด์เพิ่มเติมตามต้องการ
+
+  -- === Metadata ===
+  created_by        UUID REFERENCES users(id),
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ DEFAULT NOW(),
+  deleted_at        TIMESTAMPTZ                     -- soft delete
 );
 
+-- ============================================================
+-- CONTACTS — บุคคลติดต่อ (ผูกกับ Account)
+-- ============================================================
+
 CREATE TABLE contacts (
-  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  tenant_id     UUID NOT NULL REFERENCES tenants(id),
-  account_id    UUID REFERENCES accounts(id),
-  first_name    VARCHAR(255) NOT NULL,
-  last_name     VARCHAR(255) NOT NULL,
-  title         VARCHAR(255),
-  phone         VARCHAR(50),
-  email         VARCHAR(255),
-  line_id       VARCHAR(255),
-  custom_fields JSONB DEFAULT '{}',
-  created_at    TIMESTAMPTZ DEFAULT NOW(),
-  updated_at    TIMESTAMPTZ DEFAULT NOW()
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id         UUID NOT NULL REFERENCES tenants(id),
+  account_id        UUID NOT NULL REFERENCES accounts(id),
+
+  -- === Personal Info ===
+  prefix            VARCHAR(20),                    -- คุณ, นาย, นาง, นางสาว, ดร.
+  first_name        VARCHAR(255) NOT NULL,
+  last_name         VARCHAR(255) NOT NULL,
+  nickname          VARCHAR(100),
+  title             VARCHAR(255),                   -- ตำแหน่ง
+  department        VARCHAR(255),                   -- แผนก
+  role_in_company   VARCHAR(100),                   -- decision_maker, influencer, user, gatekeeper
+
+  -- === Contact Info ===
+  phone             VARCHAR(50),
+  mobile            VARCHAR(50),
+  email             VARCHAR(255),
+  line_id           VARCHAR(255),
+
+  -- === Flags ===
+  is_primary        BOOLEAN DEFAULT false,          -- ผู้ติดต่อหลัก
+  is_billing        BOOLEAN DEFAULT false,          -- ผู้ติดต่อด้านบัญชี
+  is_active         BOOLEAN DEFAULT true,
+
+  -- === Notes ===
+  notes             TEXT,
+  custom_fields     JSONB DEFAULT '{}',
+
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================================
+-- SHAREHOLDERS — ผู้ถือหุ้น / กรรมการ (ผูกกับ Account)
+-- ============================================================
+
+CREATE TABLE account_shareholders (
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  account_id        UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  full_name         VARCHAR(255) NOT NULL,
+  id_card           VARCHAR(13),                    -- เลขบัตรประชาชน
+  nationality       VARCHAR(100) DEFAULT 'Thai',
+  share_percentage  DECIMAL(5,2),                   -- % หุ้น
+  share_amount      DECIMAL(15,2),                  -- จำนวนหุ้น (บาท)
+  position          VARCHAR(100),                   -- กรรมการ, กรรมการผู้จัดการ, ผู้ถือหุ้น
+  is_authorized     BOOLEAN DEFAULT false,          -- กรรมการผู้มีอำนาจลงนาม
+  phone             VARCHAR(50),
+  email             VARCHAR(255),
+  created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================================
+-- ACCOUNT DOCUMENTS — เอกสารบริษัท (หนังสือรับรอง, ภพ.20, etc.)
+-- ============================================================
+
+CREATE TABLE account_documents (
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  account_id        UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  tenant_id         UUID NOT NULL REFERENCES tenants(id),
+  doc_type          VARCHAR(50) NOT NULL,           -- certificate, vat_registration, id_card, contract, other
+  doc_name          VARCHAR(255) NOT NULL,
+  file_url          VARCHAR(1024) NOT NULL,         -- S3 URL
+  file_size         BIGINT,
+  expiry_date       DATE,                           -- วันหมดอายุ (ถ้ามี)
+  notes             VARCHAR(512),
+  uploaded_by       UUID REFERENCES users(id),
+  created_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE tags (
@@ -455,6 +565,8 @@ ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ip_allowlist_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE account_shareholders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE account_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE account_tags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
@@ -486,6 +598,10 @@ CREATE POLICY rls_api_keys ON api_keys USING (tenant_id = current_setting('app.c
 CREATE POLICY rls_ip_allowlist ON ip_allowlist_entries USING (tenant_id = current_setting('app.current_tenant')::uuid);
 CREATE POLICY rls_accounts ON accounts USING (tenant_id = current_setting('app.current_tenant')::uuid);
 CREATE POLICY rls_contacts ON contacts USING (tenant_id = current_setting('app.current_tenant')::uuid);
+CREATE POLICY rls_account_shareholders ON account_shareholders USING (
+  account_id IN (SELECT id FROM accounts WHERE tenant_id = current_setting('app.current_tenant')::uuid)
+);
+CREATE POLICY rls_account_documents ON account_documents USING (tenant_id = current_setting('app.current_tenant')::uuid);
 CREATE POLICY rls_tags ON tags USING (tenant_id = current_setting('app.current_tenant')::uuid);
 CREATE POLICY rls_activities ON activities USING (tenant_id = current_setting('app.current_tenant')::uuid);
 CREATE POLICY rls_notes ON notes USING (tenant_id = current_setting('app.current_tenant')::uuid);
@@ -536,8 +652,15 @@ CREATE INDEX idx_users_tenant ON users(tenant_id);
 CREATE INDEX idx_users_email ON users(tenant_id, email);
 CREATE INDEX idx_accounts_tenant ON accounts(tenant_id);
 CREATE INDEX idx_accounts_name ON accounts(tenant_id, company_name);
+CREATE INDEX idx_accounts_tax ON accounts(tenant_id, tax_id);
+CREATE INDEX idx_accounts_status ON accounts(tenant_id, account_status);
+CREATE INDEX idx_accounts_owner ON accounts(tenant_id, account_owner);
+CREATE INDEX idx_accounts_tier ON accounts(tenant_id, account_tier);
 CREATE INDEX idx_contacts_tenant ON contacts(tenant_id);
 CREATE INDEX idx_contacts_account ON contacts(account_id);
+CREATE INDEX idx_contacts_primary ON contacts(account_id, is_primary) WHERE is_primary = true;
+CREATE INDEX idx_shareholders_account ON account_shareholders(account_id);
+CREATE INDEX idx_account_docs ON account_documents(account_id);
 CREATE INDEX idx_activities_entity ON activities(tenant_id, entity_type, entity_id);
 CREATE INDEX idx_activities_ts ON activities(tenant_id, timestamp DESC);
 CREATE INDEX idx_notes_entity ON notes(tenant_id, entity_type, entity_id);

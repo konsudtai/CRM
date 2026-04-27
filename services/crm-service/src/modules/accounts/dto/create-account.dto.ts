@@ -1,69 +1,31 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsEmail,
-  IsObject,
-  MaxLength,
-} from 'class-validator';
-
 export class CreateAccountDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
   companyName!: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(255)
+  companyNameEn?: string;
+  companyType?: string;
   industry?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(100)
+  businessDesc?: string;
   taxId?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
+  branchCode?: string;
+  branchName?: string;
+  registeredCapital?: number;
+  registrationDate?: string;
+  registrationNo?: string;
   phone?: string;
-
-  @IsEmail()
-  @IsOptional()
-  @MaxLength(255)
+  phone2?: string;
+  fax?: string;
   email?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(512)
   website?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(512)
-  street?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(255)
+  lineOaId?: string;
+  address?: string;
   subDistrict?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(255)
   district?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(255)
   province?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(20)
   postalCode?: string;
-
-  @IsObject()
-  @IsOptional()
+  accountSource?: string;
+  accountTier?: string;
+  creditTerm?: number;
+  creditLimit?: number;
+  paymentMethod?: string;
+  internalNotes?: string;
   customFields?: Record<string, unknown>;
 }

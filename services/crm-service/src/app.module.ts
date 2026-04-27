@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { Account } from './entities/account.entity';
 import { Contact } from './entities/contact.entity';
+import { AccountShareholder } from './entities/account-shareholder.entity';
+import { AccountDocument } from './entities/account-document.entity';
 import { Note } from './entities/note.entity';
 import { Attachment } from './entities/attachment.entity';
 import { Tag } from './entities/tag.entity';
@@ -40,7 +42,7 @@ import { EventBusModule } from './modules/event-bus/event-bus.module';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'crm_service',
-      entities: [Account, Contact, Note, Attachment, Tag, AccountTag, Activity, AuditLog, Task, ConsentRecord, EmailSync, CalendarSync],
+      entities: [Account, Contact, AccountShareholder, AccountDocument, Note, Attachment, Tag, AccountTag, Activity, AuditLog, Task, ConsentRecord, EmailSync, CalendarSync],
       migrations: [],
       synchronize: false,
       logging: process.env.DB_LOGGING === 'true',
