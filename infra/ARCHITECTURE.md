@@ -2,34 +2,62 @@
 
 ## Region: ap-southeast-7 (Thailand)
 
-## Cost Breakdown (~$100/mo budget)
+## Cost Breakdown (~$130/mo budget)
+
+### CRM Infrastructure (ap-southeast-7)
 
 | Service | Spec | Est. Cost |
 |---------|------|-----------|
 | RDS PostgreSQL | db.t4g.medium, 100GB gp3, single-AZ | $56 |
-| RDS Proxy | Connection pooling (2 vCPU × $0.015/hr) | $15 |
+| RDS Proxy | Connection pooling (2 vCPU x $0.015/hr) | $15 |
 | VPC Endpoints | 3 (S3, SQS, Secrets Manager) | $22 |
-| CloudFront | Flat Rate PRO, OAC + API proxy | $10 |
+| **CloudFront Pro Plan** | **Flat-rate: CDN + WAF + DDoS + DNS + TLS + Logs + 50GB S3** | **$15** |
 | AWS Backup | Daily snapshots, 7-day retention (RDS + S3) | $2 |
 | CloudWatch Logs | basic + VPC Flow Logs | $2 |
 | Lambda (5 functions) | 1024MB, ~100K invocations | $2 |
 | API Gateway HTTP API | ~100K requests, throttled | $1 |
-| S3 (frontend + files) | ~5GB, AES-256 encrypted | $1 |
-| Secrets Manager | 2 secrets | $1 |
+| S3 (frontend + files) | ~5GB (covered by Pro plan 50GB credits) | $0 |
+| Secrets Manager | 3 secrets (DB + JWT + LINE) | $1.50 |
 | SQS | ~50K messages | $0.50 |
 | DynamoDB | 2 tables (chat history + AI state), on-demand | $1 |
-| **Total** | | **~$114/mo** |
+| **CRM Subtotal** | | **~$118/mo** |
+
+### AI / Bedrock (ap-southeast-1 Singapore)
+
+| Service | Spec | Est. Cost |
+|---------|------|-----------|
+| S3 (Knowledge Base) | ~1GB documents | $0.25 |
+| Bedrock Chat Model | Claude 3 Haiku / Nova Lite (on-demand) | $5-15 |
+| Bedrock Embedding | Titan Embed v2, ~10K chunks/mo | $0.10 |
+| IAM Roles | Bedrock Agent + KB (free) | $0 |
+| **AI Subtotal** | | **~$5-15/mo** |
+
+| **Total** | CRM + AI (Haiku/Nova Lite) | **~$123-133/mo** |
 
 No NAT Gateway ($32/mo saved) — uses VPC endpoints instead.
 
-## CloudFront Flat Rate PRO
+## CloudFront Flat-Rate Pro Plan ($15/mo)
 
-- Subscribe via AWS Console > CloudFront > Savings Bundle
-- Flat Rate PRO provides predictable pricing for data transfer
+- Subscribe via AWS Console > CloudFront > Distributions > select distribution > Pricing plan > Pro
+- Pro plan includes (no overage charges):
+  - CloudFront CDN (750+ edge locations, HTTP/2+3)
+  - AWS WAF (25 rules: SQL injection, XSS, PHP, WordPress protections)
+  - Always-on DDoS protection
+  - Amazon Route 53 DNS
+  - Amazon CloudWatch Logs ingestion
+  - TLS certificate (free)
+  - Serverless edge compute (CloudFront Functions)
+  - 50GB S3 storage credits/mo
+  - 10M requests/mo, 50TB data transfer/mo
+  - Cache tag invalidation
+  - Logging included
+- No separate WAF WebACL needed — WAF is managed by the plan
 - OAC (Origin Access Control) secures S3 bucket — no public access
 - API routes proxied through CloudFront to API Gateway
-- HTTP/2 + HTTP/3 enabled for performance
 - Custom error responses for SPA routing (403/404 -> index.html)
+- Blocked DDoS attacks and WAF-blocked requests do NOT count against usage allowance
+- If usage exceeds allowance: reduced performance (fewer edge locations), but NO overage charges
+- Ref: https://aws.amazon.com/cloudfront/pricing/
 
 ## Deploy via CloudShell
 
@@ -70,9 +98,9 @@ User -> CloudFront (Flat Rate PRO)
 
 ## Security
 
-- WAF v2: Rate limiting (1000 req/5min per IP), SQL injection, XSS, bad bot protection
+- WAF: Included in CloudFront Pro plan (25 rules: SQL injection, XSS, PHP, WordPress, rate limiting)
 - S3 frontend bucket: private (BlockPublicAccess), AES-256 encrypted, served only via CloudFront OAC
-- CloudFront: TLS 1.2+ minimum, security headers (HSTS, CSP, X-Frame-Options)
+- CloudFront: TLS 1.2+ minimum, security headers (HSTS, CSP, X-Frame-Options), DDoS protection included
 - RDS: private subnet, encrypted at rest, SSL enforced, 7-day backup, deletion protection
 - Lambda: runs in VPC private subnets, restricted egress (VPC CIDR only)
 - Secrets: stored in AWS Secrets Manager

@@ -26,6 +26,7 @@ SalesFAST 7 is a full-featured Customer Relationship Management platform designe
 - [Data Flow Diagram](#data-flow-diagram)
 - [i18n — Thai / English](#i18n--thai--english)
 - [Default Credentials](#default-credentials)
+- [Deploy Readiness Checklist](#deploy-readiness-checklist)
 
 ---
 
@@ -57,8 +58,8 @@ SalesFAST 7 is a full-featured Customer Relationship Management platform designe
 | Backend | NestJS (TypeScript) on AWS Lambda Node.js 20.x — 1024MB per function |
 | Database | PostgreSQL 16 on Amazon RDS db.t4g.medium + RDS Proxy |
 | Auth | bcrypt cost-12 + JWT (15min access / 7d refresh), account lockout |
-| CDN | Amazon CloudFront Flat Rate PRO with OAC |
-| Security | AWS WAF v2, Helmet, RLS, TLS 1.2+, parameterized SQL |
+| CDN | Amazon CloudFront Pro Plan ($15/mo flat-rate) with OAC |
+| Security | AWS WAF (included in Pro plan, 25 rules), DDoS protection, Helmet, RLS, TLS 1.2+ |
 | Queue | Amazon SQS (event-driven notifications) + DLQ |
 | Storage | Amazon S3 AES-256 encrypted, private |
 | Backup | AWS Backup — daily snapshots, 7-day retention |
@@ -184,16 +185,66 @@ Phase 2: AI Stack (--ai-region, default Singapore)
 |---------|:------------------------:|:--------------------------:|
 | VPC, EC2, Lambda, S3, RDS | ✅ | ✅ |
 | API Gateway, SQS, DynamoDB | ✅ | ✅ |
-| CloudFront | ✅ Global | ✅ Global |
-| WAF v2 (CLOUDFRONT scope) | ⚠️ ต้อง deploy ที่ us-east-1 | ⚠️ ต้อง deploy ที่ us-east-1 |
+| CloudFront Pro Plan | ✅ Global (subscribe via Console) | ✅ Global |
+| WAF | ✅ Included in Pro plan | ✅ Included in Pro plan |
 | RDS Proxy | ⚠️ อาจยังไม่มี | ✅ |
 | Amazon Bedrock | ❌ ไม่มี | ✅ ครบทุก model |
 
-**ถ้า deploy ที่ ap-southeast-7 แล้ว WAF หรือ RDS Proxy error:**
-- WAF: ลบ `WAFWebACL` + `WebACLId` ออกจาก cloudformation.yaml
+**ถ้า deploy ที่ ap-southeast-7 แล้ว RDS Proxy error:**
 - RDS Proxy: ลบ `RDSProxy*` resources ออก, Lambda จะเชื่อม RDS ตรง
 
+**CloudFront Pro Plan:** subscribe หลัง deploy ผ่าน CloudFront Console (ไม่ต้อง deploy WAF แยก)
+
 **แนะนำสำหรับ production:** ใช้ `ap-southeast-1` (Singapore) เป็น CRM region เพราะรองรับทุก service + Bedrock อยู่ใน region เดียวกัน
+
+### CloudFront Pro Plan — Setup หลัง Deploy
+
+CloudFront Pro Plan เป็น flat-rate pricing $15/mo ที่รวมทุกอย่างไว้ในราคาเดียว ไม่มี overage charges:
+
+```
+สิ่งที่รวมอยู่ใน Pro Plan ($15/mo):
+  - CloudFront CDN (750+ edge locations ทั่วโลก)
+  - AWS WAF (25 rules: SQL injection, XSS, PHP, WordPress)
+  - Always-on DDoS protection
+  - Amazon Route 53 DNS
+  - Amazon CloudWatch Logs ingestion
+  - TLS certificate (free)
+  - Serverless edge compute (CloudFront Functions)
+  - 50GB S3 storage credits/mo
+  - 10M requests/mo
+  - 50TB data transfer/mo
+  - Cache tag invalidation
+  - Logging
+```
+
+**วิธี Subscribe (ทำครั้งเดียวหลัง deploy):**
+
+```
+1. เปิด AWS Console > CloudFront
+2. เลือก Distribution ที่สร้างจาก deploy.sh
+3. คลิก "Pricing plan" tab
+4. เลือก "Pro" ($15/month)
+5. กด "Subscribe"
+6. เสร็จ — WAF + DDoS + DNS + Logs เปิดใช้งานอัตโนมัติ
+```
+
+**Usage Allowance:**
+- 10M requests/mo + 50TB data transfer/mo (เพียงพอสำหรับ 50+ users)
+- ถ้าเกิน: performance ลดลง (ใช้ edge locations น้อยลง) แต่ **ไม่มีค่าใช้จ่ายเพิ่ม**
+- DDoS attacks + WAF-blocked requests **ไม่นับ** usage allowance
+- AWS แจ้งเตือนที่ 50%, 80%, 100% ของ allowance
+
+**เปรียบเทียบ Plan:**
+
+| Plan | Price | Requests | Data Transfer | WAF Rules | S3 Credits |
+|------|------:|--------:|-------------:|----------:|-----------:|
+| Free | $0/mo | 1M | 100GB | 5 | 5GB |
+| **Pro** | **$15/mo** | **10M** | **50TB** | **25** | **50GB** |
+| Business | $200/mo | 125M | 50TB | 50 | 1TB |
+| Premium | $1,000/mo | 500M | 50TB | 75 | 5TB |
+
+> สำหรับ SalesFAST 7 (30-50 users, ~500K req/mo) → **Pro plan เพียงพอ**
+> ถ้า users เกิน 300+ หรือ requests เกิน 10M/mo → upgrade เป็น Business plan
 
 ### What the Deploy Script Does
 
@@ -220,31 +271,81 @@ psql -h <RDS_ENDPOINT> -U salesfast7 -d salesfast7 < /tmp/sf7-seed-generated.sql
 
 ## AWS Cost Breakdown
 
-**Region: ap-southeast-7 (Thailand) | ~$120/month**
+### CRM Infrastructure (ap-southeast-7 Thailand)
 
 | Service | Specification | Monthly Cost |
 |---------|--------------|-------------:|
 | RDS PostgreSQL | db.t4g.medium (2 vCPU, 4GB RAM), 100GB gp3, single-AZ, encrypted | $56.00 |
 | VPC Endpoints | 3 interface endpoints (S3, SQS, Secrets Manager) — replaces NAT Gateway | $22.00 |
-| RDS Proxy | Connection pooling — 2 vCPU × $0.015/hr × 730h | $15.00 |
-| CloudFront | Flat Rate PRO plan, OAC, HTTP/2+3, security headers | $10.00 |
-| CloudFront Flat Rate | CDN + WAF + DDoS + DNS + TLS + Logging (included) | $10.00 |
-| AWS Backup | Daily snapshots, 7-day retention — RDS + S3 files (09:00 TH) | $2.00 |
+| RDS Proxy | Connection pooling — 2 vCPU x $0.015/hr x 730h | $15.00 |
+| **CloudFront Pro Plan** | **Flat-rate $15/mo — CDN + WAF + DDoS + DNS + TLS + Logs + 50GB S3 credits (no overage)** | **$15.00** |
+| AWS Backup | Daily snapshots, 7-day retention — RDS + S3 (09:00 TH) | $2.00 |
 | CloudWatch | Logs + VPC Flow Logs (30-day retention) + 3 security alarms | $2.00 |
-| Lambda | 5 functions × 1024MB, ~100K req/month | $2.00 |
+| Lambda | 5 functions x 1024MB, ~100K req/month | $2.00 |
 | API Gateway | HTTP API, ~100K requests, throttled 50 req/s | $1.00 |
-| S3 | Frontend + files, ~5GB, AES-256 encrypted | $1.00 |
-| Secrets Manager | 2 secrets (DB credentials + JWT) | $1.00 |
+| S3 (Frontend + Files) | ~5GB, AES-256 encrypted, private (50GB covered by Pro plan credits) | $0.00 |
+| Secrets Manager | 3 secrets (DB + JWT + LINE) | $1.50 |
 | SQS | ~50K messages + DLQ | $0.50 |
 | DynamoDB | 2 tables (chat history + AI state), on-demand, encrypted | $1.00 |
-| **Total** | | **~$114/mo** |
+| **CRM Subtotal** | | **~$118/mo** |
 
-**Cost Optimizations Applied:**
+> **CloudFront Pro Plan ($15/mo) includes:**
+> 10M requests/mo, 50TB data transfer/mo, 25 WAF rules (SQL/XSS/PHP/WordPress),
+> Always-on DDoS protection, Route 53 DNS, CloudWatch Logs ingestion, TLS certificate,
+> Serverless edge compute, 50GB S3 storage credits, Cache tag invalidation, Logging.
+> **No overage charges** — traffic spikes and DDoS attacks do not increase cost.
+> Subscribe via: CloudFront Console > Distributions > select distribution > Pricing plan > Pro
+
+### AI / Bedrock (ap-southeast-1 Singapore)
+
+| Service | Specification | Monthly Cost |
+|---------|--------------|-------------:|
+| S3 (Knowledge Base) | เก็บเอกสาร KB ~1GB, AES-256 | $0.25 |
+| IAM Roles | Bedrock Agent Role + KB Role (free) | $0.00 |
+| **Bedrock — Chat Model** | **ขึ้นอยู่กับ model + ปริมาณใช้งาน (ดูตารางด้านล่าง)** | **$5–80** |
+| Bedrock — Embedding | Amazon Titan Embed v2, ~10K chunks/mo | $0.10 |
+| **AI Subtotal** | | **~$5–80/mo** |
+
+### Bedrock Model Pricing (On-Demand, per 1K tokens)
+
+| Model | Input | Output | Est. Cost/mo (30 users) |
+|-------|------:|-------:|------------------------:|
+| Amazon Nova Lite 2.0 | $0.00006 | $0.00024 | **~$2–5** |
+| Claude 3 Haiku | $0.00025 | $0.00125 | **~$5–15** |
+| DeepSeek R1 | $0.00135 | $0.00540 | **~$8–20** |
+| Mistral Small | $0.001 | $0.003 | **~$5–15** |
+| Qwen 2.5 72B | $0.0008 | $0.0008 | **~$5–12** |
+| Llama 3.1 8B | $0.00022 | $0.00022 | **~$2–5** |
+| Claude 3.5 Sonnet | $0.003 | $0.015 | **~$20–50** |
+| Claude Sonnet 4 | $0.003 | $0.015 | **~$20–50** |
+| Claude Opus 4 | $0.015 | $0.075 | **~$50–150** |
+| Cohere Command R+ | $0.003 | $0.015 | **~$15–40** |
+
+> ประมาณการ: 30 users, ~500 conversations/mo, avg 2K input + 1K output tokens per conversation
+> แนะนำเริ่มต้น: **Claude 3 Haiku** หรือ **Amazon Nova Lite 2.0** (ถูกที่สุด, เร็วที่สุด)
+
+### รวมทั้งหมด
+
+| Category | Monthly Cost |
+|----------|-------------:|
+| CRM Infrastructure | ~$118 |
+| AI (Nova Lite / Haiku) | ~$5-15 |
+| **Total (แนะนำ)** | **~$123-133/mo** |
+| AI (Sonnet 4 / Opus 4) | ~$20-150 |
+| **Total (Premium model)** | **~$138-268/mo** |
+
+### Cost Optimizations Applied
+
+- CloudFront Pro Plan $15/mo flat-rate — รวม CDN + WAF + DDoS + DNS + TLS + Logs + 50GB S3 credits, no overage
 - No NAT Gateway — saves $32/month, uses VPC Endpoints instead
 - No Cognito — bcrypt + JWT in PostgreSQL saves ~$0-5/month
 - Serverless Lambda instead of EC2/ECS — no idle compute cost
 - Single-AZ RDS — acceptable for SMB, saves ~$56/month vs Multi-AZ
 - HTTP API Gateway — 70% cheaper than REST API
+- S3 storage covered by Pro plan — 50GB/mo credits included (frontend ~5GB ใช้ฟรี)
+- Bedrock On-Demand — จ่ายตามใช้จริง ไม่มี minimum, ไม่มี commitment
+- DynamoDB On-Demand — ไม่ต้อง provision capacity, จ่ายตาม request
+- AI stack แยก region — deploy Bedrock ที่ Singapore (ใกล้ไทย, มีทุก model)
 
 ---
 
@@ -260,9 +361,11 @@ psql -h <RDS_ENDPOINT> -U salesfast7 -d salesfast7 < /tmp/sf7-seed-generated.sql
 | RDS Proxy | Connection pool | ~150 pooled connections to RDS |
 | RDS | db.t4g.medium, 4GB RAM | ~170 max DB connections |
 | API Gateway | HTTP API | 10,000 req/s (regional) |
-| WAF | Rate limit per IP | 1,000 req / 5 min per IP |
+| CloudFront Pro | WAF 25 rules | SQL/XSS/PHP/WordPress + DDoS protection |
+| CloudFront Pro | Requests | 10M requests/mo (no overage) |
+| CloudFront Pro | Data Transfer | 50TB/mo (no overage) |
 
-### Recommended User Capacity at $120/mo
+### Recommended User Capacity at ~$130/mo
 
 | Usage Pattern | Concurrent Users | Req/month | Status |
 |--------------|-----------------|-----------|--------|
@@ -271,17 +374,17 @@ psql -h <RDS_ENDPOINT> -U salesfast7 -d salesfast7 < /tmp/sf7-seed-generated.sql
 | Peak (50 sales users) | 50-80 | ~1M | Optimal sweet spot |
 | Heavy (100+ users) | 100-150 | ~3M | RDS starts to strain |
 
-**Sweet spot: 30-50 active sales users** — ใช้งานได้สบายมากที่ $120/mo
+**Sweet spot: 30-50 active sales users** — ใช้งานได้สบายมากที่ ~$130/mo (CRM + AI)
 
 ### Cost Scaling Scenarios
 
 | Users | Req/month | Changes Needed | Est. Cost |
 |-------|-----------|---------------|-----------|
-| 5-50 | 100K–1M | ไม่ต้องเปลี่ยน | **$120/mo** |
-| 50-150 | 1M–3M | Lambda req cost เพิ่ม | **$130-140/mo** |
-| 150-300 | 3M–8M | Upgrade RDS → db.t4g.large | **$200-220/mo** |
-| 300-500 | 8M–20M | RDS db.t4g.xlarge + Read Replica | **$350-400/mo** |
-| 500+ | 20M+ | Multi-AZ RDS + ElastiCache | **$500+/mo** |
+| 5-50 | 100K-1M | ไม่ต้องเปลี่ยน | **~$130/mo** |
+| 50-150 | 1M-3M | Lambda req cost เพิ่ม | **~$140-155/mo** |
+| 150-300 | 3M-8M | Upgrade RDS → db.t4g.large | **~$215-245/mo** |
+| 300-500 | 8M-20M | RDS db.t4g.xlarge + Read Replica | **~$365-415/mo** |
+| 500+ | 20M+ | Multi-AZ RDS + ElastiCache + CF Business plan | **$500+/mo** |
 
 ### When to Upgrade
 
@@ -1075,3 +1178,85 @@ The system will prompt for password change on first login (`force_password_chang
 ## License
 
 Proprietary. All rights reserved.
+
+---
+
+## Deploy Readiness Checklist
+
+> Last verified: 1 May 2026
+
+### Pre-Deploy Requirements
+
+```
+[ ] AWS Account with sufficient permissions
+    (CloudFormation, Lambda, RDS, S3, DynamoDB, SQS, API Gateway,
+     CloudFront, IAM, Secrets Manager, CloudWatch, Backup)
+[ ] AWS CLI configured (aws configure)
+[ ] Git installed
+[ ] Region selected:
+    - CRM: ap-southeast-7 (Thailand) or ap-southeast-1 (Singapore)
+    - AI:  ap-southeast-1 (Singapore, recommended — has Bedrock)
+```
+
+### Deploy Command
+
+```bash
+git clone https://github.com/konsudtai/CRM.git
+cd CRM/infra
+bash deploy.sh \
+  --email    admin@mycompany.com \
+  --name     "Somchai Jaidee" \
+  --password "MyPass@123" \
+  --db-pass  auto \
+  --tenant   "My Company Ltd" \
+  --region   ap-southeast-7
+```
+
+### Post-Deploy Steps
+
+```
+[ ] 1. Subscribe CloudFront Pro Plan ($15/mo)
+       Console > CloudFront > Distributions > select > Pricing plan > Pro
+
+[ ] 2. Initialize Database (if auto-init skipped)
+       RDS Query Editor > Connect > Run schema.sql then seed.sql
+
+[ ] 3. Setup Bedrock Knowledge Base (optional)
+       Console > Bedrock > Knowledge Base > Create
+       S3 source: sf7-prod-knowledge-base-{account-id}
+
+[ ] 4. Setup LINE OA (optional)
+       CRM > Settings > Add-ons > LINE OA > Enter token/secret
+
+[ ] 5. Test Login
+       Open CloudFront URL > Login with admin credentials
+
+[ ] 6. Change Admin Password (first login)
+       System will prompt for password change
+```
+
+### Project Verification Summary
+
+| Component | Files | Status |
+|-----------|------:|:------:|
+| Frontend Pages | 13 pages + admin portal + manual | OK |
+| Backend Services | 5 NestJS microservices | OK |
+| Database Schema | 30+ tables with RLS | OK |
+| Seed Data | 5 placeholders, 4 default roles | OK |
+| CloudFormation (CRM) | ~1,280 lines, 11 outputs | OK |
+| CloudFormation (AI) | S3 + IAM roles, 6 outputs | OK |
+| Deploy Script | 2-phase, 8 steps, all flags validated | OK |
+| i18n | 150+ keys TH/EN | OK |
+| Mock Data | 8 datasets (accounts, leads, tasks, etc.) | OK |
+| AI Agents | 3 agents (Admin AI, น้องขายไว, น้องวิ) | OK |
+| LINE OA | Webhook + auto-lead + send product/QT | OK |
+| Security | 18 issues fixed, RLS, bcrypt, JWT | OK |
+
+### Monthly Cost Summary
+
+```
+CRM Infrastructure:  ~$118/mo  (RDS + VPC + CloudFront Pro + Lambda + ...)
+AI / Bedrock:        ~$5-15/mo (Nova Lite or Haiku, on-demand)
+─────────────────────────────────
+Total:               ~$123-133/mo (recommended setup)
+```

@@ -348,13 +348,30 @@ Resources:
 
   # ============================================================
   # ============================================================
-  # WAF — Included in CloudFront Flat Rate plan
-  # Select flat-rate plan via CloudFront Console
-  # Includes: CDN + WAF + DDoS + DNS + TLS + Logging
+  # CloudFront Flat-Rate PRO Plan ($15/mo)
+  # ─────────────────────────────────────────────────────────────
+  # Subscribe AFTER deploy via CloudFront Console:
+  #   Console > CloudFront > Distributions > select distribution > Pricing plan > Pro
+  #
+  # Pro plan includes (no overage charges):
+  #   - CloudFront CDN (750+ edge locations, HTTP/2+3)
+  #   - AWS WAF (25 rules, SQL/XSS/PHP/WordPress protections)
+  #   - Always-on DDoS protection
+  #   - Amazon Route 53 DNS
+  #   - Amazon CloudWatch Logs ingestion
+  #   - TLS certificate (free)
+  #   - Serverless edge compute
+  #   - 50GB S3 storage credits/mo
+  #   - 10M requests/mo
+  #   - 50TB data transfer/mo
+  #   - Logging included
+  #   - Cache tag invalidation
+  #
+  # No separate WAF WebACL needed — WAF is managed by the plan.
+  # Ref: https://aws.amazon.com/cloudfront/pricing/
   # ============================================================
 
-  # CloudFront — Flat Rate PRO plan
-  # OAC for S3 origin (private bucket, no public access)
+  # CloudFront Distribution — OAC for S3 origin (private bucket)
   # ============================================================
   CloudFrontOAC:
     Type: AWS::CloudFront::OriginAccessControl

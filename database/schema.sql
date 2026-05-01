@@ -1,7 +1,7 @@
 -- ============================================================
 -- SalesFAST 7 — Complete PostgreSQL Schema
 -- Single database, multi-tenant with RLS
--- User auth via AWS Cognito User Pool
+-- User auth via bcrypt + JWT (no Cognito)
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
