@@ -134,9 +134,19 @@ CRM/
 
 Open [AWS CloudShell](https://console.aws.amazon.com/cloudshell/) in region `ap-southeast-7`, then run:
 
+**Step 1: Deploy CRM (Thailand)**
 ```bash
-# Clone and deploy — interactive mode (prompts for all inputs)
 git clone https://github.com/konsudtai/CRM.git && cd CRM/infra && bash deploy.sh
+```
+
+**Step 2: Deploy AI Resources (Singapore — recommended)**
+```bash
+bash deploy-ai.sh
+```
+
+Or specify a different region:
+```bash
+bash deploy-ai.sh --region us-east-1
 ```
 
 Or pass everything as flags in one line:

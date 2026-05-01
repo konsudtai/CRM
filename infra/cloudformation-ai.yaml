@@ -1,0 +1,136 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SalesFAST 7 — AI Resources (Bedrock Agents + Knowledge Base)'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues: [prod, staging]
+  CRMStackName:
+    Type: String
+    Default: salesfast7-prod
+    Description: 'Name of the main CRM CloudFormation stack'
+  CRMRegion:
+    Type: String
+    Default: ap-southeast-7
+    Description: 'Region where the main CRM stack is deployed'
+
+Resources:
+
+  # ============================================================
+  # S3 — Knowledge Base Documents
+  # ============================================================
+  KBBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'sf7-${Environment}-knowledge-base-${AWS::AccountId}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # ============================================================
+  # IAM — Bedrock Agent Role
+  # ============================================================
+  BedrockAgentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'sf7-${Environment}-bedrock-agent-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: bedrock-agent-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt KBBucket.Arn
+                  - !Sub '${KBBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: '*'
+
+  # ============================================================
+  # IAM — Knowledge Base Role
+  # ============================================================
+  KBRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'sf7-${Environment}-kb-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: kb-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt KBBucket.Arn
+                  - !Sub '${KBBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                Resource: '*'
+
+# ============================================================
+# Outputs
+# ============================================================
+Outputs:
+  KBBucketName:
+    Value: !Ref KBBucket
+    Description: S3 bucket for Knowledge Base documents
+
+  KBBucketArn:
+    Value: !GetAtt KBBucket.Arn
+    Description: S3 bucket ARN
+
+  BedrockAgentRoleArn:
+    Value: !GetAtt BedrockAgentRole.Arn
+    Description: IAM role ARN for Bedrock Agents
+
+  KBRoleArn:
+    Value: !GetAtt KBRole.Arn
+    Description: IAM role ARN for Knowledge Base
+
+  AIRegion:
+    Value: !Ref AWS::Region
+    Description: Region where AI resources are deployed
+
+  SetupInstructions:
+    Value: !Sub |
+      AI stack deployed. Next steps:
+      1. Go to Bedrock Console in ${AWS::Region}
+      2. Create Knowledge Base using role: sf7-${Environment}-kb-role
+      3. Set S3 data source: sf7-${Environment}-knowledge-base-${AWS::AccountId}
+      4. Create 3 Agents using role: sf7-${Environment}-bedrock-agent-role
+      5. Copy Agent IDs to CRM Settings > AI Configuration
+    Description: Post-deployment setup instructions
