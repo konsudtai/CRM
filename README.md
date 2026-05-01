@@ -1317,21 +1317,58 @@ bash deploy.sh \
 ### Quick Reference — CloudShell Commands
 
 ```bash
-# ── First Deploy ──
-git clone https://github.com/konsudtai/CRM.git && cd CRM/infra && \
-bash deploy.sh --email admin@co.com --name "John" --password "Pass@1" --db-pass auto --tenant "My Co"
+# ══════════════════════════════════════════════════
+# First Deploy (ครั้งแรก)
+# ══════════════════════════════════════════════════
+git clone https://github.com/konsudtai/CRM.git
+cd CRM/infra
+bash deploy.sh \
+  --email admin@mycompany.com \
+  --name "Somchai Jaidee" \
+  --password "MyPass@123" \
+  --db-pass auto \
+  --tenant "My Company Ltd"
 
-# ── Update Code ──
-cd CRM && git pull origin main && cd infra && \
-bash deploy.sh --email admin@co.com --name "John" --password "Pass@1" --db-pass "<SAME>" --tenant "My Co"
+# ══════════════════════════════════════════════════
+# Update Code (อัปเดต version ใหม่ — ไม่ลบ database)
+# ══════════════════════════════════════════════════
+cd ~/CRM
+git pull origin main
+cd infra
+bash deploy.sh \
+  --email admin@mycompany.com \
+  --name "Somchai Jaidee" \
+  --password "MyPass@123" \
+  --db-pass "<SAME_PASSWORD_AS_FIRST_DEPLOY>" \
+  --tenant "My Company Ltd"
 
-# ── Destroy ──
-cd CRM/infra && bash destroy.sh
+# ══════════════════════════════════════════════════
+# Destroy (ลบทุกอย่าง)
+# ══════════════════════════════════════════════════
+cd ~/CRM/infra
+bash destroy.sh
 
-# ── Clean Redeploy ──
-cd CRM/infra && bash destroy.sh --yes && \
-bash deploy.sh --email admin@co.com --name "John" --password "Pass@1" --db-pass auto --tenant "My Co"
+# หรือ skip confirmation:
+bash destroy.sh --yes
+
+# หรือระบุ region:
+bash destroy.sh --region ap-southeast-7
+
+# ══════════════════════════════════════════════════
+# Clean Redeploy (ลบแล้ว deploy ใหม่ทั้งหมด)
+# ══════════════════════════════════════════════════
+cd ~/CRM/infra
+bash destroy.sh --yes
+bash deploy.sh \
+  --email admin@mycompany.com \
+  --name "Somchai Jaidee" \
+  --password "MyPass@123" \
+  --db-pass auto \
+  --tenant "My Company Ltd"
 ```
+
+> **หมายเหตุ:** ใน CloudShell ถ้า clone ไว้แล้ว repo จะอยู่ที่ `~/CRM`
+> ถ้าเปิด CloudShell session ใหม่ ให้ `cd ~/CRM/infra` ก่อน run command
 
 ---
 
