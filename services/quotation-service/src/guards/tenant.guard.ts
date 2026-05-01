@@ -52,9 +52,9 @@ export class TenantGuard implements CanActivate {
       throw new UnauthorizedException('Token missing tenant identifier');
     }
 
-    // Set the PostgreSQL session variable for RLS enforcement
+    // Set the PostgreSQL session variable for RLS enforcement (parameterized to prevent SQL injection)
     await this.dataSource.query(
-      `SET LOCAL app.current_tenant = '${payload.tenantId}'`,
+      `SELECT set_config('app.current_tenant', $1, true)`, [payload.tenantId],
     );
 
     // Attach user info to request for downstream handlers

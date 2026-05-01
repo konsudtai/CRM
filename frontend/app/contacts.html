@@ -1,7 +1,8 @@
-<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — ผู้ติดต่อ</title><link rel="stylesheet" href="../css/app.css"/></head><body>
+<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — ผู้ติดต่อ</title><link rel="stylesheet" href="../css/app.css"/></head><body>
 <div class="bg-pattern"></div><div id="nav"></div>
 <div class="page anim">
-  <div class="page-header"><div><div class="page-title">ผู้ติดต่อ</div><div class="page-subtitle">รายชื่อผู้ติดต่อทั้งหมด — ${CONTACTS.length} รายการ</div></div><button class="btn btn-primary">+ เพิ่มผู้ติดต่อ</button></div>
+  <div class="page-header"><div><div class="page-title">ผู้ติดต่อ</div><div class="page-subtitle" id="contacts-subtitle">รายชื่อผู้ติดต่อทั้งหมด</div></div><button class="btn btn-primary" onclick="alert('ผู้ติดต่อจัดการได้ใน Account Detail > แท็บ Contacts')">+ เพิ่มผู้ติดต่อ</button></div>
   <div class="card"><input class="search-input" id="search" placeholder="ค้นหาชื่อ, อีเมล, โทรศัพท์..." style="margin-bottom:20px" oninput="render()"/>
     <div class="table-wrap"><table><thead><tr><th>ชื่อ</th><th>บริษัท</th><th>ตำแหน่ง</th><th>อีเมล</th><th>โทรศัพท์</th><th>LINE</th></tr></thead><tbody id="tbody"></tbody></table></div>
   </div>
@@ -10,6 +11,8 @@
 <script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('contacts');
-function render(){const q=(document.getElementById('search').value||'').toLowerCase();const f=CONTACTS.filter(c=>c.name.toLowerCase().includes(q)||c.email.toLowerCase().includes(q));document.getElementById('tbody').innerHTML=f.map(c=>`<tr><td style="font-weight:500">${c.name}</td><td><a href="#" class="table-link">${c.account}</a></td><td style="color:var(--text2)">${c.title}</td><td>${c.email}</td><td style="color:var(--text2)">${c.phone}</td><td>${c.line||'—'}</td></tr>`).join('');}
+function render(){const q=(document.getElementById('search').value||'').toLowerCase();const f=CONTACTS.filter(c=>c.name.toLowerCase().includes(q)||c.email.toLowerCase().includes(q));document.getElementById('tbody').innerHTML=f.map(c=>`<tr><td style="font-weight:500">${c.name}</td><td><a href="account-detail.html?id=${c.accountId}" class="table-link">${c.account}</a></td><td style="color:var(--text2)">${c.title}</td><td>${c.email}</td><td style="color:var(--text2)">${c.phone}</td><td>${c.line||'—'}</td></tr>`).join('');}
 render();
+function updateSubtitle(){var el=document.getElementById("contacts-subtitle");if(el)el.textContent="รายชื่อผู้ติดต่อทั้งหมด — "+CONTACTS.length+" รายการ";}
+updateSubtitle();
 </script></body></html>

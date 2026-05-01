@@ -1,35 +1,153 @@
-<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — ปฏิทิน</title><link rel="stylesheet" href="../css/app.css"/></head><body>
+<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — ปฏิทิน</title><link rel="stylesheet" href="../css/app.css"/></head><body>
 <div class="bg-pattern"></div><div id="nav"></div>
 <div class="page anim">
-  <div class="page-header"><div><div class="page-title">ปฏิทิน</div><div class="page-subtitle">ดูงาน นัดหมาย และการประชุม</div></div>
-    <div class="page-actions"><a href="tasks.html" class="btn btn-secondary">รายการงาน</a><button class="btn btn-primary">+ สร้างงาน</button></div></div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-    <div style="display:flex;align-items:center;gap:12px">
-      <button class="btn btn-secondary" style="padding:6px 12px" onclick="navMonth(-1)">←</button>
-      <span id="month-label" style="font-size:14px;font-weight:600;min-width:180px;text-align:center"></span>
-      <button class="btn btn-secondary" style="padding:6px 12px" onclick="navMonth(1)">→</button>
-      <button class="btn btn-secondary" style="padding:6px 12px;color:var(--sf-blue)" onclick="goToday()">วันนี้</button>
+  <!-- Calendar View -->
+  <div id="cal-view">
+    <div class="page-header"><div><div class="page-title" data-i18n="cal_title">ปฏิทิน</div><div class="page-subtitle" data-i18n="cal_subtitle">ดูงาน นัดหมาย และการประชุม</div></div>
+      <div class="page-actions"><a href="tasks.html" class="btn btn-secondary">รายการงาน</a><button class="btn btn-primary" onclick="openTaskForm()">+ สร้างงาน</button></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn btn-secondary" style="padding:6px 12px" onclick="navMonth(-1)">&#8592;</button>
+        <span id="month-label" style="font-size:14px;font-weight:600;min-width:180px;text-align:center"></span>
+        <button class="btn btn-secondary" style="padding:6px 12px" onclick="navMonth(1)">&#8594;</button>
+        <button class="btn btn-secondary" style="padding:6px 12px;color:var(--sf-blue)" onclick="goToday()">วันนี้</button>
+      </div>
     </div>
-    <div class="filter-bar"><button class="filter-btn">วัน</button><button class="filter-btn">สัปดาห์</button><button class="filter-btn active">เดือน</button></div>
+    <div class="card" style="padding:0;overflow:hidden" id="cal"></div>
+    <!-- Legend -->
+    <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--text3);flex-wrap:wrap">
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:4px"></span>High</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--orange);margin-right:4px"></span>Medium</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--text3);margin-right:4px"></span>Low</span>
+    </div>
   </div>
-  <div class="card" style="padding:0;overflow:hidden" id="cal"></div>
+
+  <!-- Create Task Form -->
+  <div id="task-form" style="display:none">
+    <div class="page-header"><div><div class="page-title">สร้างงานใหม่</div><div class="page-subtitle">เพิ่มงานหรือนัดหมายลงปฏิทิน</div></div>
+      <div class="page-actions"><button class="btn btn-secondary" onclick="closeTaskForm()">ยกเลิก</button><button class="btn btn-primary" onclick="saveTask()">บันทึก</button></div>
+    </div>
+    <div class="card" style="padding:24px;max-width:640px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="grid-column:1/-1"><label class="field-label">ชื่องาน *</label><input type="text" class="field-input" id="t-title" placeholder="เช่น ประชุมลูกค้า, โทรติดตาม"/></div>
+        <div><label class="field-label">วันกำหนด *</label><input type="date" class="field-input" id="t-due"/></div>
+        <div><label class="field-label">ความสำคัญ</label>
+          <select class="field-input" id="t-priority">
+            <option value="High">สูง (High)</option><option value="Medium" selected>ปานกลาง (Medium)</option><option value="Low">ต่ำ (Low)</option>
+          </select>
+        </div>
+        <div><label class="field-label">สถานะ</label>
+          <select class="field-input" id="t-status">
+            <option value="Open">เปิด (Open)</option><option value="In Progress">กำลังทำ (In Progress)</option>
+          </select>
+        </div>
+        <div><label class="field-label">ลูกค้า (Account)</label>
+          <select class="field-input" id="t-account"><option value="">-- ไม่ระบุ --</option></select>
+        </div>
+        <div style="grid-column:1/-1"><label class="field-label">รายละเอียด</label><textarea class="field-input" id="t-desc" rows="3" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></textarea></div>
+      </div>
+    </div>
+  </div>
 </div>
 <script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
 <script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('calendar');
-const THAI_DAYS=['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
-const THAI_MONTHS=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-let cur=new Date();
-function navMonth(d){cur.setMonth(cur.getMonth()+d);render()}
-function goToday(){cur=new Date();render()}
-function render(){
-  const y=cur.getFullYear(),m=cur.getMonth();
-  document.getElementById('month-label').textContent=THAI_MONTHS[m]+' '+(y+543);
-  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),today=new Date();
-  let cells='';for(let i=0;i<first;i++)cells+='<div class="cal-cell empty"></div>';
-  for(let d=1;d<=days;d++){const isToday=d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();cells+=`<div class="cal-cell${isToday?' today':''}"><span class="cal-date">${d}</span></div>`}
-  document.getElementById('cal').innerHTML=`<div class="cal-header">${THAI_DAYS.map(d=>`<div class="cal-header-cell">${d}</div>`).join('')}</div><div class="cal-grid">${cells}</div>`;
+var THAI_DAYS=['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+var THAI_MONTHS=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+var cur=new Date();
+var calTasks=TASKS.slice(); // local copy for adding
+
+function navMonth(d){cur.setMonth(cur.getMonth()+d);renderCal()}
+function goToday(){cur=new Date();renderCal()}
+
+function getTasksForDate(y,m,d){
+  return calTasks.filter(function(t){
+    if(!t.due)return false;
+    // Support both YYYY-MM-DD and Buddhist year XXXX-MM-DD
+    var parts=t.due.split('-');
+    var ty=parseInt(parts[0]),tm=parseInt(parts[1])-1,td=parseInt(parts[2]);
+    if(ty>2500)ty-=543; // Convert Buddhist year
+    return ty===y&&tm===m&&td===d;
+  });
 }
-render();
+
+function renderCal(){
+  var y=cur.getFullYear(),m=cur.getMonth();
+  document.getElementById('month-label').textContent=THAI_MONTHS[m]+' '+(y+543);
+  var first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),today=new Date();
+  var cells='';
+  for(var i=0;i<first;i++)cells+='<div class="cal-cell empty"></div>';
+  for(var d=1;d<=days;d++){
+    var isToday=d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
+    var dayTasks=getTasksForDate(y,m,d);
+    var dots='';
+    if(dayTasks.length>0){
+      dots='<div style="display:flex;gap:3px;margin-top:2px;flex-wrap:wrap">';
+      dayTasks.forEach(function(t){
+        var c=t.priority==='High'?'var(--red)':t.priority==='Medium'?'var(--orange)':'var(--text3)';
+        var label=esc(t.title);
+        if(label.length>12)label=label.substring(0,12)+'...';
+        dots+='<div style="font-size:9px;padding:1px 4px;border-radius:3px;background:'+c+';color:#fff;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis" title="'+esc(t.title)+'">'+label+'</div>';
+      });
+      dots+='</div>';
+    }
+    cells+='<div class="cal-cell'+(isToday?' today':'')+'" onclick="openTaskForm('+y+','+(m+1)+','+d+')"><span class="cal-date">'+d+'</span>'+dots+'</div>';
+  }
+  document.getElementById('cal').innerHTML='<div class="cal-header">'+THAI_DAYS.map(function(d){return '<div class="cal-header-cell">'+d+'</div>'}).join('')+'</div><div class="cal-grid">'+cells+'</div>';
+}
+
+function openTaskForm(y,m,d){
+  document.getElementById('t-title').value='';
+  document.getElementById('t-desc').value='';
+  document.getElementById('t-priority').value='Medium';
+  document.getElementById('t-status').value='Open';
+  // Set date
+  if(y&&m&&d){
+    var ds=y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    document.getElementById('t-due').value=ds;
+  }else{
+    var now=new Date();
+    document.getElementById('t-due').value=now.toISOString().slice(0,10);
+  }
+  // Populate accounts dropdown
+  document.getElementById('t-account').innerHTML='<option value="">-- ไม่ระบุ --</option>'+ACCOUNTS.map(function(a){return '<option value="'+esc(a.name)+'">'+esc(a.name)+'</option>'}).join('');
+  document.getElementById('cal-view').style.display='none';
+  document.getElementById('task-form').style.display='block';
+  window.scrollTo(0,0);
+}
+
+function closeTaskForm(){
+  document.getElementById('task-form').style.display='none';
+  document.getElementById('cal-view').style.display='block';
+}
+
+function saveTask(){
+  var title=document.getElementById('t-title').value.trim();
+  var due=document.getElementById('t-due').value;
+  if(!title){alert('กรุณาใส่ชื่องาน');return}
+  if(!due){alert('กรุณาเลือกวันกำหนด');return}
+
+  // Convert to Buddhist year for display consistency
+  var parts=due.split('-');
+  var buddhistDue=(parseInt(parts[0])+543)+'-'+parts[1]+'-'+parts[2];
+
+  var task={
+    id:calTasks.length?Math.max.apply(null,calTasks.map(function(x){return x.id}))+1:1,
+    title:title,
+    due:buddhistDue,
+    priority:document.getElementById('t-priority').value,
+    status:document.getElementById('t-status').value,
+    account:document.getElementById('t-account').value,
+    desc:document.getElementById('t-desc').value.trim()
+  };
+  calTasks.push(task);
+  TASKS.push(task); // also add to global TASKS
+
+  closeTaskForm();
+  renderCal();
+}
+
+renderCal();
 </script></body></html>

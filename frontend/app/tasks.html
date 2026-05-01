@@ -2,6 +2,7 @@
 <html lang="th" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SalesFAST 7 — Tasks</title>
 <link rel="stylesheet" href="../css/app.css"/>
@@ -132,12 +133,22 @@ function renderTable() {
   const f = taskFilter === 'all' ? TASKS : TASKS.filter(t => t.status === taskFilter);
   document.getElementById('tbody').innerHTML = f.map(t => {
     const ov = t.status === 'Overdue';
+    // Find account ID for linking
+    var accLink = '—';
+    if (t.account) {
+      var acc = ACCOUNTS.find(function(a){ return a.name === t.account });
+      if (acc) {
+        accLink = '<a href="account-detail.html?id=' + acc.id + '" style="color:var(--sf-blue);text-decoration:none;font-weight:500" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">' + esc(t.account) + '</a>';
+      } else {
+        accLink = esc(t.account);
+      }
+    }
     return `<tr style="${ov ? 'background:rgba(194,57,52,.04)' : ''}">
-      <td style="font-weight:500;${ov ? 'color:var(--red)' : ''}">${t.title}</td>
+      <td style="font-weight:500;${ov ? 'color:var(--red)' : ''}">${esc(t.title)}</td>
       <td style="${ov ? 'font-weight:600;color:var(--red)' : 'color:var(--text2)'}">${t.due}</td>
       <td><span class="status-badge" style="background:${PRI_COLORS[t.priority]}18;color:${PRI_COLORS[t.priority]}">${t.priority}</span></td>
       <td><span class="status-badge" style="background:${TASK_COLORS[t.status]}18;color:${TASK_COLORS[t.status]}">${t.status}</span></td>
-      <td style="color:var(--text2);font-size:12px">${t.account || '—'}</td>
+      <td style="font-size:12px">${accLink}</td>
     </tr>`;
   }).join('') || '<tr><td colspan="5" class="empty-state">No tasks found</td></tr>';
 }

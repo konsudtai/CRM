@@ -59,6 +59,20 @@ th: {
   btn_save:'บันทึก', btn_cancel:'ยกเลิก', btn_back:'กลับ', btn_edit:'แก้ไข',
   select_none:'-- ไม่ระบุ --', select_choose:'-- เลือก --',
   high:'สูง', medium:'กลาง', low:'ต่ำ',
+
+  // Calendar
+  cal_title:'ปฏิทิน', cal_subtitle:'ดูงาน นัดหมาย และการประชุม',
+  cal_today:'วันนี้', cal_create:'+ สร้างงาน', cal_task_list:'รายการงาน',
+
+  // Products
+  prod_title:'แคตตาล็อกสินค้า', prod_subtitle:'จัดการสินค้าและบริการ',
+  prod_new:'+ เพิ่มสินค้า', prod_search:'ค้นหาสินค้า / SKU...',
+  prod_name:'ชื่อสินค้า', prod_sku:'SKU', prod_price:'ราคาต่อหน่วย',
+  prod_unit:'หน่วย', prod_wht:'WHT %', prod_status:'สถานะ', prod_manage:'จัดการ',
+  prod_active:'ใช้งาน', prod_inactive:'ปิดใช้งาน',
+  prod_form_title:'เพิ่มสินค้าใหม่', prod_form_edit:'แก้ไขสินค้า',
+  prod_form_desc:'กรอกข้อมูลสินค้าหรือบริการ',
+
   // User menu
   user_edit:'แก้ไขโปรไฟล์', user_password:'เปลี่ยนรหัสผ่าน', user_logout:'ออกจากระบบ',
   profile_title:'แก้ไขโปรไฟล์', pw_title:'เปลี่ยนรหัสผ่าน',
@@ -118,6 +132,20 @@ en: {
   btn_save:'Save', btn_cancel:'Cancel', btn_back:'Back', btn_edit:'Edit',
   select_none:'-- None --', select_choose:'-- Select --',
   high:'High', medium:'Medium', low:'Low',
+
+  // Calendar
+  cal_title:'Calendar', cal_subtitle:'View tasks, appointments and meetings',
+  cal_today:'Today', cal_create:'+ New Task', cal_task_list:'Task List',
+
+  // Products
+  prod_title:'Product Catalog', prod_subtitle:'Manage products and services',
+  prod_new:'+ Add Product', prod_search:'Search product / SKU...',
+  prod_name:'Product Name', prod_sku:'SKU', prod_price:'Unit Price',
+  prod_unit:'Unit', prod_wht:'WHT %', prod_status:'Status', prod_manage:'Manage',
+  prod_active:'Active', prod_inactive:'Inactive',
+  prod_form_title:'Add New Product', prod_form_edit:'Edit Product',
+  prod_form_desc:'Enter product or service details',
+
   user_edit:'Edit Profile', user_password:'Change Password', user_logout:'Log out',
   profile_title:'Edit Profile', pw_title:'Change Password',
   pf_first:'First Name', pf_last:'Last Name', pf_username:'Username', pf_email:'Email', pf_role:'Role',

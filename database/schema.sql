@@ -6,6 +6,71 @@
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "vector";  -- pgvector for AI embeddings
+
+-- ============================================================
+-- 0. AI KNOWLEDGE BASE (pgvector)
+-- ============================================================
+
+CREATE TABLE kb_documents (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id       UUID NOT NULL REFERENCES tenants(id),
+  file_name       VARCHAR(255) NOT NULL,
+  file_type       VARCHAR(50) NOT NULL,           -- pdf, md, txt, json, docx
+  file_size       BIGINT,
+  file_url        VARCHAR(1024),                  -- S3 URL
+  category        VARCHAR(50) DEFAULT 'general',  -- product, company, faq, playbook
+  status          VARCHAR(30) DEFAULT 'processing', -- processing, ready, error
+  chunk_count     INTEGER DEFAULT 0,
+  uploaded_by     UUID REFERENCES users(id),
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE kb_chunks (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  document_id     UUID NOT NULL REFERENCES kb_documents(id) ON DELETE CASCADE,
+  tenant_id       UUID NOT NULL REFERENCES tenants(id),
+  chunk_index     INTEGER NOT NULL,
+  content         TEXT NOT NULL,
+  token_count     INTEGER,
+  embedding       vector(1536),                   -- Amazon Titan embedding dimension
+  metadata        JSONB DEFAULT '{}',
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index for similarity search
+CREATE INDEX idx_kb_chunks_embedding ON kb_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+CREATE INDEX idx_kb_chunks_tenant ON kb_chunks(tenant_id);
+CREATE INDEX idx_kb_chunks_doc ON kb_chunks(document_id);
+CREATE INDEX idx_kb_documents_tenant ON kb_documents(tenant_id);
+
+-- AI config per tenant
+CREATE TABLE ai_config (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id       UUID NOT NULL REFERENCES tenants(id),
+  enabled         BOOLEAN DEFAULT false,
+  bedrock_region  VARCHAR(30) DEFAULT 'us-east-1',
+  model_id        VARCHAR(100) DEFAULT 'anthropic.claude-3-haiku-20240307-v1:0',
+  embedding_model VARCHAR(100) DEFAULT 'amazon.titan-embed-text-v2:0',
+  temperature     DECIMAL(3,2) DEFAULT 0.3,
+  max_tokens      INTEGER DEFAULT 2048,
+  system_prompt   TEXT,
+  ai_name         VARCHAR(100) DEFAULT 'น้องขายไว',
+  line_ai_enabled BOOLEAN DEFAULT false,
+  line_ai_name    VARCHAR(100) DEFAULT 'Admin AI',
+  kb_last_synced  TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(tenant_id)
+);
+
+ALTER TABLE kb_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE kb_chunks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_config ENABLE ROW LEVEL SECURITY;
+CREATE POLICY rls_kb_documents ON kb_documents USING (tenant_id = current_setting('app.current_tenant')::uuid);
+CREATE POLICY rls_kb_chunks ON kb_chunks USING (tenant_id = current_setting('app.current_tenant')::uuid);
+CREATE POLICY rls_ai_config ON ai_config USING (tenant_id = current_setting('app.current_tenant')::uuid);
 
 -- ============================================================
 -- 1. TENANTS & AUTH (Cognito-integrated)
@@ -37,7 +102,11 @@ CREATE TABLE users (
   preferred_language  VARCHAR(5) DEFAULT 'th',
   preferred_calendar  VARCHAR(20) DEFAULT 'buddhist',
   is_active           BOOLEAN DEFAULT true,
+  force_password_change BOOLEAN DEFAULT true,       -- must change on first login
+  failed_login_count  INTEGER DEFAULT 0,
+  locked_until        TIMESTAMPTZ,
   last_login_at       TIMESTAMPTZ,
+  last_login_ip       VARCHAR(45),
   created_at          TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(tenant_id, email)
 );
@@ -326,18 +395,9 @@ CREATE TABLE leads (
   source        VARCHAR(100),
   status        VARCHAR(50) DEFAULT 'New',
   assigned_to   UUID REFERENCES users(id),
-  ai_score      INTEGER,                          -- 0-100
   metadata      JSONB DEFAULT '{}',
   created_at    TIMESTAMPTZ DEFAULT NOW(),
   updated_at    TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE lead_scores (
-  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  lead_id       UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
-  score         INTEGER NOT NULL,
-  factors       JSONB DEFAULT '[]',
-  calculated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE opportunities (
@@ -353,7 +413,6 @@ CREATE TABLE opportunities (
   closed_reason         VARCHAR(255),
   closed_notes          TEXT,
   assigned_to           UUID NOT NULL REFERENCES users(id),
-  ai_close_probability  INTEGER,                  -- 0-100
   created_at            TIMESTAMPTZ DEFAULT NOW(),
   updated_at            TIMESTAMPTZ DEFAULT NOW()
 );
@@ -575,7 +634,6 @@ ALTER TABLE attachments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pipeline_stages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
-ALTER TABLE lead_scores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE opportunities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE opportunity_histories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sales_targets ENABLE ROW LEVEL SECURITY;
@@ -630,9 +688,6 @@ CREATE POLICY rls_user_roles ON user_roles USING (
 CREATE POLICY rls_account_tags ON account_tags USING (
   account_id IN (SELECT id FROM accounts WHERE tenant_id = current_setting('app.current_tenant')::uuid)
 );
-CREATE POLICY rls_lead_scores ON lead_scores USING (
-  lead_id IN (SELECT id FROM leads WHERE tenant_id = current_setting('app.current_tenant')::uuid)
-);
 CREATE POLICY rls_opp_histories ON opportunity_histories USING (
   opportunity_id IN (SELECT id FROM opportunities WHERE tenant_id = current_setting('app.current_tenant')::uuid)
 );
@@ -671,7 +726,6 @@ CREATE INDEX idx_tasks_status ON tasks(tenant_id, status);
 CREATE INDEX idx_leads_tenant ON leads(tenant_id);
 CREATE INDEX idx_leads_status ON leads(tenant_id, status);
 CREATE INDEX idx_leads_assigned ON leads(tenant_id, assigned_to);
-CREATE INDEX idx_leads_score ON leads(tenant_id, ai_score DESC);
 CREATE INDEX idx_opps_tenant ON opportunities(tenant_id);
 CREATE INDEX idx_opps_stage ON opportunities(tenant_id, stage_id);
 CREATE INDEX idx_opps_close ON opportunities(tenant_id, expected_close_date);

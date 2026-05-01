@@ -2,6 +2,7 @@
 <html lang="th" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SalesFAST 7 — Quotations</title>
 <link rel="stylesheet" href="../css/app.css"/>
@@ -171,7 +172,7 @@ function renderTable(){
     var actions='';
     if(q.status==='draft') actions='<button class="btn btn-secondary" style="padding:3px 10px;font-size:11px" onclick="event.stopPropagation()">Submit</button>';
     else if(q.status==='pending_approval') actions='<span style="font-size:11px;color:#DD7A01;font-weight:600">Awaiting</span>';
-    else if(q.status==='sent'||q.status==='accepted') actions='<span style="font-size:11px;color:#2E844A;font-weight:600">Approved</span>';
+    else if(q.status==='sent'||q.status==='accepted') actions='<span style="font-size:11px;color:#2E844A;font-weight:600">Approved</span>&nbsp;<button class="btn btn-secondary" style="padding:2px 8px;font-size:10px;color:#06C755;border-color:#06C755" onclick="event.stopPropagation();sendQtLine('+q.id+')">LINE</button>';
     else if(q.status==='rejected') actions='<span style="font-size:11px;color:#C23934;font-weight:600">Rejected</span>';
     return '<tr><td><a href="quotation-detail.html?id='+q.id+'" class="table-link">'+q.number+'</a></td><td style="color:var(--text2);font-size:12px">'+q.account+'</td><td><span class="status-badge" style="background:'+STATUS_COLORS[q.status]+'18;color:'+STATUS_COLORS[q.status]+'">'+(STATUS_LABELS[q.status]||q.status)+'</span></td><td>'+fmt(q.subtotal)+'</td><td>'+fmt(q.vat)+'</td><td style="color:var(--red)">-'+fmt(q.wht)+'</td><td style="font-weight:600;color:var(--sf-blue)">'+fmt(q.grand)+'</td><td style="color:var(--text2)">'+q.date+'</td><td>'+actions+'</td></tr>';
   }).join('')||'<tr><td colspan="9" class="empty-state">No quotations</td></tr>';
@@ -193,6 +194,9 @@ function openCreate(){
   var d=new Date();d.setDate(d.getDate()+30);document.getElementById('qt-valid').value=d.toISOString().slice(0,10);
   var year=new Date().getFullYear()+543;document.getElementById('qt-number').value='QT-'+year+'-'+String(QUOTATIONS.length+1).padStart(4,'0');
   lineCounter=0;document.getElementById('qt-lines').innerHTML='';addLine();window.scrollTo(0,0);
+  // Auto-select account if passed via URL param
+  var urlAcc=new URLSearchParams(window.location.search).get('account');
+  if(urlAcc){document.getElementById('qt-account').value=urlAcc}
 }
 function closeForm(){document.getElementById('form-view').style.display='none';document.getElementById('list-view').style.display='block';document.getElementById('qt-filter').style.display='inline-flex';document.getElementById('create-btn').style.display='inline-flex'}
 
@@ -324,6 +328,25 @@ function saveQuotation(status){
 }
 
 renderTable();
+// Auto-open create form if ?account= is in URL
+(function(){var p=new URLSearchParams(window.location.search).get('account');if(p){openCreate()}})();
+
+function submitForApproval(){
+  var account=document.getElementById('qt-account').value;
+  if(!account){alert('Please select a customer');return}
+  var items=getLineItems();if(items.length===0){alert('Add at least one item');return}
+  saveQuotation('pending_approval');
+  alert('✅ Quotation submitted for approval.\nSales Manager will review and approve.');
+}
+
+function sendQtLine(id){
+  var q=QUOTATIONS.find(function(x){return x.id===id});
+  if(!q)return;
+  var lineId=prompt('กรอก LINE User ID ของลูกค้า ('+q.account+'):');
+  if(!lineId)return;
+  // In production: POST /line/send/quotation
+  alert('✅ ส่งใบเสนอราคา '+q.number+' (฿'+q.grand.toLocaleString()+') ผ่าน LINE ไปยัง '+lineId+' เรียบร้อยแล้ว');
+}
 </script>
 </body>
 </html>

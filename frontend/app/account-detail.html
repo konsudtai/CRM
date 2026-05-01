@@ -2,6 +2,7 @@
 <html lang="th" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SalesFAST 7 — Account Detail</title>
 <link rel="stylesheet" href="../css/app.css"/>
@@ -71,6 +72,14 @@ if (!account) {
         <div class="page-subtitle">${account.industry} &middot; ${account.phone}</div>
       </div>
       <div class="page-actions">
+        <a href="quotations.html?account=${encodeURIComponent(account.name)}" class="btn btn-primary" style="text-decoration:none;display:flex;align-items:center;gap:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          New Quotation
+        </a>
+        <a href="leads.html?account=${encodeURIComponent(account.name)}" class="btn btn-secondary" style="text-decoration:none;display:flex;align-items:center;gap:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          New Lead
+        </a>
         <button class="btn btn-secondary">Edit</button>
       </div>
     </div>
@@ -90,6 +99,7 @@ if (!account) {
       <button class="tab-btn" onclick="showTab('deals',this)">Deals (${opps.length})</button>
       <button class="tab-btn" onclick="showTab('quotes',this)">Quotations (${quotes.length})</button>
       <button class="tab-btn" onclick="showTab('tasks',this)">Tasks (${tasks.length})</button>
+      <button class="tab-btn" onclick="showTab('docs',this)">Documents</button>
       <button class="tab-btn" onclick="showTab('timeline',this)">Timeline</button>
     </div>
 
@@ -159,13 +169,12 @@ if (!account) {
       <div class="card">
         ${opps.length === 0 ? '<div class="empty-state">No opportunities for this account</div>' : `
           <div class="table-wrap"><table>
-            <thead><tr><th>Deal Name</th><th>Stage</th><th>Value</th><th>AI %</th><th>Close Date</th><th>Assigned</th></tr></thead>
+            <thead><tr><th>Deal Name</th><th>Stage</th><th>Value</th><th>Close Date</th><th>Assigned</th></tr></thead>
             <tbody>${opps.map(o => `
               <tr>
                 <td style="font-weight:500">${o.name}</td>
                 <td><span class="status-badge" style="background:${STAGE_COLORS[o.stage]||'var(--sf-blue)'}18;color:${STAGE_COLORS[o.stage]||'var(--sf-blue)'}">${o.stage}</span></td>
                 <td style="font-weight:600;color:var(--sf-blue)">${fmt(o.value)}</td>
-                <td><span class="ai-badge ${o.prob>=70?'ai-high':o.prob>=40?'ai-mid':'ai-low'}">${o.prob}%</span></td>
                 <td style="color:var(--text2);font-size:12px">${o.close}</td>
                 <td style="color:var(--text2)">${o.assigned}</td>
               </tr>
@@ -215,6 +224,28 @@ if (!account) {
       </div>
     </div>
 
+    <!-- Tab: Documents -->
+    <div class="tab-content" id="tab-docs">
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700;color:var(--sf-blue)">Documents</div>
+          <label class="btn btn-primary" style="cursor:pointer;margin:0;display:flex;align-items:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload
+            <input type="file" id="doc-upload" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.txt,.csv,.zip" style="display:none" onchange="handleUpload(this.files)"/>
+          </label>
+        </div>
+        <!-- Drop zone -->
+        <div id="drop-zone" style="border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;color:var(--text3);font-size:13px;margin-bottom:16px;transition:all .2s;cursor:pointer" onclick="document.getElementById('doc-upload').click()">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px;opacity:.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div>Drag files here or click to upload</div>
+          <div style="font-size:11px;margin-top:4px;color:var(--text3)">PDF, Word, Excel, Images, ZIP (max 25MB)</div>
+        </div>
+        <!-- File list -->
+        <div id="doc-list"></div>
+      </div>
+    </div>
+
     <!-- Tab: Timeline -->
     <div class="tab-content" id="tab-timeline">
       <div class="card">
@@ -232,6 +263,159 @@ function showTab(tabId, btn) {
   document.getElementById('tab-' + tabId).classList.add('active');
   btn.classList.add('active');
 }
+
+/* ══════════════════════════════════════════════════════════
+   Documents — Upload, Preview, Download
+   ══════════════════════════════════════════════════════════ */
+var accountDocs = []; // {id, name, size, type, dataUrl, uploadedAt}
+
+function getFileIcon(type, name) {
+  var ext = (name || '').split('.').pop().toLowerCase();
+  if (type && type.indexOf('pdf') >= 0 || ext === 'pdf')
+    return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C23934" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>';
+  if (type && type.indexOf('image') >= 0 || ['png','jpg','jpeg','gif','webp'].indexOf(ext) >= 0)
+    return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B827C" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+  if (['doc','docx'].indexOf(ext) >= 0)
+    return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0176D3" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>';
+  if (['xls','xlsx','csv'].indexOf(ext) >= 0)
+    return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E844A" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><rect x="8" y="13" width="8" height="4"/></svg>';
+  return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+}
+
+function fmtSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function handleUpload(files) {
+  if (!files || files.length === 0) return;
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    if (f.size > 25 * 1024 * 1024) { alert(f.name + ' exceeds 25MB limit'); continue; }
+    (function(file) {
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        accountDocs.push({
+          id: Date.now() + Math.random(),
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          dataUrl: ev.target.result,
+          uploadedAt: new Date().toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric' })
+        });
+        renderDocs();
+      };
+      reader.readAsDataURL(file);
+    })(f);
+  }
+}
+
+function renderDocs() {
+  var el = document.getElementById('doc-list');
+  if (!el) return;
+  if (accountDocs.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">No documents uploaded yet</div>';
+    return;
+  }
+  el.innerHTML = accountDocs.map(function(d, idx) {
+    var isImage = d.type && d.type.indexOf('image') >= 0;
+    var isPdf = d.type && d.type.indexOf('pdf') >= 0;
+    var canPreview = isImage || isPdf;
+    return '<div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;background:var(--surface2);margin-bottom:6px">' +
+      '<div style="width:40px;height:40px;border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border)">' +
+        (isImage ? '<img src="' + d.dataUrl + '" style="width:36px;height:36px;object-fit:cover;border-radius:6px"/>' : getFileIcon(d.type, d.name)) +
+      '</div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(d.name) + '</div>' +
+        '<div style="font-size:11px;color:var(--text3)">' + fmtSize(d.size) + ' &middot; ' + d.uploadedAt + '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;flex-shrink:0">' +
+        (canPreview ? '<button class="btn btn-secondary" style="padding:4px 10px;font-size:11px" onclick="previewDoc(' + idx + ')">Preview</button>' : '') +
+        '<button class="btn btn-secondary" style="padding:4px 10px;font-size:11px" onclick="downloadDoc(' + idx + ')">Download</button>' +
+        '<button style="border:none;background:none;color:var(--red);cursor:pointer;font-size:14px;padding:4px" onclick="deleteDoc(' + idx + ')" title="Delete">&times;</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function previewDoc(idx) {
+  var d = accountDocs[idx];
+  if (!d) return;
+  var isImage = d.type && d.type.indexOf('image') >= 0;
+  // Create overlay
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)';
+  overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
+
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:12px;max-width:900px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)';
+
+  // Header
+  var header = document.createElement('div');
+  header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)';
+  header.innerHTML = '<div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(d.name) + '</div>' +
+    '<div style="display:flex;gap:8px;flex-shrink:0">' +
+      '<button class="btn btn-primary" style="padding:6px 14px;font-size:12px" onclick="downloadDoc(' + idx + ')">Download</button>' +
+      '<button class="btn btn-secondary" style="padding:6px 10px;font-size:14px" onclick="this.closest(\'div[style*=fixed]\').remove()">&times;</button>' +
+    '</div>';
+  box.appendChild(header);
+
+  // Content
+  var content = document.createElement('div');
+  content.style.cssText = 'flex:1;overflow:auto;padding:16px;display:flex;align-items:center;justify-content:center;min-height:300px';
+  if (isImage) {
+    content.innerHTML = '<img src="' + d.dataUrl + '" style="max-width:100%;max-height:70vh;border-radius:4px"/>';
+  } else {
+    content.innerHTML = '<iframe src="' + d.dataUrl + '" style="width:100%;height:70vh;border:none;border-radius:4px"></iframe>';
+  }
+  box.appendChild(content);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function downloadDoc(idx) {
+  var d = accountDocs[idx];
+  if (!d) return;
+  var a = document.createElement('a');
+  a.href = d.dataUrl;
+  a.download = d.name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function deleteDoc(idx) {
+  if (!confirm('Delete "' + accountDocs[idx].name + '"?')) return;
+  accountDocs.splice(idx, 1);
+  renderDocs();
+}
+
+// Drag & drop on drop zone
+(function() {
+  setTimeout(function() {
+    var zone = document.getElementById('drop-zone');
+    if (!zone) return;
+    zone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      zone.style.borderColor = 'var(--sf-blue)';
+      zone.style.background = 'rgba(1,118,211,.04)';
+    });
+    zone.addEventListener('dragleave', function() {
+      zone.style.borderColor = '';
+      zone.style.background = '';
+    });
+    zone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      zone.style.borderColor = '';
+      zone.style.background = '';
+      handleUpload(e.dataTransfer.files);
+    });
+  }, 100);
+})();
+
+// Initial render
+setTimeout(renderDocs, 50);
 </script>
 </body>
 </html>

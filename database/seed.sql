@@ -2,11 +2,18 @@
 -- SalesFAST 7 — Initial Seed Data
 -- Run after schema.sql
 -- Creates first tenant + admin user + default roles
+--
+-- Placeholders (replaced by deploy.sh):
+--   __ADMIN_EMAIL__         -> admin email address
+--   __ADMIN_PASSWORD_HASH__ -> bcrypt hash of admin password
+--   __ADMIN_FIRST_NAME__    -> admin first name
+--   __ADMIN_LAST_NAME__     -> admin last name
+--   __TENANT_NAME__         -> company/tenant name
 -- ============================================================
 
 -- 1. Create first tenant
 INSERT INTO tenants (id, name, slug, is_active) VALUES
-  ('00000000-0000-0000-0000-000000000001', 'SalesFAST 7 Admin', 'admin', true);
+  ('00000000-0000-0000-0000-000000000001', '__TENANT_NAME__', 'admin', true);
 
 -- 2. Create default roles
 INSERT INTO roles (id, tenant_id, name, is_default) VALUES
@@ -98,15 +105,15 @@ INSERT INTO role_permissions (role_id, module, action) VALUES
   ('00000000-0000-0000-0000-000000000013', 'tasks', 'read'),
   ('00000000-0000-0000-0000-000000000013', 'reports', 'read');
 
--- 4. Create admin user (password: Admin@1234)
--- bcrypt hash of 'Admin@1234' with cost 12
-INSERT INTO users (id, tenant_id, email, password_hash, first_name, last_name, is_active) VALUES
+-- 4. Create admin user
+INSERT INTO users (id, tenant_id, email, password_hash, first_name, last_name, is_active, force_password_change) VALUES
   ('00000000-0000-0000-0000-000000000100',
    '00000000-0000-0000-0000-000000000001',
-   'admin@salesfast7.com',
-   '$2b$12$LJ3m4ys3Lk0TSwMBQWJBaeQBfMQcfNpQOPKfMFHJFLDqxGMmVqHXe',
-   'System',
-   'Admin',
+   '__ADMIN_EMAIL__',
+   '__ADMIN_PASSWORD_HASH__',
+   '__ADMIN_FIRST_NAME__',
+   '__ADMIN_LAST_NAME__',
+   true,
    true);
 
 -- 5. Assign Admin role to admin user
@@ -124,6 +131,6 @@ INSERT INTO pipeline_stages (tenant_id, name, sort_order, probability, color) VA
   ('00000000-0000-0000-0000-000000000001', 'Closed Lost',    7, 0,  '#9CA3AF');
 
 -- ============================================================
--- First login: admin@salesfast7.com / Admin@1234
--- Change password immediately after first login!
+-- Login with the email and password you configured during deploy.
+-- The system will prompt you to change password on first login.
 -- ============================================================

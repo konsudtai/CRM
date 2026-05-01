@@ -27,7 +27,6 @@ import { SearchModule } from './modules/search/search.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
-import { AiModule } from './modules/ai/ai.module';
 import { ConsentModule } from './modules/consent/consent.module';
 import { EmailModule } from './modules/email/email.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
@@ -48,7 +47,7 @@ import { EventBusModule } from './modules/event-bus/event-bus.module';
       logging: process.env.DB_LOGGING === 'true',
     }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'dev-secret-change-me',
+      secret: (() => { const s = process.env.JWT_SECRET; if (!s) throw new Error('JWT_SECRET env var is required'); return s; })(),
       signOptions: { expiresIn: '1h' },
     }),
     AccountsModule,
@@ -60,7 +59,6 @@ import { EventBusModule } from './modules/event-bus/event-bus.module';
     AuditModule,
     TasksModule,
     ActivitiesModule,
-    AiModule,
     ConsentModule,
     EmailModule,
     CalendarModule,

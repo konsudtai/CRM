@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — Pipeline</title><link rel="stylesheet" href="../css/app.css"/></head><body>
+<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — Pipeline</title><link rel="stylesheet" href="../css/app.css"/></head><body>
 <div class="bg-pattern"></div><div id="nav"></div>
 <div class="page anim">
   <div class="page-header"><div><div class="page-title" data-i18n="nav_pipeline">Pipeline</div><div class="page-subtitle">Manage leads and deals through every stage</div></div>
@@ -57,7 +58,6 @@
 <script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('leads');
-function sc(s){return s>=70?'ai-high':s>=40?'ai-mid':'ai-low'}
 
 var selectedAccountId = null;
 
@@ -129,10 +129,140 @@ document.addEventListener('click', function(e) {
 });
 
 function renderKanban(){
-  document.getElementById('kanban').innerHTML=STAGES_ORDER.map(stage=>{const leads=LEADS_DATA[stage]||[];return`<div class="kanban-col"><div class="kanban-col-header"><div class="kanban-col-title"><span style="width:7px;height:7px;border-radius:50%;background:${STAGE_COLORS[stage]}"></span>${stage}</div><span class="kanban-badge">${leads.length}</span></div>${leads.length===0?'<div class="empty-state" style="padding:20px;font-size:12px">Empty</div>':leads.map(l=>`<div class="kanban-card"><div class="kanban-card-name">${l.name}</div>${l.company?`<div class="kanban-card-sub">${l.company}</div>`:''}<div class="kanban-card-footer"><span style="font-size:10px;color:var(--text3)">${l.source}</span>${l.score?`<span class="ai-badge ${sc(l.score)}">${l.score}</span>`:''}</div>${l.assigned?`<div style="font-size:10px;color:var(--text3);margin-top:6px">${l.assigned}</div>`:''}</div>`).join('')}</div>`}).join('');
+  var html=STAGES_ORDER.map(function(stage,colIdx){
+    var leads=LEADS_DATA[stage]||[];
+    var total=leads.reduce(function(s,l){return s+(l.value||0)},0);
+    var cards='';
+    if(leads.length===0){
+      cards='<div class="kanban-empty">Drop here</div>';
+    }else{
+      cards=leads.map(function(l,idx){
+        return '<div class="kanban-card" data-col="'+colIdx+'" data-idx="'+idx+'">'+
+          '<div class="kanban-card-name">'+esc(l.name)+'</div>'+
+          (l.company?'<div class="kanban-card-sub">'+esc(l.company)+'</div>':'')+
+          '<div class="kanban-card-footer"><span style="font-size:10px;color:var(--text3)">'+esc(l.source)+'</span>'+
+            (l.value?'<span style="font-size:10px;font-weight:600;color:var(--sf-blue)">'+fmt(l.value)+'</span>':'')+
+          '</div>'+
+          (l.assigned?'<div style="font-size:10px;color:var(--text3);margin-top:6px">'+esc(l.assigned)+'</div>':'')+
+        '</div>';
+      }).join('');
+    }
+    return '<div class="kanban-col" data-col="'+colIdx+'">'+
+      '<div class="kanban-col-header">'+
+        '<div class="kanban-col-title">'+
+          '<span style="width:7px;height:7px;border-radius:50%;background:'+STAGE_COLORS[stage]+'"></span>'+stage+
+        '</div>'+
+        '<span class="kanban-badge">'+leads.length+'</span>'+
+      '</div>'+
+      '<div style="font-size:11px;font-weight:700;color:'+STAGE_COLORS[stage]+';margin-bottom:10px;padding:0 2px">'+fmt(total)+'</div>'+
+      cards+
+    '</div>';
+  }).join('');
+  document.getElementById('kanban').innerHTML=html;
 }
 
-function openCreate(){
+/* ══════════════════════════════════════════════════════════
+   Mouse-based Drag & Drop (no HTML5 Drag API)
+   Works on all browsers without issues
+   ══════════════════════════════════════════════════════════ */
+(function(){
+  var isDragging=false;
+  var srcCol=-1, srcIdx=-1;
+  var ghost=null;
+  var startX=0, startY=0;
+  var THRESHOLD=5; // px before drag starts
+
+  document.addEventListener('mousedown',function(e){
+    if(e.button!==0)return; // left click only
+    var card=e.target.closest('.kanban-card[data-col]');
+    if(!card)return;
+    srcCol=parseInt(card.getAttribute('data-col'));
+    srcIdx=parseInt(card.getAttribute('data-idx'));
+    startX=e.clientX;
+    startY=e.clientY;
+
+    function onMove(ev){
+      var dx=ev.clientX-startX, dy=ev.clientY-startY;
+      if(!isDragging && Math.abs(dx)+Math.abs(dy)<THRESHOLD)return;
+
+      if(!isDragging){
+        isDragging=true;
+        card.classList.add('dragging');
+        // Create ghost element
+        ghost=card.cloneNode(true);
+        ghost.classList.remove('dragging');
+        ghost.style.cssText='position:fixed;z-index:9999;pointer-events:none;opacity:0.85;width:'+card.offsetWidth+'px;box-shadow:0 8px 32px rgba(0,0,0,.18);transform:rotate(2deg);transition:none;';
+        document.body.appendChild(ghost);
+      }
+
+      ghost.style.left=(ev.clientX-card.offsetWidth/2)+'px';
+      ghost.style.top=(ev.clientY-20)+'px';
+
+      // Highlight column under cursor
+      highlightCol(ev.clientX,ev.clientY);
+    }
+
+    function onUp(ev){
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+
+      if(!isDragging){srcCol=-1;srcIdx=-1;return}
+
+      // Find target column
+      var targetCol=getColAt(ev.clientX,ev.clientY);
+
+      // Cleanup
+      card.classList.remove('dragging');
+      if(ghost&&ghost.parentNode)ghost.parentNode.removeChild(ghost);
+      ghost=null;
+      document.querySelectorAll('.kanban-col').forEach(function(c){c.classList.remove('drag-over')});
+
+      if(targetCol!==null && targetCol!==srcCol){
+        // Move lead data
+        var fromStage=STAGES_ORDER[srcCol];
+        var toStage=STAGES_ORDER[targetCol];
+        var fromList=LEADS_DATA[fromStage]||[];
+        if(srcIdx>=0 && srcIdx<fromList.length){
+          var lead=fromList.splice(srcIdx,1)[0];
+          if(!LEADS_DATA[toStage])LEADS_DATA[toStage]=[];
+          LEADS_DATA[toStage].push(lead);
+          renderKanban();
+        }
+      }
+
+      isDragging=false;srcCol=-1;srcIdx=-1;
+    }
+
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+    e.preventDefault(); // prevent text selection
+  });
+
+  function highlightCol(x,y){
+    var cols=document.querySelectorAll('.kanban-col[data-col]');
+    cols.forEach(function(c){
+      var r=c.getBoundingClientRect();
+      if(x>=r.left && x<=r.right && y>=r.top-30 && y<=r.bottom+30){
+        c.classList.add('drag-over');
+      }else{
+        c.classList.remove('drag-over');
+      }
+    });
+  }
+
+  function getColAt(x,y){
+    var cols=document.querySelectorAll('.kanban-col[data-col]');
+    for(var i=0;i<cols.length;i++){
+      var r=cols[i].getBoundingClientRect();
+      if(x>=r.left && x<=r.right && y>=r.top-30 && y<=r.bottom+30){
+        return parseInt(cols[i].getAttribute('data-col'));
+      }
+    }
+    return null;
+  }
+})();
+
+function openCreate(prefilAccountName){
   document.getElementById('kanban').style.display='none';
   document.getElementById('lead-form').style.display='block';
   document.getElementById('fl-name').value='';
@@ -146,6 +276,12 @@ function openCreate(){
   selectedAccountId=null;
   document.getElementById('fl-assigned').innerHTML='<option value="">-- Auto --</option>'+REPS.map(r=>'<option>'+r.name+'</option>').join('');
   window.scrollTo(0,0);
+
+  // Auto-fill from account name if provided
+  if(prefilAccountName){
+    var acc=ACCOUNTS.find(function(a){return a.name===prefilAccountName});
+    if(acc){selectCustomer(acc.id)}
+  }
 }
 function closeForm(){
   document.getElementById('lead-form').style.display='none';
@@ -158,10 +294,15 @@ function saveLead(e){
   var source=document.getElementById('fl-source').value;
   var assigned=document.getElementById('fl-assigned').value;
   if(!LEADS_DATA['New'])LEADS_DATA['New']=[];
-  LEADS_DATA['New'].unshift({id:Date.now(),name:name,company:company,source:source,score:Math.floor(Math.random()*40+40),assigned:assigned||''});
+  LEADS_DATA['New'].unshift({id:Date.now(),name:name,company:company,source:source,assigned:assigned||''});
   closeForm();
   renderKanban();
 }
 
 renderKanban();
+// Auto-open create form with customer data if ?account= is in URL
+(function(){
+  var p=new URLSearchParams(window.location.search).get('account');
+  if(p){openCreate(p)}
+})();
 </script></body></html>

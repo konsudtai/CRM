@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SalesFAST 7 — User Manual</title>
+<link rel="stylesheet" href="../css/app.css"/>
+<style>
+.manual{max-width:900px;margin:0 auto}
+.lang-toggle{display:flex;gap:4px;margin-bottom:24px}
+.lang-btn{padding:6px 16px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;color:var(--text2);transition:all .15s}
+.lang-btn.active{background:var(--sf-blue);color:#fff;border-color:var(--sf-blue)}
+.chapter{margin-bottom:32px}
+.ch-title{font-size:18px;font-weight:800;color:var(--sf-blue);margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.ch-num{width:28px;height:28px;border-radius:50%;background:var(--sf-blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.ch-body{padding-left:38px}
+.ch-desc{font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:12px}
+.ch-steps{list-style:none;padding:0;counter-reset:step}
+.ch-steps li{counter-increment:step;padding:8px 0 8px 32px;position:relative;font-size:13px;line-height:1.6;color:var(--text);border-bottom:1px solid var(--border)}
+.ch-steps li:last-child{border-bottom:none}
+.ch-steps li::before{content:counter(step);position:absolute;left:0;top:8px;width:22px;height:22px;border-radius:50%;background:rgba(1,118,211,.08);color:var(--sf-blue);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ch-tip{margin-top:8px;padding:10px 14px;border-radius:8px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1);font-size:12px;color:var(--text2)}
+.ch-tip strong{color:var(--sf-blue)}
+.screenshot{width:100%;border-radius:10px;border:1px solid var(--border);margin:12px 0;box-shadow:var(--shadow)}
+.toc{margin-bottom:28px}
+.toc a{display:block;padding:6px 0;font-size:13px;color:var(--sf-blue);text-decoration:none;border-bottom:1px solid var(--border)}
+.toc a:hover{text-decoration:underline}
+@media print{.sf7-nav,.lang-toggle,.page-header .btn,.toc{display:none!important}.page{padding:0!important;max-width:100%!important}.ch-title{break-before:page}}
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+<div id="nav"></div>
+<div class="page anim manual">
+  <div class="page-header">
+    <div>
+      <div class="page-title">User Manual / คู่มือการใช้งาน</div>
+      <div class="page-subtitle">SalesFAST 7 CRM Platform</div>
+    </div>
+    <button class="btn btn-secondary" onclick="window.print()">Print / Save PDF</button>
+  </div>
+
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setManualLang('th',this)">ภาษาไทย</button>
+    <button class="lang-btn" onclick="setManualLang('en',this)">English</button>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="card toc" style="margin-bottom:24px">
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px" id="toc-title">สารบัญ</div>
+    <div id="toc-links"></div>
+  </div>
+
+  <div id="manual-content"></div>
+</div>
+
+<script src="../js/helpers.js"></script>
+<script src="../js/i18n.js"></script>
+<script src="../js/nav.js"></script>
+<script>
+document.getElementById('nav').innerHTML=renderNav('manual');
+
+var ML='th';
+function setManualLang(l,btn){
+  ML=l;
+  document.querySelectorAll('.lang-btn').forEach(function(b){b.classList.remove('active')});
+  btn.classList.add('active');
+  renderManual();
+}
+
+var CHAPTERS={
+th:[
+{title:'เข้าสู่ระบบ (Login)',page:'../login.html',desc:'เปิดหน้า Login แล้วกรอก Email และ Password ที่ Admin สร้างให้',steps:['เปิดเว็บไซต์ SalesFAST 7 ผ่าน URL ที่ได้รับ','กรอก Email และ Password','กดปุ่ม "เข้าสู่ระบบ"','หากเป็นการ Login ครั้งแรก ระบบจะให้เปลี่ยนรหัสผ่าน'],tip:'หากลืมรหัสผ่าน ให้ติดต่อ Admin เพื่อ Reset Password'},
+{title:'แดชบอร์ด (Dashboard)',page:'dashboard.html',desc:'หน้าแรกหลัง Login แสดงภาพรวมการขาย KPI ไปป์ไลน์ และกิจกรรมล่าสุด',steps:['ดู KPI 5 ตัว: มูลค่าไปป์ไลน์, ยอดปิดการขาย, ลูกค้า, Tickets, Conversion','ดูกราฟรายได้รายเดือน','ดู Pipeline by Stage แสดงมูลค่าแต่ละขั้นตอน','ดู Mini Kanban แสดง Opportunity ทั้งหมด','ใช้ Quick Actions: New Lead, Add Customer, Quotation, Log Call, Calendar, Products','เปลี่ยนช่วงเวลา: เดือน / ไตรมาส / ปี'],tip:'Quick Actions ด้านบนจะ link ไปหน้าที่เกี่ยวข้องโดยตรง'},
+{title:'บัญชีลูกค้า (Accounts)',page:'accounts.html',desc:'จัดการข้อมูลลูกค้าทั้งหมด — ข้อมูลบริษัท เลขภาษี ที่อยู่ ข้อมูลการขาย',steps:['กดปุ่ม "+ สร้างบัญชี" เพื่อเพิ่มลูกค้าใหม่','กรอกข้อมูล 6 ส่วน: บริษัท, ภาษี, ติดต่อ, ที่อยู่, การขาย, หมายเหตุ','กดชื่อบริษัทในตารางเพื่อดู Customer 360','ค้นหาด้วยชื่อบริษัท เลขภาษี หรืออุตสาหกรรม'],tip:'เลขผู้เสียภาษี 13 หลัก และรหัสสาขา 00000 = สำนักงานใหญ่'},
+{title:'รายละเอียดลูกค้า (Account Detail)',page:'account-detail.html',desc:'หน้า Customer 360 แสดงข้อมูลทั้งหมดของลูกค้า 7 แท็บ',steps:['แท็บ Company Info — ข้อมูลบริษัท ภาษี ติดต่อ','แท็บ Contacts — รายชื่อผู้ติดต่อ','แท็บ Deals — โอกาสขายที่เกี่ยวข้อง','แท็บ Quotations — ใบเสนอราคาทั้งหมด','แท็บ Tasks — งานที่เกี่ยวข้อง','แท็บ Documents — อัปโหลด/ดู/ดาวน์โหลดเอกสาร (PDF, Word, รูปภาพ)','แท็บ Timeline — ประวัติกิจกรรมทั้งหมด','กดปุ่ม "New Quotation" เพื่อสร้างใบเสนอราคาจากลูกค้านี้','กดปุ่ม "New Lead" เพื่อสร้างลีดจากลูกค้านี้'],tip:'เอกสารรองรับ PDF, Word, Excel, รูปภาพ, ZIP สูงสุด 25MB'},
+{title:'ไปป์ไลน์ (Pipeline)',page:'leads.html',desc:'Kanban Board สำหรับจัดการลีดและดีล — ลากและวางเพื่อเปลี่ยนสถานะ',steps:['ดู Kanban 7 คอลัมน์: New > Contacted > Qualified > Proposal > Negotiation > Won > Lost','แต่ละคอลัมน์แสดงจำนวนลีดและมูลค่ารวม','ลากการ์ดจากคอลัมน์หนึ่งไปอีกคอลัมน์เพื่อเปลี่ยนสถานะ','กดปุ่ม "+ New Lead" เพื่อสร้างลีดใหม่','ค้นหาลูกค้าจาก CRM เพื่อ link กับลีด — ระบบจะดึงข้อมูลมาให้อัตโนมัติ'],tip:'ลากการ์ดข้าม stage ได้เลย ระบบจะอัปเดตมูลค่ารวมให้อัตโนมัติ'},
+{title:'ใบเสนอราคา (Quotations)',page:'quotations.html',desc:'สร้างใบเสนอราคา คำนวณ VAT 7% / WHT อัตโนมัติ พร้อม Approval Workflow',steps:['กดปุ่ม "+ New Quotation"','อัปโหลดโลโก้บริษัท (ถ้ามี)','เลือกลูกค้าจาก dropdown','เพิ่มรายการสินค้า — เลือกจากแคตตาล็อกหรือพิมพ์เอง','ระบบคำนวณ VAT 7% และ WHT ให้อัตโนมัติ','กด "Save as Draft" เพื่อบันทึกร่าง','กด "Submit for Approval" เพื่อส่งให้ Sales Manager อนุมัติ','หลังอนุมัติแล้วจึงจะ Preview และ Download PDF ได้ (A4)'],tip:'ใบเสนอราคาต้องได้รับการอนุมัติจาก Sales Manager ก่อนจึงจะดาวน์โหลด PDF ได้'},
+{title:'งานและกิจกรรม (Tasks)',page:'tasks.html',desc:'จัดการงาน นัดหมาย และบันทึกการโทร',steps:['ดูรายการงานทั้งหมด กรองตามสถานะ: ทั้งหมด / เปิด / กำลังทำ / เสร็จ / เกินกำหนด','กดปุ่ม "+ สร้างงาน" เพื่อสร้างงานใหม่','กรอกชื่องาน วันกำหนด ความสำคัญ สถานะ','เลือกลูกค้าและผู้รับผิดชอบ','กดปุ่ม "บันทึกการโทร" เพื่อบันทึก call log','กดชื่อลูกค้าในตารางเพื่อไปหน้า Account Detail'],tip:'งานที่เกินกำหนดจะแสดงเป็นสีแดง'},
+{title:'สินค้า (Products)',page:'products.html',desc:'จัดการแคตตาล็อกสินค้าและบริการ',steps:['ดูรายการสินค้าทั้งหมด ค้นหาด้วยชื่อหรือ SKU','กดปุ่ม "+ เพิ่มสินค้า" เพื่อเพิ่มสินค้าใหม่','กรอกชื่อ SKU ราคา หน่วยนับ WHT% สถานะ','กดปุ่ม "แก้ไข" เพื่อแก้ไขสินค้าที่มีอยู่'],tip:'WHT 3% สำหรับบริการ, 0% สำหรับสินค้า'},
+{title:'ปฏิทิน (Calendar)',page:'calendar.html',desc:'ดูงานและนัดหมายในรูปแบบปฏิทินรายเดือน',steps:['ดูปฏิทินรายเดือน แสดงปี พ.ศ.','งานที่มีจะแสดงเป็นจุดสีตามความสำคัญ (แดง=สูง, ส้ม=กลาง, เทา=ต่ำ)','กดที่วันในปฏิทินเพื่อสร้างงานในวันนั้น','กดปุ่ม "+ สร้างงาน" เพื่อสร้างงานใหม่','ใช้ลูกศร ซ้าย/ขวา เพื่อเปลี่ยนเดือน'],tip:'กดปุ่ม "วันนี้" เพื่อกลับมาเดือนปัจจุบัน'},
+{title:'ตั้งค่า (Settings)',page:'settings.html',desc:'จัดการผู้ใช้งานและสิทธิ์การเข้าถึง',steps:['แท็บ Users — ดูรายชื่อผู้ใช้ทั้งหมด','กดปุ่ม "+ Add User" เพื่อเพิ่มผู้ใช้ใหม่','กรอกชื่อ อีเมล เบอร์โทร เลือก Role กำหนดรหัสผ่านชั่วคราว','กดปุ่ม "Role" เพื่อเปลี่ยน Role ของผู้ใช้','กดปุ่ม "Reset PW" เพื่อรีเซ็ตรหัสผ่าน','กดปุ่ม "Deactivate" เพื่อปิดการใช้งานผู้ใช้','แท็บ Roles & Permissions — ดูตาราง CRUD matrix ของแต่ละ Role'],tip:'มี 7 Roles: Admin, Sales Manager, Sales Rep, Accounting, Support, Marketing, Viewer'},
+{title:'เปลี่ยนภาษา / Dark Mode',page:null,desc:'ระบบรองรับภาษาไทยและอังกฤษ พร้อม Dark Mode',steps:['กดปุ่ม TH/EN ที่แถบเมนูด้านบนขวาเพื่อเปลี่ยนภาษา','กดไอคอนพระจันทร์/ดวงอาทิตย์เพื่อเปลี่ยน Dark/Light Mode','การตั้งค่าจะถูกจำไว้ในเบราว์เซอร์'],tip:'ทุกหน้าจะเปลี่ยนภาษาตามที่เลือกทันที'},
+],
+en:[
+{title:'Login',page:'../login.html',desc:'Open the Login page and enter the Email and Password provided by your Admin.',steps:['Open the SalesFAST 7 website URL','Enter your Email and Password','Click "Log in"','If this is your first login, the system will ask you to change your password'],tip:'If you forgot your password, contact your Admin to reset it.'},
+{title:'Dashboard',page:'dashboard.html',desc:'The first page after login showing sales overview, KPIs, pipeline, and recent activity.',steps:['View 5 KPI cards: Pipeline Value, Closed Won, Active Customers, Open Tickets, Conversion','View monthly revenue chart','View Pipeline by Stage with value per stage','View Mini Kanban showing all opportunities','Use Quick Actions: New Lead, Add Customer, Quotation, Log Call, Calendar, Products','Switch time period: Month / Quarter / Year'],tip:'Quick Actions at the top link directly to the relevant pages.'},
+{title:'Accounts',page:'accounts.html',desc:'Manage all customer data — company info, tax ID, address, sales info.',steps:['Click "+ New Account" to add a new customer','Fill in 6 sections: Company, Tax, Contact, Address, Sales, Notes','Click a company name in the table to view Customer 360','Search by company name, tax ID, or industry'],tip:'Tax ID is 13 digits. Branch code 00000 = Head Office.'},
+{title:'Account Detail (Customer 360)',page:'account-detail.html',desc:'Full customer view with 7 tabs showing all related data.',steps:['Company Info tab — company details, tax, contact','Contacts tab — contact persons','Deals tab — related opportunities','Quotations tab — all quotations','Tasks tab — related tasks','Documents tab — upload/preview/download files (PDF, Word, images)','Timeline tab — activity history','Click "New Quotation" to create a quotation for this customer','Click "New Lead" to create a lead from this customer'],tip:'Documents support PDF, Word, Excel, images, ZIP up to 25MB.'},
+{title:'Pipeline',page:'leads.html',desc:'Kanban Board for managing leads and deals — drag and drop to change status.',steps:['View 7 columns: New > Contacted > Qualified > Proposal > Negotiation > Won > Lost','Each column shows lead count and total value','Drag a card from one column to another to change status','Click "+ New Lead" to create a new lead','Search existing customers from CRM to link with the lead — auto-fills data'],tip:'Drag cards across stages freely. Total values update automatically.'},
+{title:'Quotations',page:'quotations.html',desc:'Create quotations with auto-calculated VAT 7% / WHT and Approval Workflow.',steps:['Click "+ New Quotation"','Upload company logo (optional)','Select customer from dropdown','Add line items — select from catalog or type custom','System auto-calculates VAT 7% and WHT','Click "Save as Draft" to save','Click "Submit for Approval" to send to Sales Manager','After approval, you can Preview and Download PDF (A4 format)'],tip:'Quotations must be approved by Sales Manager before PDF download.'},
+{title:'Tasks & Activities',page:'tasks.html',desc:'Manage tasks, appointments, and call logs.',steps:['View all tasks, filter by status: All / Open / In Progress / Completed / Overdue','Click "+ New Task" to create a task','Fill in title, due date, priority, status','Select customer and assignee','Click "Log Call" to record a call log','Click customer name in the table to go to Account Detail'],tip:'Overdue tasks are highlighted in red.'},
+{title:'Products',page:'products.html',desc:'Manage product and service catalog.',steps:['View all products, search by name or SKU','Click "+ Add Product" to add a new product','Fill in name, SKU, price, unit, WHT%, status','Click "Edit" to modify existing products'],tip:'WHT 3% for services, 0% for goods.'},
+{title:'Calendar',page:'calendar.html',desc:'View tasks and appointments in a monthly calendar.',steps:['View monthly calendar with Buddhist year','Tasks appear as colored dots by priority (red=High, orange=Medium, gray=Low)','Click a day to create a task on that date','Click "+ New Task" to create a task','Use left/right arrows to change month'],tip:'Click "Today" to return to the current month.'},
+{title:'Settings',page:'settings.html',desc:'Manage users and access permissions.',steps:['Users tab — view all users','Click "+ Add User" to add a new user','Fill in name, email, phone, select Role, set temporary password','Click "Role" to change a user\'s role','Click "Reset PW" to reset password','Click "Deactivate" to disable a user','Roles & Permissions tab — view CRUD matrix for each role'],tip:'7 Roles: Admin, Sales Manager, Sales Rep, Accounting, Support, Marketing, Viewer.'},
+{title:'Language / Dark Mode',page:null,desc:'The system supports Thai and English with Dark Mode.',steps:['Click TH/EN toggle in the top-right navigation bar to switch language','Click the moon/sun icon to toggle Dark/Light Mode','Settings are saved in your browser'],tip:'All pages change language instantly.'},
+]
+};
+
+function renderManual(){
+  var chs=CHAPTERS[ML];
+  document.getElementById('toc-title').textContent=ML==='th'?'สารบัญ':'Table of Contents';
+  document.getElementById('toc-links').innerHTML=chs.map(function(c,i){
+    return '<a href="#ch-'+i+'">'+(i+1)+'. '+c.title+'</a>';
+  }).join('');
+
+  document.getElementById('manual-content').innerHTML=chs.map(function(c,i){
+    var pageLink='';
+    if(c.page){
+      pageLink='<a href="'+c.page+'" target="_blank" style="font-size:12px;color:var(--sf-blue);text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:8px">'+(ML==='th'?'เปิดหน้านี้':'Open this page')+' &rarr;</a>';
+    }
+    var screenshot='';
+    if(c.page){
+      screenshot='<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:12px 0;position:relative;height:280px;background:var(--surface2)">'
+        +'<iframe src="'+c.page+'" style="width:200%;height:200%;transform:scale(0.5);transform-origin:top left;pointer-events:none;border:none"></iframe>'
+        +'<div style="position:absolute;inset:0;cursor:pointer" onclick="window.open(\''+c.page+'\',\'_blank\')"></div>'
+        +'</div>';
+    }
+    return '<div class="chapter" id="ch-'+i+'">'
+      +'<div class="ch-title"><span class="ch-num">'+(i+1)+'</span>'+c.title+'</div>'
+      +'<div class="ch-body">'
+        +pageLink
+        +'<div class="ch-desc">'+c.desc+'</div>'
+        +screenshot
+        +'<ol class="ch-steps">'+c.steps.map(function(s){return '<li>'+s+'</li>'}).join('')+'</ol>'
+        +(c.tip?'<div class="ch-tip"><strong>'+(ML==='th'?'Tip:':'Tip:')+'</strong> '+c.tip+'</div>':'')
+      +'</div>'
+    +'</div>';
+  }).join('');
+}
+
+renderManual();
+</script>
+</body>
+</html>

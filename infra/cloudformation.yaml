@@ -131,6 +131,46 @@ Resources:
       RouteTableId: !Ref PrivateRouteTable
 
   # VPC Endpoints (replace NAT Gateway — saves $32/mo)
+  VPCFlowLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/sf7/${Environment}/vpc-flow-logs'
+      RetentionInDays: 30
+
+  VPCFlowLogRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: vpc-flow-logs.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: flow-log-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                Resource: '*'
+
+  VPCFlowLog:
+    Type: AWS::EC2::FlowLog
+    Properties:
+      ResourceId: !Ref VPC
+      ResourceType: VPC
+      TrafficType: ALL
+      LogDestinationType: cloud-watch-logs
+      LogGroupName: !Ref VPCFlowLogGroup
+      DeliverLogsPermissionArn: !GetAtt VPCFlowLogRole.Arn
+
   S3Endpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -179,8 +219,16 @@ Resources:
           ToPort: 443
           CidrIp: 10.0.0.0/16
       SecurityGroupEgress:
-        - IpProtocol: -1
-          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 10.0.0.0/16
+          Description: VPC endpoints (SQS, Secrets Manager)
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 10.0.0.0/16
+          Description: RDS PostgreSQL
 
   RDSSG:
     Type: AWS::EC2::SecurityGroup
@@ -204,6 +252,16 @@ Resources:
         - !Ref PrivateSubnetA
         - !Ref PrivateSubnetB
 
+  DBParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Family: postgres16
+      Description: SF7 PostgreSQL parameters — enforce SSL
+      Parameters:
+        rds.force_ssl: '1'
+        log_connections: '1'
+        log_disconnections: '1'
+
   Database:
     Type: AWS::RDS::DBInstance
     Properties:
@@ -216,6 +274,7 @@ Resources:
       MasterUsername: salesfast7
       MasterUserPassword: !Ref DBPassword
       DBName: salesfast7
+      DBParameterGroupName: !Ref DBParameterGroup
       VPCSecurityGroups:
         - !Ref RDSSG
       DBSubnetGroupName: !Ref DBSubnetGroup
@@ -249,6 +308,12 @@ Resources:
       Name: !Sub 'sf7/${Environment}/jwt'
       SecretString: !Sub '{"secret": "${JWTSecret}"}'
 
+  LineSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub 'sf7/${Environment}/line'
+      SecretString: '{"channelAccessToken":"","channelSecret":"","configured":false}'
+
   # ============================================================
   # S3 Buckets
   # ============================================================
@@ -256,14 +321,15 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub 'sf7-${Environment}-frontend-${AWS::AccountId}'
-      WebsiteConfiguration:
-        IndexDocument: index.html
-        ErrorDocument: index.html
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
       PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        BlockPublicPolicy: false
-        IgnorePublicAcls: false
-        RestrictPublicBuckets: false
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
 
   FrontendBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -272,20 +338,341 @@ Resources:
       PolicyDocument:
         Statement:
           - Effect: Allow
-            Principal: '*'
+            Principal:
+              Service: cloudfront.amazonaws.com
             Action: s3:GetObject
             Resource: !Sub '${FrontendBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+  # ============================================================
+  # WAF v2 — Web Application Firewall for CloudFront
+  # Basic protection: rate limiting, SQLi, XSS, bad bots
+  # Cost: ~$7/mo (WebACL $5 + 4 rules $4 + requests ~$0.60)
+  # ============================================================
+  WAFWebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub 'sf7-${Environment}-waf'
+      Scope: CLOUDFRONT
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub 'sf7-${Environment}-waf'
+      Rules:
+        # Rule 1: Rate limiting — 1000 requests per 5 min per IP
+        - Name: RateLimitPerIP
+          Priority: 1
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: RateLimitPerIP
+          Statement:
+            RateBasedStatement:
+              Limit: 1000
+              AggregateKeyType: IP
+
+        # Rule 2: AWS Managed — SQL Injection protection
+        - Name: AWSManagedSQLi
+          Priority: 2
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSManagedSQLi
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesSQLiRuleSet
+
+        # Rule 3: AWS Managed — Known bad inputs (XSS, LFI, etc.)
+        - Name: AWSManagedKnownBadInputs
+          Priority: 3
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSManagedKnownBadInputs
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+
+        # Rule 4: AWS Managed — Common rule set (bad bots, scanners, probes)
+        - Name: AWSManagedCommonRuleSet
+          Priority: 4
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSManagedCommonRuleSet
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+
+  # ============================================================
+  # CloudFront — Flat Rate PRO plan
+  # OAC for S3 origin (private bucket, no public access)
+  # ============================================================
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub 'sf7-${Environment}-oac'
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  CloudFrontSecurityHeaders:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub 'sf7-${Environment}-security-headers'
+        SecurityHeadersConfig:
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: true
+            Preload: true
+            Override: true
+          ContentTypeOptions:
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+          XSSProtection:
+            ModeBlock: true
+            Protection: true
+            Override: true
+          ReferrerPolicy:
+            ReferrerPolicy: strict-origin-when-cross-origin
+            Override: true
+          ContentSecurityPolicy:
+            ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'"
+            Override: true
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub 'SalesFAST 7 ${Environment}'
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        PriceClass: PriceClass_All
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+          MinimumProtocolVersion: TLSv1.2_2021
+        WebACLId: !GetAtt WAFWebACL.Arn
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            OriginAccessControlId: !Ref CloudFrontOAC
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+          - Id: ApiOrigin
+            DomainName: !Sub '${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+            CustomOriginConfig:
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols: [TLSv1.2]
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          ResponseHeadersPolicyId: !Ref CloudFrontSecurityHeaders
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # CachingOptimized
+          Compress: true
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD]
+        CacheBehaviors:
+          - PathPattern: '/auth/*'
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: https-only
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad  # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac  # AllViewerExceptHostHeader
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          - PathPattern: '/users/*'
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: https-only
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          - PathPattern: '/accounts/*'
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: https-only
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          - PathPattern: '/leads/*'
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: https-only
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          - PathPattern: '/pipeline/*'
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: https-only
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          - PathPattern: '/tasks/*'
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: https-only
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          - PathPattern: '/quotations/*'
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: https-only
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          - PathPattern: '/products/*'
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: https-only
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          - PathPattern: '/reports/*'
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: https-only
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          - PathPattern: '/roles/*'
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: https-only
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 10
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 10
 
   FilesBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub 'sf7-${Environment}-files-${AWS::AccountId}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders: ['*']
             AllowedMethods: [GET, PUT]
-            AllowedOrigins: ['*']
+            AllowedOrigins:
+              - !Sub 'https://${CloudFrontDistribution.DomainName}'
             MaxAge: 3600
+
+  # ============================================================
+  # DynamoDB — AI chat history, session state, key-value store
+  # Cost: ~$1-2/mo (on-demand, pay per request)
+  # ============================================================
+
+  # Chat conversations (AI ↔ ลูกค้า LINE)
+  ChatHistoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'sf7-${Environment}-chat-history'
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'sf7-${Environment}-chat-history'
+      # ── Access Patterns ──
+      # PK=CONV#{conversationId}  SK=MSG#{timestamp}     → messages in a conversation
+      # PK=CONV#{conversationId}  SK=META                → conversation metadata (status, collected_data)
+      # PK=LINE#{lineUserId}      SK=CONV#{conversationId} → conversations by LINE user
+      # GSI1PK=TENANT#{tenantId}  GSI1SK={timestamp}     → all conversations for a tenant
+
+  # AI config + session state + key-value store
+  AIStateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'sf7-${Environment}-ai-state'
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'sf7-${Environment}-ai-state'
+      # ── Access Patterns ──
+      # PK=CONFIG#{tenantId}      SK=AI          → AI config (enabled, name, mode, escalation rules)
+      # PK=CONFIG#{tenantId}      SK=LINE        → LINE config
+      # PK=SESSION#{sessionId}    SK=STATE       → agent session state
+      # PK=LEAD#{lineUserId}      SK=COLLECTED   → collected lead data (name, phone, company...)
+      # PK=CACHE#{key}            SK=VALUE       → general key-value cache (with TTL)
+
+  # VPC Endpoint for DynamoDB (Gateway type — free)
+  DynamoDBEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPC
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.dynamodb'
+      RouteTableIds:
+        - !Ref PrivateRouteTable
 
   # ============================================================
   # SQS Queues
@@ -333,6 +720,7 @@ Resources:
                 Resource:
                   - !Ref DBSecret
                   - !Ref JWTSecretStore
+                  - !Ref LineSecret
               - Effect: Allow
                 Action:
                   - s3:GetObject
@@ -350,6 +738,19 @@ Resources:
                   - !GetAtt EventsQueue.Arn
               - Effect: Allow
                 Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:BatchWriteItem
+                Resource:
+                  - !GetAtt ChatHistoryTable.Arn
+                  - !Sub '${ChatHistoryTable.Arn}/index/*'
+                  - !GetAtt AIStateTable.Arn
+                  - !Sub '${AIStateTable.Arn}/index/*'
+              - Effect: Allow
+                Action:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
@@ -364,7 +765,7 @@ Resources:
       FunctionName: !Sub 'sf7-${Environment}-auth'
       Runtime: nodejs20.x
       Handler: index.handler
-      MemorySize: 256
+      MemorySize: 1024
       Timeout: 10
       Role: !GetAtt LambdaRole.Arn
       Code:
@@ -383,6 +784,10 @@ Resources:
           SQS_QUEUE_URL: !Ref EventsQueue
           S3_BUCKET: !Ref FilesBucket
           NODE_ENV: production
+          CORS_ORIGIN: !Sub 'https://${CloudFrontDistribution.DomainName}'
+          DB_PROXY_HOST: !GetAtt RDSProxy.Endpoint
+          CHAT_TABLE: !Ref ChatHistoryTable
+          AI_STATE_TABLE: !Ref AIStateTable
 
   CRMFunction:
     Type: AWS::Lambda::Function
@@ -390,7 +795,7 @@ Resources:
       FunctionName: !Sub 'sf7-${Environment}-crm'
       Runtime: nodejs20.x
       Handler: index.handler
-      MemorySize: 256
+      MemorySize: 1024
       Timeout: 15
       Role: !GetAtt LambdaRole.Arn
       Code:
@@ -408,6 +813,11 @@ Resources:
           JWT_SECRET_ARN: !Ref JWTSecretStore
           SQS_QUEUE_URL: !Ref EventsQueue
           S3_BUCKET: !Ref FilesBucket
+          NODE_ENV: production
+          CORS_ORIGIN: !Sub 'https://${CloudFrontDistribution.DomainName}'
+          DB_PROXY_HOST: !GetAtt RDSProxy.Endpoint
+          CHAT_TABLE: !Ref ChatHistoryTable
+          AI_STATE_TABLE: !Ref AIStateTable
 
   SalesFunction:
     Type: AWS::Lambda::Function
@@ -415,7 +825,7 @@ Resources:
       FunctionName: !Sub 'sf7-${Environment}-sales'
       Runtime: nodejs20.x
       Handler: index.handler
-      MemorySize: 256
+      MemorySize: 1024
       Timeout: 15
       Role: !GetAtt LambdaRole.Arn
       Code:
@@ -431,6 +841,11 @@ Resources:
         Variables:
           DB_SECRET_ARN: !Ref DBSecret
           SQS_QUEUE_URL: !Ref EventsQueue
+          NODE_ENV: production
+          CORS_ORIGIN: !Sub 'https://${CloudFrontDistribution.DomainName}'
+          DB_PROXY_HOST: !GetAtt RDSProxy.Endpoint
+          CHAT_TABLE: !Ref ChatHistoryTable
+          AI_STATE_TABLE: !Ref AIStateTable
 
   QuotationFunction:
     Type: AWS::Lambda::Function
@@ -438,7 +853,7 @@ Resources:
       FunctionName: !Sub 'sf7-${Environment}-quotation'
       Runtime: nodejs20.x
       Handler: index.handler
-      MemorySize: 256
+      MemorySize: 1024
       Timeout: 30
       Role: !GetAtt LambdaRole.Arn
       Code:
@@ -455,6 +870,11 @@ Resources:
           DB_SECRET_ARN: !Ref DBSecret
           S3_BUCKET: !Ref FilesBucket
           SQS_QUEUE_URL: !Ref EventsQueue
+          NODE_ENV: production
+          CORS_ORIGIN: !Sub 'https://${CloudFrontDistribution.DomainName}'
+          DB_PROXY_HOST: !GetAtt RDSProxy.Endpoint
+          CHAT_TABLE: !Ref ChatHistoryTable
+          AI_STATE_TABLE: !Ref AIStateTable
 
   NotificationFunction:
     Type: AWS::Lambda::Function
@@ -462,7 +882,7 @@ Resources:
       FunctionName: !Sub 'sf7-${Environment}-notification'
       Runtime: nodejs20.x
       Handler: index.handler
-      MemorySize: 256
+      MemorySize: 1024
       Timeout: 15
       Role: !GetAtt LambdaRole.Arn
       Code:
@@ -478,6 +898,12 @@ Resources:
         Variables:
           DB_SECRET_ARN: !Ref DBSecret
           SQS_QUEUE_URL: !Ref EventsQueue
+          NODE_ENV: production
+          CORS_ORIGIN: !Sub 'https://${CloudFrontDistribution.DomainName}'
+          DB_PROXY_HOST: !GetAtt RDSProxy.Endpoint
+          LINE_SECRET_ARN: !Ref LineSecret
+          CHAT_TABLE: !Ref ChatHistoryTable
+          AI_STATE_TABLE: !Ref AIStateTable
 
   # SQS -> Notification Lambda trigger
   NotificationEventSource:
@@ -508,6 +934,9 @@ Resources:
       ApiId: !Ref HttpApi
       StageName: '$default'
       AutoDeploy: true
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 100
+        ThrottlingRateLimit: 50
 
   # Auth routes
   AuthIntegration:
@@ -647,6 +1076,223 @@ Resources:
       RouteKey: 'ANY /products/{proxy+}'
       Target: !Sub 'integrations/${QuotationIntegration}'
 
+  # LINE OA routes (Notification service)
+  LineRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /line/{proxy+}'
+      Target: !Sub 'integrations/${NotificationIntegration}'
+
+  NotificationIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt NotificationFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  NotificationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref NotificationFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*'
+
+  # ============================================================
+  # CloudWatch Alarms — Security Monitoring
+  # ============================================================
+  AuthLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'sf7-${Environment}-auth-errors'
+      AlarmDescription: Auth Lambda error rate too high (possible brute force)
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref AuthFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 50
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
+  Api4xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'sf7-${Environment}-api-4xx'
+      AlarmDescription: High 4xx error rate on API (possible attack)
+      Namespace: AWS/ApiGateway
+      MetricName: 4xx
+      Dimensions:
+        - Name: ApiId
+          Value: !Ref HttpApi
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 500
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
+  RDSConnectionAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'sf7-${Environment}-rds-connections'
+      AlarmDescription: RDS connection count unusually high
+      Namespace: AWS/RDS
+      MetricName: DatabaseConnections
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Sub 'sf7-${Environment}'
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
+  # ============================================================
+  # RDS Proxy — Connection pooling for Lambda
+  # Reduces RDS connections from 10/Lambda to shared pool
+  # Cost: ~$15/mo (0.015 per vCPU-hour × 2 vCPU × 730h)
+  # ============================================================
+  RDSProxySG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS Proxy security group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LambdaSG
+          Description: Lambda to RDS Proxy
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 10.0.0.0/16
+          Description: RDS Proxy to RDS
+
+  RDSProxyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'sf7-${Environment}-rds-proxy-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: rds.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: rds-proxy-secrets-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:DescribeSecret
+                Resource: !Ref DBSecret
+
+  RDSProxy:
+    Type: AWS::RDS::DBProxy
+    DependsOn: Database
+    Properties:
+      DBProxyName: !Sub 'sf7-${Environment}-proxy'
+      EngineFamily: POSTGRESQL
+      RoleArn: !GetAtt RDSProxyRole.Arn
+      Auth:
+        - AuthScheme: SECRETS
+          SecretArn: !Ref DBSecret
+          IAMAuth: DISABLED
+      VpcSubnetIds:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+      VpcSecurityGroupIds:
+        - !Ref RDSProxySG
+      RequireTLS: true
+      IdleClientTimeout: 1800
+      DebugLogging: false
+      Tags:
+        - Key: Name
+          Value: !Sub 'sf7-${Environment}-proxy'
+
+  RDSProxyTargetGroup:
+    Type: AWS::RDS::DBProxyTargetGroup
+    DependsOn: RDSProxy
+    Properties:
+      DBProxyName: !Ref RDSProxy
+      TargetGroupName: default
+      DBInstanceIdentifiers:
+        - !Ref Database
+      ConnectionPoolConfigurationInfo:
+        MaxConnectionsPercent: 90
+        MaxIdleConnectionsPercent: 50
+        ConnectionBorrowTimeout: 120
+
+# ============================================================
+# AWS Backup — 7-day retention for RDS + S3
+# Runs daily at 02:00 UTC (09:00 Thailand time)
+# Cost: ~$1-2/mo (snapshot storage based on data size)
+# ============================================================
+
+  BackupVault:
+    Type: AWS::Backup::BackupVault
+    Properties:
+      BackupVaultName: !Sub 'sf7-${Environment}-vault'
+      EncryptionKeyArn: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/backup'
+
+  BackupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'sf7-${Environment}-backup-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: backup.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
+        - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
+        - arn:aws:iam::aws:policy/AWSBackupServiceRolePolicyForS3Backup
+        - arn:aws:iam::aws:policy/AWSBackupServiceRolePolicyForS3Restore
+
+  BackupPlan:
+    Type: AWS::Backup::BackupPlan
+    Properties:
+      BackupPlan:
+        BackupPlanName: !Sub 'sf7-${Environment}-daily-7day'
+        BackupPlanRule:
+          - RuleName: DailyBackup7DayRetention
+            TargetBackupVault: !Ref BackupVault
+            ScheduleExpression: 'cron(0 2 * * ? *)'   # 02:00 UTC = 09:00 Thailand
+            StartWindowMinutes: 60
+            CompletionWindowMinutes: 180
+            Lifecycle:
+              DeleteAfterDays: 7
+
+  BackupSelection:
+    Type: AWS::Backup::BackupSelection
+    Properties:
+      BackupPlanId: !Ref BackupPlan
+      BackupSelection:
+        SelectionName: !Sub 'sf7-${Environment}-resources'
+        IamRoleArn: !GetAtt BackupRole.Arn
+        Resources:
+          - !Sub 'arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:sf7-${Environment}'
+          - !Sub 'arn:aws:s3:::sf7-${Environment}-files-${AWS::AccountId}'
+        ListOfTags:
+          - ConditionType: STRINGEQUALS
+            ConditionKey: aws:cloudformation:stack-name
+            ConditionValue: !Ref AWS::StackName
+
 # ============================================================
 # Outputs
 # ============================================================
@@ -655,13 +1301,21 @@ Outputs:
     Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
     Description: API Gateway URL
 
-  FrontendUrl:
-    Value: !GetAtt FrontendBucket.WebsiteURL
-    Description: Frontend S3 website URL
+  CloudFrontUrl:
+    Value: !Sub 'https://${CloudFrontDistribution.DomainName}'
+    Description: CloudFront distribution URL (main entry point)
+
+  CloudFrontDistributionId:
+    Value: !Ref CloudFrontDistribution
+    Description: CloudFront distribution ID (for cache invalidation)
 
   DatabaseEndpoint:
     Value: !GetAtt Database.Endpoint.Address
-    Description: RDS PostgreSQL endpoint
+    Description: RDS PostgreSQL endpoint (direct — use Proxy endpoint for Lambda)
+
+  RDSProxyEndpoint:
+    Value: !GetAtt RDSProxy.Endpoint
+    Description: RDS Proxy endpoint (use this in Lambda DB_HOST)
 
   FilesBucket:
     Value: !Ref FilesBucket
@@ -670,3 +1324,15 @@ Outputs:
   FrontendBucket:
     Value: !Ref FrontendBucket
     Description: S3 bucket for frontend
+
+  BackupVault:
+    Value: !Ref BackupVault
+    Description: AWS Backup vault name (7-day retention, daily at 09:00 TH)
+
+  ChatHistoryTable:
+    Value: !Ref ChatHistoryTable
+    Description: DynamoDB table for AI chat history
+
+  AIStateTable:
+    Value: !Ref AIStateTable
+    Description: DynamoDB table for AI config and session state

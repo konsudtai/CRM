@@ -13,7 +13,6 @@ export interface Lead {
   source: string;
   status: string;
   assignedTo?: string;
-  aiScore?: number;
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -33,7 +32,6 @@ export interface Opportunity {
   closedReason?: string;
   closedNotes?: string;
   assignedTo: string;
-  aiCloseProbability?: number;
   createdAt: Date;
   updatedAt: Date;
 }

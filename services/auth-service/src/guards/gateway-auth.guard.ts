@@ -78,9 +78,9 @@ export class GatewayAuthGuard implements CanActivate {
       throw new UnauthorizedException('Token missing tenant identifier');
     }
 
-    // Set PostgreSQL RLS session variable
+    // Set PostgreSQL RLS session variable (parameterized to prevent SQL injection)
     await this.dataSource.query(
-      `SET LOCAL app.current_tenant = '${payload.tenantId}'`,
+      `SELECT set_config('app.current_tenant', $1, true)`, [payload.tenantId],
     );
 
     (request as any).user = payload;
@@ -112,9 +112,9 @@ export class GatewayAuthGuard implements CanActivate {
         this.logger.error('Failed to update API key last_used_at', err),
       );
 
-    // Set PostgreSQL RLS session variable
+    // Set PostgreSQL RLS session variable (parameterized to prevent SQL injection)
     await this.dataSource.query(
-      `SET LOCAL app.current_tenant = '${apiKey.tenantId}'`,
+      `SELECT set_config('app.current_tenant', $1, true)`, [apiKey.tenantId],
     );
 
     (request as any).user = {

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <circle cx="60" cy="60" r="60" fill="url(#bg2)"/>
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7F56D9"/>
+      <stop offset="100%" stop-color="#0B827C"/>
+    </linearGradient>
+    <linearGradient id="hair2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8B4513"/>
+      <stop offset="100%" stop-color="#5C2D0E"/>
+    </linearGradient>
+    <linearGradient id="skin2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FDDCB5"/>
+      <stop offset="100%" stop-color="#F5C8A0"/>
+    </linearGradient>
+    <linearGradient id="blouse2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7F56D9"/>
+      <stop offset="100%" stop-color="#5B3AAE"/>
+    </linearGradient>
+  </defs>
+  <!-- Hair back -->
+  <ellipse cx="60" cy="50" rx="30" ry="34" fill="url(#hair2)"/>
+  <!-- Neck -->
+  <rect x="52" y="72" width="16" height="12" rx="4" fill="url(#skin2)"/>
+  <!-- Blouse -->
+  <path d="M30 105 Q30 82 60 82 Q90 82 90 105 L90 120 L30 120 Z" fill="url(#blouse2)"/>
+  <path d="M50 84 L60 94 L70 84" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+  <!-- Face -->
+  <ellipse cx="60" cy="54" rx="25" ry="27" fill="url(#skin2)"/>
+  <!-- Hair front - bob cut style -->
+  <path d="M35 46 Q35 22 60 20 Q85 22 85 46 L85 40 Q85 18 60 16 Q35 18 35 40 Z" fill="url(#hair2)"/>
+  <path d="M38 42 Q44 30 54 34 Q50 26 60 28 Q56 22 66 26 Q64 20 74 28 Q72 24 80 34 Q84 30 84 42" fill="url(#hair2)"/>
+  <!-- Side hair - shorter bob -->
+  <path d="M35 46 Q32 46 30 58 Q29 68 34 72 Q36 64 37 54 Z" fill="url(#hair2)"/>
+  <path d="M85 46 Q88 46 90 58 Q91 68 86 72 Q84 64 83 54 Z" fill="url(#hair2)"/>
+  <!-- Glasses -->
+  <rect x="38" y="48" width="16" height="12" rx="6" fill="none" stroke="#5B3AAE" stroke-width="1.8"/>
+  <rect x="66" y="48" width="16" height="12" rx="6" fill="none" stroke="#5B3AAE" stroke-width="1.8"/>
+  <line x1="54" y1="53" x2="66" y2="53" stroke="#5B3AAE" stroke-width="1.5"/>
+  <line x1="38" y1="53" x2="34" y2="51" stroke="#5B3AAE" stroke-width="1.5"/>
+  <line x1="82" y1="53" x2="86" y2="51" stroke="#5B3AAE" stroke-width="1.5"/>
+  <!-- Eyes behind glasses -->
+  <ellipse cx="46" cy="54" rx="3.5" ry="4" fill="#fff"/>
+  <ellipse cx="74" cy="54" rx="3.5" ry="4" fill="#fff"/>
+  <ellipse cx="47" cy="54.5" rx="2.2" ry="2.8" fill="#5B3AAE"/>
+  <ellipse cx="75" cy="54.5" rx="2.2" ry="2.8" fill="#5B3AAE"/>
+  <circle cx="48" cy="53" r="1" fill="#fff"/>
+  <circle cx="76" cy="53" r="1" fill="#fff"/>
+  <!-- Eyebrows -->
+  <path d="M40 46 Q46 43 52 46" fill="none" stroke="#5C2D0E" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M68 46 Q74 43 80 46" fill="none" stroke="#5C2D0E" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Nose -->
+  <path d="M58 61 Q60 64 62 61" fill="none" stroke="#E8B090" stroke-width="1.2" stroke-linecap="round"/>
+  <!-- Smile -->
+  <path d="M50 68 Q60 75 70 68" fill="none" stroke="#C4836A" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M52 69 Q60 74 68 69" fill="#E8878A" opacity="0.5"/>
+  <!-- Blush -->
+  <ellipse cx="40" cy="65" rx="5" ry="3" fill="#FFB5B5" opacity="0.3"/>
+  <ellipse cx="80" cy="65" rx="5" ry="3" fill="#FFB5B5" opacity="0.3"/>
+  <!-- Small chart icon on blouse -->
+  <polyline points="40 98 48 92 56 96 64 88 72 94 80 86" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

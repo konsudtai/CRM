@@ -16,7 +16,7 @@ import { PdfGenerationService } from './pdf-generation.service';
   imports: [
     TypeOrmModule.forFeature([Quotation, QuotationLineItem, QuotationSequence, Product]),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'dev-secret-change-me',
+      secret: (() => { const s = process.env.JWT_SECRET; if (!s) throw new Error('JWT_SECRET env var is required'); return s; })(),
       signOptions: { expiresIn: '1h' },
     }),
   ],

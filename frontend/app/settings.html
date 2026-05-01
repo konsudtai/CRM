@@ -2,6 +2,7 @@
 <html lang="th" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SalesFAST 7 — Settings</title>
 <link rel="stylesheet" href="../css/app.css"/>
@@ -27,6 +28,23 @@
 .perm-cell{padding:8px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center}
 .perm-module{padding:8px 10px;font-weight:500;border-bottom:1px solid var(--border);display:flex;align-items:center}
 .perm-check{width:16px;height:16px;accent-color:var(--sf-blue);cursor:pointer}
+/* Add-ons */
+.addon-card{background:var(--surface);border-radius:12px;padding:20px;border:1px solid var(--border);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.addon-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.addon-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.addon-badge-soon{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--surface3);color:var(--text3)}
+.addon-features{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px}
+.addon-feature{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text2);padding:4px 0}
+.addon-feat-icon{color:#06C755;font-weight:700;flex-shrink:0;margin-top:1px}
+.addon-toggle{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+.addon-toggle input{opacity:0;width:0;height:0}
+.addon-slider{position:absolute;cursor:pointer;inset:0;background:var(--surface3);border-radius:24px;transition:.3s}
+.addon-slider:before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.addon-toggle input:checked + .addon-slider{background:#06C755}
+.addon-toggle input:checked + .addon-slider:before{transform:translateX(20px)}
+.feat-toggle-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:var(--surface2);cursor:pointer;font-size:12px;color:var(--text)}
+.feat-toggle-row input{accent-color:var(--sf-blue);width:14px;height:14px;flex-shrink:0}
+.addon-card-soon{background:var(--surface);border-radius:10px;padding:14px 16px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;opacity:.7}
 </style>
 </head>
 <body>
@@ -44,6 +62,10 @@
   <div class="tab-bar">
     <button class="tab-btn active" onclick="showTab('users',this)">Users</button>
     <button class="tab-btn" onclick="showTab('roles',this)">Roles & Permissions</button>
+    <button class="tab-btn" onclick="showTab('addons',this)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Add-ons
+    </button>
   </div>
 
   <!-- Tab: Users -->
@@ -102,6 +124,345 @@
       </div>
     </div>
   </div>
+
+  <!-- Tab: Add-ons -->
+  <div class="tab-content" id="tab-addons">
+
+    <!-- LINE OA Add-on -->
+    <div class="addon-card" id="addon-line-locked">
+      <div class="addon-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="addon-icon" style="background:#06C755">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:700">LINE OA Integration</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px">รับ Lead อัตโนมัติ · ส่ง Product/Quotation ผ่าน LINE</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="width:8px;height:8px;border-radius:50%;background:#06C755;display:inline-block"></span>
+            <span style="font-size:11px;font-weight:600;color:#06C755">Active</span>
+          </div>
+          <label class="addon-toggle">
+            <input type="checkbox" id="line-toggle" checked onchange="toggleLineAddon(this)"/>
+            <span class="addon-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Features list -->
+      <div class="addon-features">
+        <div class="addon-feature"><span class="addon-feat-icon">&#10003;</span><span>รับข้อความจาก LINE OA → สร้าง Lead อัตโนมัติใน Pipeline</span></div>
+        <div class="addon-feature"><span class="addon-feat-icon">&#10003;</span><span>แจ้งเตือน Sales Rep เมื่อมีข้อความใหม่จากลูกค้า</span></div>
+        <div class="addon-feature"><span class="addon-feat-icon">&#10003;</span><span>บันทึก LINE message ใน Account Timeline</span></div>
+        <div class="addon-feature"><span class="addon-feat-icon">&#10003;</span><span>ส่งสินค้าแนะนำผ่าน LINE จากหน้า Products</span></div>
+        <div class="addon-feature"><span class="addon-feat-icon">&#10003;</span><span>ส่ง Quotation ผ่าน LINE หลังได้รับการอนุมัติ</span></div>
+        <div class="addon-feature"><span class="addon-feat-icon">&#10003;</span><span>Broadcast ข้อความไปหาลูกค้าหลายคนพร้อมกัน</span></div>
+      </div>
+    </div>
+
+    <!-- LINE Setup Form (always visible) -->
+    <div id="line-setup-form" style="display:block">
+      <div class="card" style="margin-top:16px">
+        <div style="font-size:13px;font-weight:700;color:#06C755;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#06C755"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+          LINE OA Configuration
+        </div>
+
+        <!-- Status bar -->
+        <div id="line-status-bar" style="display:none;margin-bottom:16px;padding:10px 14px;border-radius:8px;background:rgba(46,132,74,.06);border:1px solid rgba(46,132,74,.2);display:flex;align-items:center;gap:8px">
+          <span style="width:8px;height:8px;border-radius:50%;background:#2E844A;display:inline-block"></span>
+          <span style="font-size:12px;font-weight:600;color:#2E844A">Connected</span>
+          <span style="font-size:12px;color:var(--text2);margin-left:4px" id="line-channel-name"></span>
+          <span style="margin-left:auto;font-size:11px;color:var(--text3)" id="line-msg-count"></span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="sf7-form-group">
+            <label class="sf7-form-label">Channel Access Token *
+              <a href="https://developers.line.biz" target="_blank" style="font-size:10px;color:var(--sf-blue);margin-left:6px">LINE Developers &#8599;</a>
+            </label>
+            <input class="sf7-form-input" id="line-token" type="password" placeholder="Channel Access Token"/>
+          </div>
+          <div class="sf7-form-group">
+            <label class="sf7-form-label">Channel Secret *</label>
+            <input class="sf7-form-input" id="line-secret" type="password" placeholder="Channel Secret"/>
+          </div>
+          <div class="sf7-form-group">
+            <label class="sf7-form-label">Channel Name (ชื่อ LINE OA)</label>
+            <input class="sf7-form-input" id="line-name" placeholder="@MyCompany"/>
+          </div>
+        </div>
+
+        <!-- Webhook URL -->
+        <div style="margin-top:14px;padding:12px 14px;border-radius:8px;background:var(--surface2);border:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px">Webhook URL — Copy ไปใส่ใน LINE Developers Console</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <code style="flex:1;font-size:12px;color:var(--sf-blue);background:var(--surface);padding:8px 12px;border-radius:6px;border:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="webhook-url">https://your-cloudfront.net/notifications/line/webhook</code>
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;flex-shrink:0" onclick="copyWebhook()">Copy</button>
+          </div>
+        </div>
+
+        <!-- Feature toggles -->
+        <div style="margin-top:16px">
+          <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px">Feature Settings</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <label class="feat-toggle-row"><input type="checkbox" checked/><span>Auto-create Lead จากข้อความใหม่</span></label>
+            <label class="feat-toggle-row"><input type="checkbox" checked/><span>แจ้งเตือน Sales Rep เมื่อมีข้อความ</span></label>
+            <label class="feat-toggle-row"><input type="checkbox" checked/><span>บันทึก message ใน Account Timeline</span></label>
+            <label class="feat-toggle-row"><input type="checkbox"/><span>Auto-reply นอกเวลาทำการ</span></label>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:20px">
+          <button class="btn btn-secondary" onclick="testLineConnection()" style="display:flex;align-items:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Test Connection
+          </button>
+          <button class="btn btn-primary" onclick="saveLineConfig()" style="display:flex;align-items:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Configuration
+          </button>
+          <button class="btn btn-secondary" onclick="disconnectLine()" style="color:var(--red);border-color:var(--red);margin-left:auto">Disconnect</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Configuration -->
+    <div class="addon-card" style="margin-top:20px">
+      <div class="addon-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="addon-icon" style="background:linear-gradient(135deg,#7F56D9,#0B827C)">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" fill="#fff" opacity=".9"/><path d="M2 17l10 5 10-5" stroke="#fff" stroke-width="1.5" fill="none"/><path d="M2 12l10 5 10-5" stroke="#fff" stroke-width="1.5" fill="none"/></svg>
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" fill="#7F56D9"/><path d="M2 17l10 5 10-5" stroke="#7F56D9" stroke-width="2" fill="none"/><path d="M2 12l10 5 10-5" stroke="#0B827C" stroke-width="2" fill="none"/></svg>
+              AI Configuration
+            </div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px">Amazon Bedrock · Model Selection · Knowledge Base</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:8px;height:8px;border-radius:50%;background:#2E844A"></span>
+          <span style="font-size:11px;font-weight:600;color:#2E844A">Active</span>
+        </div>
+      </div>
+
+      <!-- Sub-tabs -->
+      <div style="display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:16px">
+        <button class="tab-btn active" onclick="showAITab('bedrock',this)" style="padding:8px 16px;font-size:12px">Bedrock API</button>
+        <button class="tab-btn" onclick="showAITab('model',this)" style="padding:8px 16px;font-size:12px">Model Selection</button>
+        <button class="tab-btn" onclick="showAITab('kb',this)" style="padding:8px 16px;font-size:12px">Knowledge Base</button>
+        <button class="tab-btn" onclick="showAITab('prompt',this)" style="padding:8px 16px;font-size:12px">System Prompt</button>
+      </div>
+
+      <!-- Sub: Bedrock API -->
+      <div id="ai-tab-bedrock">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="sf7-form-group">
+            <label class="sf7-form-label">Bedrock Region</label>
+            <select class="sf7-form-input" id="ai-region">
+              <option value="us-east-1">US East (N. Virginia)</option>
+              <option value="us-west-2">US West (Oregon)</option>
+              <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+              <option value="ap-northeast-1">Asia Pacific (Tokyo)</option>
+              <option value="eu-west-1">Europe (Ireland)</option>
+            </select>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">เลือก region ที่ใกล้ที่สุดและมี model ที่ต้องการ</div>
+          </div>
+          <div class="sf7-form-group">
+            <label class="sf7-form-label">AWS Access Key ID</label>
+            <input class="sf7-form-input" id="ai-access-key" type="password" placeholder="AKIA..."/>
+          </div>
+          <div class="sf7-form-group">
+            <label class="sf7-form-label">AWS Secret Access Key</label>
+            <input class="sf7-form-input" id="ai-secret-key" type="password" placeholder="wJalr..."/>
+          </div>
+          <div class="sf7-form-group">
+            <label class="sf7-form-label">Status</label>
+            <div style="padding:10px 14px;border-radius:8px;background:rgba(46,132,74,.06);border:1px solid rgba(46,132,74,.2);font-size:12px;color:#2E844A;font-weight:600;display:flex;align-items:center;gap:6px">
+              <span style="width:8px;height:8px;border-radius:50%;background:#2E844A"></span> Connected
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1);font-size:11px;color:var(--text2)">
+          <strong style="color:var(--sf-blue)">Tip:</strong> ถ้า deploy ผ่าน CloudFormation Lambda จะใช้ IAM Role อัตโนมัติ ไม่ต้องกรอก Access Key ตรงนี้ กรอกเฉพาะกรณีใช้ external access
+        </div>
+      </div>
+
+      <!-- Sub: Model Selection -->
+      <div id="ai-tab-model" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="sf7-form-group">
+            <label class="sf7-form-label">Chat Model (สำหรับตอบลูกค้า + น้องขายไว)</label>
+            <select class="sf7-form-input" id="ai-chat-model">
+              <optgroup label="Amazon">
+                <option value="amazon.nova-lite-v2:0">Amazon Nova Lite 2.0 — เร็ว, ถูกที่สุด</option>
+                <option value="amazon.nova-pro-v1:0">Amazon Nova Pro — สมดุล</option>
+              </optgroup>
+              <optgroup label="Anthropic">
+                <option value="anthropic.claude-3-haiku-20240307-v1:0" selected>Claude 3 Haiku — เร็ว, ถูก (แนะนำ)</option>
+                <option value="anthropic.claude-3-5-sonnet-20241022-v2:0">Claude 3.5 Sonnet — ฉลาดกว่า</option>
+                <option value="anthropic.claude-sonnet-4-20250514-v1:0">Claude Sonnet 4</option>
+                <option value="anthropic.claude-opus-4-20250514-v1:0">Claude Opus 4 — ฉลาดที่สุด</option>
+              </optgroup>
+              <optgroup label="Meta (Open Source)">
+                <option value="meta.llama3-1-70b-instruct-v1:0">Llama 3.1 70B</option>
+                <option value="meta.llama3-1-8b-instruct-v1:0">Llama 3.1 8B — เล็ก, เร็วมาก</option>
+              </optgroup>
+              <optgroup label="DeepSeek">
+                <option value="deepseek.deepseek-r1-v1:0">DeepSeek R1 — ถูกมาก, reasoning ดี</option>
+              </optgroup>
+              <optgroup label="Alibaba (Qwen)">
+                <option value="qwen.qwen2-5-72b-instruct-v1:0">Qwen 2.5 72B — ถูก, รองรับภาษาไทย</option>
+              </optgroup>
+              <optgroup label="Mistral">
+                <option value="mistral.mistral-large-2407-v1:0">Mistral Large</option>
+                <option value="mistral.mistral-small-2503-v1:0">Mistral Small — เร็ว, ถูกมาก</option>
+              </optgroup>
+              <optgroup label="Cohere">
+                <option value="cohere.command-r-plus-v1:0">Command R+ — ดีสำหรับ RAG</option>
+              </optgroup>
+            </select>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">ทุก model ใช้ผ่าน Amazon Bedrock API เดียวกัน เปลี่ยนได้ทุกเมื่อ</div>
+          </div>
+          <div class="sf7-form-group">
+            <label class="sf7-form-label">Embedding Model (สำหรับ Knowledge Base)</label>
+            <select class="sf7-form-input" id="ai-embed-model">
+              <option value="amazon.titan-embed-text-v2:0">Amazon Titan Embed v2 (แนะนำ)</option>
+              <option value="cohere.embed-multilingual-v3">Cohere Multilingual v3</option>
+            </select>
+          </div>
+          <div class="sf7-form-group">
+            <label class="sf7-form-label">Temperature (0 = แม่นยำ, 1 = สร้างสรรค์)</label>
+            <input class="sf7-form-input" id="ai-temp" type="range" min="0" max="1" step="0.1" value="0.3" oninput="document.getElementById('ai-temp-val').textContent=this.value" style="padding:6px 0"/>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3)"><span>แม่นยำ 0</span><span id="ai-temp-val">0.3</span><span>สร้างสรรค์ 1</span></div>
+          </div>
+          <div class="sf7-form-group">
+            <label class="sf7-form-label">Max Tokens (ความยาวคำตอบ)</label>
+            <select class="sf7-form-input" id="ai-max-tokens">
+              <option value="1024">1,024 — สั้น</option>
+              <option value="2048" selected>2,048 — ปกติ (แนะนำ)</option>
+              <option value="4096">4,096 — ยาว</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub: Knowledge Base -->
+      <div id="ai-tab-kb" style="display:none">
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:600">เอกสารใน Knowledge Base</div>
+            <label class="btn btn-primary" style="cursor:pointer;margin:0;padding:6px 14px;font-size:12px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload
+              <input type="file" multiple accept=".pdf,.md,.txt,.json,.docx,.csv" style="display:none" onchange="handleKBUpload(this.files)"/>
+            </label>
+          </div>
+
+          <!-- Drop zone -->
+          <div id="kb-drop" style="border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;color:var(--text3);font-size:12px;margin-bottom:14px;transition:all .2s;cursor:pointer" onclick="this.querySelector('input').click()">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:6px;opacity:.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <div>ลากไฟล์มาวางหรือคลิกเพื่อ upload</div>
+            <div style="font-size:10px;margin-top:4px">PDF, Markdown, Text, JSON, Word, CSV</div>
+            <input type="file" multiple accept=".pdf,.md,.txt,.json,.docx,.csv" style="display:none" onchange="handleKBUpload(this.files)"/>
+          </div>
+
+          <!-- File list -->
+          <div id="kb-files">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--surface2);margin-bottom:6px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2E844A" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div style="flex:1"><div style="font-size:12px;font-weight:600">product-catalog.json</div><div style="font-size:10px;color:var(--text3)">Auto-sync จาก DB · 5 products · 12 chunks</div></div>
+              <span style="font-size:10px;font-weight:600;color:#2E844A;padding:2px 8px;border-radius:10px;background:rgba(46,132,74,.08)">Ready</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--surface2);margin-bottom:6px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0176D3" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div style="flex:1"><div style="font-size:12px;font-weight:600">company-profile.md</div><div style="font-size:10px;color:var(--text3)">อัปโหลดเมื่อ 28 Apr 2026 · 8 chunks</div></div>
+              <span style="font-size:10px;font-weight:600;color:#2E844A;padding:2px 8px;border-radius:10px;background:rgba(46,132,74,.08)">Ready</span>
+              <button style="border:none;background:none;color:var(--red);cursor:pointer;font-size:14px" title="Delete">&times;</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--surface2);margin-bottom:6px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DD7A01" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div style="flex:1"><div style="font-size:12px;font-weight:600">faq.md</div><div style="font-size:10px;color:var(--text3)">อัปโหลดเมื่อ 28 Apr 2026 · 15 chunks</div></div>
+              <span style="font-size:10px;font-weight:600;color:#2E844A;padding:2px 8px;border-radius:10px;background:rgba(46,132,74,.08)">Ready</span>
+              <button style="border:none;background:none;color:var(--red);cursor:pointer;font-size:14px" title="Delete">&times;</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:var(--surface2);font-size:11px;color:var(--text2)">
+            <strong>วิธีทำงาน:</strong> เมื่อ upload ไฟล์ ระบบจะ 1) แบ่งเป็น chunks 2) สร้าง embedding ด้วย Titan Embed 3) เก็บใน PostgreSQL (pgvector) 4) AI Agent ค้นหาข้อมูลที่เกี่ยวข้องเมื่อลูกค้าถาม
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub: System Prompt -->
+      <div id="ai-tab-prompt" style="display:none">
+        <div class="sf7-form-group">
+          <label class="sf7-form-label">System Prompt — Admin AI Agent (ตอบลูกค้า LINE)</label>
+          <textarea class="sf7-form-input" id="ai-prompt-admin" rows="6" placeholder="คุณเป็นผู้ช่วยฝ่ายขาย ตอบเป็นภาษาไทย สุภาพ...">คุณเป็นผู้ช่วยฝ่ายขายของบริษัท ตอบเป็นภาษาไทย สุภาพ ใช้ครับ/ค่ะ
+หน้าที่: ตอบคำถามสินค้า/ราคา + เก็บข้อมูลลูกค้าเพื่อสร้าง Lead
+ข้อมูลที่ต้องเก็บ: ชื่อ, เบอร์โทร, บริษัท, สนใจอะไร, งบประมาณ
+ถ้าตอบไม่ได้ → บอกว่าจะให้ทีมงานติดต่อกลับ
+ห้ามให้ส่วนลดหรือสัญญาอะไรที่ไม่ได้รับอนุญาต</textarea>
+        </div>
+        <div class="sf7-form-group" style="margin-top:12px">
+          <label class="sf7-form-label">System Prompt — น้องขายไว (ช่วย Sales ใน CRM)</label>
+          <textarea class="sf7-form-input" id="ai-prompt-co" rows="4">คุณเป็น Personal Assistant ของทีมขาย ชื่อ "น้องขายไว"
+ตอบเป็นภาษาไทย สุภาพ ใช้ค่ะ
+ช่วยเรื่อง: assign lead, approve QT, สรุปลูกค้า, เขียน email, ดูงาน
+แยกข้อมูลตาม role ของผู้ใช้ (Sales Manager vs Sales Rep)</textarea>
+        </div>
+        <div class="sf7-form-group" style="margin-top:12px">
+          <label class="sf7-form-label">System Prompt — น้องวิ Analytics (วิเคราะห์ข้อมูล)</label>
+          <textarea class="sf7-form-input" id="ai-prompt-analytics" rows="4">คุณเป็นนักวิเคราะห์ข้อมูลการขาย ชื่อ "น้องวิ"
+ตอบเป็นภาษาไทย ใช้ตัวเลขและข้อมูลจริงจาก CRM
+ช่วยเรื่อง: forecast, churn risk, win rate, performance, deal size, sales cycle
+แนะนำ action ที่ทำได้จริงเสมอ</textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-primary" onclick="alert('AI Configuration saved!')">Save Configuration</button>
+        <button class="btn btn-secondary" onclick="alert('Connection test: OK')">Test Connection</button>
+      </div>
+    </div>
+
+    <!-- Future Add-ons (coming soon) -->
+    <div style="margin-top:20px">
+      <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Coming Soon</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="addon-card-soon">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="addon-icon" style="background:#7F56D9;opacity:.5">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text2)">AI Assistant</div>
+              <div style="font-size:11px;color:var(--text3)">Bedrock-powered sales insights</div>
+            </div>
+          </div>
+          <span class="addon-badge-soon">Coming Soon</span>
+        </div>
+        <div class="addon-card-soon">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="addon-icon" style="background:#0176D3;opacity:.5">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text2)">Advanced Reports</div>
+              <div style="font-size:11px;color:var(--text3)">Custom dashboards & exports</div>
+            </div>
+          </div>
+          <span class="addon-badge-soon">Coming Soon</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end tab-addons -->
 </div>
 
 <script src="../js/helpers.js"></script>
@@ -253,6 +614,107 @@ function renderPermissions() {
 
 renderUsers();
 renderPermissions();
+
+// ── LINE Add-on ──
+function toggleLineAddon(cb) {
+  var form = document.getElementById('line-setup-form');
+  if (form) form.style.display = cb.checked ? 'block' : 'none';
+}
+
+function copyWebhook() {
+  var url = document.getElementById('webhook-url').textContent;
+  navigator.clipboard.writeText(url).then(function() {
+    var btn = event.target;
+    btn.textContent = 'Copied!';
+    btn.style.color = '#2E844A';
+    setTimeout(function(){ btn.textContent = 'Copy'; btn.style.color = ''; }, 2000);
+  });
+}
+
+function testLineConnection() {
+  var token = document.getElementById('line-token').value;
+  var secret = document.getElementById('line-secret').value;
+  if (!token || !secret) { alert('กรุณากรอก Channel Access Token และ Channel Secret ก่อน'); return; }
+  var btn = event.target;
+  btn.textContent = 'Testing...';
+  btn.disabled = true;
+  setTimeout(function() {
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Test Connection';
+    btn.disabled = false;
+    var bar = document.getElementById('line-status-bar');
+    var name = document.getElementById('line-name').value || '@MyCompany';
+    document.getElementById('line-channel-name').textContent = name;
+    document.getElementById('line-msg-count').textContent = '247 / 3,000 messages this month';
+    bar.style.display = 'flex';
+    alert('✅ Connection successful! LINE OA connected.');
+  }, 1500);
+}
+
+function saveLineConfig() {
+  var token = document.getElementById('line-token').value;
+  var secret = document.getElementById('line-secret').value;
+  if (!token || !secret) { alert('กรุณากรอก Channel Access Token และ Channel Secret'); return; }
+  // Save to localStorage for demo (production: POST /line/configure)
+  localStorage.setItem('sf7-line-config', JSON.stringify({
+    token: token,
+    secret: secret,
+    name: document.getElementById('line-name').value || '@MyCompany',
+    enabled: true
+  }));
+  alert('✅ LINE OA configuration saved!\n\nRemember to set the Webhook URL in LINE Developers Console.');
+}
+
+function disconnectLine() {
+  if (!confirm('ต้องการยกเลิกการเชื่อมต่อ LINE OA ใช่หรือไม่?')) return;
+  document.getElementById('line-toggle').checked = false;
+  toggleLineAddon(document.getElementById('line-toggle'));
+  document.getElementById('line-token').value = '';
+  document.getElementById('line-secret').value = '';
+  document.getElementById('line-status-bar').style.display = 'none';
+}
+// ── AI Config Tabs ──
+function showAITab(id,btn){
+  ['bedrock','model','kb','prompt'].forEach(function(t){
+    var el=document.getElementById('ai-tab-'+t);
+    if(el)el.style.display=t===id?'block':'none';
+  });
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+  btn.classList.add('active');
+}
+
+function handleKBUpload(files){
+  if(!files||!files.length)return;
+  var list=document.getElementById('kb-files');
+  for(var i=0;i<files.length;i++){
+    var f=files[i];
+    var ext=f.name.split('.').pop().toLowerCase();
+    var color=ext==='pdf'?'#C23934':ext==='json'?'#2E844A':ext==='md'?'#0176D3':'#DD7A01';
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--surface2);margin-bottom:6px';
+    row.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+color+'" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'+
+      '<div style="flex:1"><div style="font-size:12px;font-weight:600">'+esc(f.name)+'</div><div style="font-size:10px;color:var(--text3)">'+(f.size/1024).toFixed(0)+' KB · Processing...</div></div>'+
+      '<span style="font-size:10px;font-weight:600;color:#DD7A01;padding:2px 8px;border-radius:10px;background:rgba(221,122,1,.08)">Processing</span>';
+    list.appendChild(row);
+    // Simulate processing
+    (function(r){
+      setTimeout(function(){
+        r.querySelector('span').textContent='Ready';
+        r.querySelector('span').style.color='#2E844A';
+        r.querySelector('span').style.background='rgba(46,132,74,.08)';
+        r.querySelector('div > div:last-child').textContent=r.querySelector('div > div:last-child').textContent.replace('Processing...','Embedded · Ready');
+      },2000+i*500);
+    })(row);
+  }
+}
+
+// KB drop zone
+setTimeout(function(){
+  var zone=document.getElementById('kb-drop');
+  if(!zone)return;
+  zone.addEventListener('dragover',function(e){e.preventDefault();zone.style.borderColor='var(--sf-blue)';zone.style.background='rgba(1,118,211,.04)'});
+  zone.addEventListener('dragleave',function(){zone.style.borderColor='';zone.style.background=''});
+  zone.addEventListener('drop',function(e){e.preventDefault();zone.style.borderColor='';zone.style.background='';handleKBUpload(e.dataTransfer.files)});
+},200);
 </script>
 </body>
 </html>

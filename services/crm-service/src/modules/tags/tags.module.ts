@@ -12,7 +12,7 @@ import { TagsService } from './tags.service';
   imports: [
     TypeOrmModule.forFeature([Tag, AccountTag, Account]),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'dev-secret-change-me',
+      secret: (() => { const s = process.env.JWT_SECRET; if (!s) throw new Error('JWT_SECRET env var is required'); return s; })(),
       signOptions: { expiresIn: '1h' },
     }),
   ],

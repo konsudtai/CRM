@@ -30,11 +30,13 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: process.env.CORS_ORIGIN?.split(',') || [],
+    credentials: true,
   });
 
-  // ── OpenAPI 3.0 Documentation ──────────────────────────────────────────
-  const swaggerConfig = new DocumentBuilder()
+  // OpenAPI docs — disabled in production
+  if (process.env.NODE_ENV !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
     .setTitle('Thai SMB CRM API')
     .setDescription(
       'RESTful API for the Thai SMB CRM platform. ' +
@@ -67,11 +69,14 @@ async function bootstrap() {
       persistAuthorization: true,
     },
   });
+  } // end swagger if-block
 
   const port = parseInt(process.env.PORT || '3001', 10);
   await app.listen(port);
   console.log(`Auth service running on port ${port}`);
-  console.log(`OpenAPI docs available at http://localhost:${port}/api/docs`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`OpenAPI docs available at http://localhost:${port}/api/docs`);
+  }
 }
 
 bootstrap();

@@ -8,28 +8,32 @@
   --nav-h:52px;
 }
 [data-theme="light"]{
-  --bg:#F3F3F5;--surface:#FFFFFF;--surface2:#F4F6F9;--surface3:#E5E5E5;
-  --text:#181818;--text2:#5C5C5C;--text3:#939393;
-  --border:#D8D8D8;--border2:#C9C9C9;
-  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
-  --shadow-md:0 4px 20px rgba(1,68,134,.1),0 1px 4px rgba(0,0,0,.05);
-  --row-hover:rgba(1,118,211,.04);--deal-row:#F4F6F9;--kanban-col:#F4F6F9;
-  --filter-bg:rgba(0,0,0,.05);--filter-active:#fff;--filter-shadow:0 1px 4px rgba(0,0,0,.12);
-  --input-bg:#F4F6F9;
+  --bg:#EEF1F6;--surface:#FFFFFF;--surface2:#F7F9FB;--surface3:#E8ECF1;
+  --text:#16171A;--text2:#5A6872;--text3:#8E9BAE;
+  --border:#D4DAE3;--border2:#C1C9D4;
+  --shadow:0 1px 2px rgba(3,45,96,.04),0 2px 8px rgba(3,45,96,.06);
+  --shadow-md:0 4px 16px rgba(3,45,96,.08),0 1px 3px rgba(3,45,96,.04);
+  --shadow-lg:0 8px 32px rgba(3,45,96,.1),0 2px 6px rgba(3,45,96,.04);
+  --row-hover:rgba(1,118,211,.04);--deal-row:#F7F9FB;--kanban-col:#F3F5F9;
+  --filter-bg:rgba(3,45,96,.05);--filter-active:#fff;--filter-shadow:0 1px 4px rgba(3,45,96,.1);
+  --input-bg:#F7F9FB;
   --nav-bg:linear-gradient(135deg,#032D60 0%,#014486 50%,#0176D3 100%);
   --nav-text:rgba(255,255,255,.75);--nav-active:rgba(255,255,255,.15);--nav-hover:rgba(255,255,255,.1);
+  --page-bg:linear-gradient(180deg,#E8EDF4 0%,#EEF1F6 120px,#EEF1F6 100%);
 }
 [data-theme="dark"]{
-  --bg:#0B0B0F;--surface:#1A1A1E;--surface2:#242428;--surface3:#333338;
-  --text:rgba(255,255,255,.92);--text2:rgba(255,255,255,.5);--text3:rgba(255,255,255,.25);
+  --bg:#0D0F13;--surface:#1B1D23;--surface2:#22252B;--surface3:#2E3138;
+  --text:rgba(255,255,255,.92);--text2:rgba(255,255,255,.55);--text3:rgba(255,255,255,.28);
   --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.12);
   --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);
-  --shadow-md:0 4px 20px rgba(0,0,0,.45);
-  --row-hover:rgba(27,150,255,.06);--deal-row:rgba(255,255,255,.04);--kanban-col:rgba(255,255,255,.03);
-  --filter-bg:rgba(255,255,255,.06);--filter-active:rgba(255,255,255,.12);--filter-shadow:0 1px 4px rgba(0,0,0,.4);
-  --input-bg:#242428;
+  --shadow-md:0 4px 20px rgba(0,0,0,.35);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.4);
+  --row-hover:rgba(27,150,255,.06);--deal-row:rgba(255,255,255,.03);--kanban-col:rgba(255,255,255,.03);
+  --filter-bg:rgba(255,255,255,.06);--filter-active:rgba(255,255,255,.1);--filter-shadow:0 1px 4px rgba(0,0,0,.4);
+  --input-bg:#22252B;
   --nav-bg:linear-gradient(135deg,#001639 0%,#032D60 100%);
   --nav-text:rgba(255,255,255,.7);--nav-active:rgba(255,255,255,.15);--nav-hover:rgba(255,255,255,.08);
+  --page-bg:linear-gradient(180deg,#111318 0%,#0D0F13 120px,#0D0F13 100%);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
@@ -37,14 +41,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 a{color:var(--sf-blue);text-decoration:none}a:hover{text-decoration:underline}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:rgba(1,118,211,.18);border-radius:3px}
 
-/* BG */
-.bg-pattern{position:fixed;inset:0;z-index:-1;pointer-events:none}
-[data-theme="light"] .bg-pattern{background:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(1,118,211,.04),transparent 50%),radial-gradient(ellipse 50% 30% at 80% 80%,rgba(127,86,217,.03),transparent 50%),var(--bg)}
-[data-theme="dark"] .bg-pattern{background:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(27,150,255,.06),transparent 50%),radial-gradient(ellipse 50% 30% at 80% 80%,rgba(127,86,217,.04),transparent 50%),var(--bg)}
+/* BG — Salesforce Lightning clean gradient */
+.bg-pattern{position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--page-bg)}
 
 /* Nav */
 /* ── Unified Nav (SalesFAST 7) ── */
-.sf7-nav{position:sticky;top:0;z-index:100;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--nav-bg);box-shadow:0 2px 16px rgba(3,45,96,.35)}
+.sf7-nav{position:sticky;top:0;z-index:100;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--nav-bg);box-shadow:0 1px 0 rgba(3,45,96,.15),0 4px 20px rgba(3,45,96,.12)}
 .sf7-nav-left{display:flex;align-items:center;gap:20px;height:100%}
 .sf7-brand{text-decoration:none;font-size:17px;font-weight:900;letter-spacing:-.6px;color:#fff;padding-right:16px;border-right:1px solid rgba(255,255,255,.1);white-space:nowrap}
 .sf7-brand:hover{text-decoration:none}
@@ -55,7 +57,7 @@ a{color:var(--sf-blue);text-decoration:none}a:hover{text-decoration:underline}
 .sf7-nav-item.active{color:#fff;background:rgba(255,255,255,.12);font-weight:600}
 .sf7-nav-item.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--sf-blue-l);border-radius:2px 2px 0 0}
 /* Dropdown */
-.sf7-dropdown{position:absolute;top:100%;left:0;min-width:220px;background:var(--surface);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.15);border:1px solid var(--border);padding:6px;z-index:200;opacity:0;visibility:hidden;transform:translateY(-4px);transition:all .15s;pointer-events:none}
+.sf7-dropdown{position:absolute;top:100%;left:0;min-width:220px;background:var(--surface);border-radius:10px;box-shadow:var(--shadow-lg);border:1px solid var(--border);padding:6px;z-index:200;opacity:0;visibility:hidden;transform:translateY(-4px);transition:all .15s;pointer-events:none}
 .sf7-nav-group:hover .sf7-dropdown{opacity:1;visibility:visible;transform:translateY(4px);pointer-events:all}
 .sf7-drop-item{display:block;padding:10px 14px;border-radius:8px;text-decoration:none;transition:background .12s;color:var(--text)}
 .sf7-drop-item:hover{background:var(--row-hover);text-decoration:none}
@@ -68,7 +70,7 @@ a{color:var(--sf-blue);text-decoration:none}a:hover{text-decoration:underline}
 .sf7-util:hover{background:rgba(255,255,255,.16);color:#fff;text-decoration:none}
 .sf7-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--sf-blue-l),var(--purple));display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;cursor:pointer}
 /* Keep old class names working for dashboard.html (React SPA) */
-.glass-nav{position:sticky;top:0;z-index:100;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--nav-bg);box-shadow:0 2px 16px rgba(3,45,96,.35)}
+.glass-nav{position:sticky;top:0;z-index:100;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--nav-bg);box-shadow:0 1px 0 rgba(3,45,96,.15),0 4px 20px rgba(3,45,96,.12)}
 .nav-left{display:flex;align-items:center;gap:20px}
 .nav-brand{text-decoration:none;font-size:17px;font-weight:900;letter-spacing:-.6px;color:#fff}
 .nav-brand:hover{text-decoration:none}
@@ -89,25 +91,26 @@ a{color:var(--sf-blue);text-decoration:none}a:hover{text-decoration:underline}
 .page-subtitle{font-size:12px;color:var(--text2);margin-top:2px}
 .page-actions{display:flex;gap:8px;flex-wrap:wrap}
 
-/* Buttons */
+/* Buttons — Salesforce Lightning */
 .btn{padding:7px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
-.btn-primary{background:var(--sf-blue);color:#fff;box-shadow:0 2px 8px rgba(1,118,211,.3)}
-.btn-primary:hover{background:var(--sf-blue-d);transform:translateY(-1px);box-shadow:0 4px 16px rgba(1,118,211,.45)}
-.btn-secondary{background:var(--surface);color:var(--text);border:1.5px solid var(--border)}
-.btn-secondary:hover{border-color:var(--sf-blue);color:var(--sf-blue)}
+.btn-primary{background:var(--sf-blue);color:#fff;box-shadow:0 1px 3px rgba(1,118,211,.25)}
+.btn-primary:hover{background:var(--sf-blue-d);box-shadow:0 2px 8px rgba(1,118,211,.35)}
+.btn-secondary{background:var(--surface);color:var(--text);border:1.5px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.btn-secondary:hover{border-color:var(--sf-blue);color:var(--sf-blue);box-shadow:0 1px 4px rgba(1,118,211,.12)}
 
-/* Filter */
+/* Filter — Salesforce Lightning segmented control */
 .filter-bar{display:inline-flex;gap:3px;padding:3px;background:var(--filter-bg);border-radius:10px}
 .filter-btn{padding:5px 14px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:500;background:none;font-family:inherit;color:var(--text2);transition:all .15s}
-.filter-btn:hover{color:var(--text)}.filter-btn.active{background:var(--filter-active);color:var(--text);box-shadow:var(--filter-shadow)}
+.filter-btn:hover{color:var(--text)}.filter-btn.active{background:var(--filter-active);color:var(--sf-blue);font-weight:600;box-shadow:var(--filter-shadow)}
 
-/* Card */
-.card{background:var(--surface);border-radius:12px;padding:20px;box-shadow:var(--shadow);border:1px solid var(--border)}
+/* Card — Salesforce Lightning elevated card */
+.card{background:var(--surface);border-radius:12px;padding:20px;box-shadow:var(--shadow);border:1px solid var(--border);transition:box-shadow .2s}
+.card:hover{box-shadow:var(--shadow-md)}
 
-/* KPI */
+/* KPI — Salesforce Lightning metric cards */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:13px;margin-bottom:22px}
-.kpi-card{background:var(--surface);border-radius:12px;padding:18px 20px;border:1px solid var(--border);box-shadow:var(--shadow);transition:all .18s;cursor:default;position:relative;overflow:hidden}
-.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.kpi-card{background:var(--surface);border-radius:12px;padding:18px 20px;border:1px solid var(--border);box-shadow:var(--shadow);transition:all .2s;cursor:default;position:relative;overflow:hidden}
+.kpi-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
 .kpi-stripe{position:absolute;top:0;left:0;right:0;height:4px;border-radius:12px 12px 0 0}
 .kpi-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;margin-top:6px}
 .kpi-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px}
@@ -142,30 +145,30 @@ a{color:var(--sf-blue);text-decoration:none}a:hover{text-decoration:underline}
 .rep-row:hover{background:var(--row-hover)}
 .rep-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
 
-/* Kanban */
-.kanban{display:flex;gap:12px;overflow-x:auto;padding-bottom:16px}
-.kanban-col{flex-shrink:0;width:230px;background:var(--kanban-col);border-radius:10px;padding:12px;border:1px solid var(--border)}
+/* Kanban — Salesforce Lightning board */
+.kanban{display:flex;gap:12px;overflow-x:auto;padding-bottom:16px;position:relative}
+.kanban-col{flex-shrink:0;width:230px;background:var(--kanban-col);border-radius:10px;padding:12px;border:1px solid var(--border);display:flex;flex-direction:column;transition:background .2s}
 .kanban-col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .kanban-col-title{font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px}
 .kanban-badge{font-size:11px;font-weight:600;padding:1px 7px;border-radius:20px;background:var(--surface3);color:var(--text2)}
-.kanban-card{background:var(--surface);border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid var(--border);cursor:grab;transition:all .18s}
-.kanban-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.kanban-card{background:var(--surface);border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid var(--border);cursor:grab;transition:box-shadow .2s,opacity .2s;user-select:none;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.kanban-card:hover{box-shadow:var(--shadow-md)}
+.kanban-card:active{cursor:grabbing}
+.kanban-card.dragging{opacity:0.3}
+.kanban-col.drag-over{outline:2px dashed var(--sf-blue);background:rgba(1,118,211,.06)!important}
+.kanban-col-body{min-height:80px;flex:1;display:flex;flex-direction:column}
+.kanban-empty{padding:30px 12px;text-align:center;font-size:11px;color:var(--text3);border:2px dashed var(--border);border-radius:8px;margin:4px 0}
+.form-section-title{font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 .kanban-card-name{font-size:13px;font-weight:600}.kanban-card-sub{font-size:11px;color:var(--text2);margin-top:2px}
 .kanban-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
 
-/* AI Badge */
-.ai-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
-.ai-high{background:rgba(46,132,74,.12);color:var(--green)}
-.ai-mid{background:rgba(221,122,1,.12);color:var(--orange)}
-.ai-low{background:rgba(147,147,147,.12);color:var(--text3)}
-
-/* Table */
-.search-input{width:100%;padding:9px 14px;border-radius:8px;font-family:inherit;border:1.5px solid var(--border);background:var(--input-bg);font-size:13px;color:var(--text);outline:none}
-.search-input:focus{border-color:var(--sf-blue);box-shadow:0 0 0 3px rgba(1,118,211,.12)}
+/* Table — Salesforce Lightning data table */
+.search-input{width:100%;padding:9px 14px;border-radius:8px;font-family:inherit;border:1.5px solid var(--border);background:var(--input-bg);font-size:13px;color:var(--text);outline:none;transition:all .2s}
+.search-input:focus{border-color:var(--sf-blue);box-shadow:0 0 0 3px rgba(1,118,211,.1);background:var(--surface)}
 .search-input::placeholder{color:var(--text3)}
 table{width:100%;border-collapse:collapse}
-thead th{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;padding:0 12px 10px;text-align:left;border-bottom:1px solid var(--border)}
-tbody tr{border-bottom:1px solid var(--border)}tbody tr:hover{background:var(--row-hover)}
+thead th{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:0 12px 10px;text-align:left;border-bottom:2px solid var(--border)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .12s}tbody tr:hover{background:var(--row-hover)}
 tbody td{padding:11px 12px;font-size:13px}
 .table-link{color:var(--sf-blue);font-weight:600}.table-link:hover{text-decoration:underline}
 .tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(1,118,211,.08);color:var(--sf-blue);margin:1px 2px}
@@ -288,7 +291,7 @@ tbody td{padding:11px 12px;font-size:13px}
 .sf7-lang-btn{padding:4px 10px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;border:none;background:none;color:rgba(255,255,255,.5);transition:all .15s}
 .sf7-lang-btn.active{background:rgba(255,255,255,.2);color:#fff}
 .sf7-lang-btn:hover{color:#fff}
-.sf7-user-menu{position:absolute;top:calc(100% + 8px);right:0;width:280px;background:var(--surface);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.15);border:1px solid var(--border);padding:0;z-index:300;opacity:0;visibility:hidden;transform:translateY(-6px);transition:all .15s;pointer-events:none}
+.sf7-user-menu{position:absolute;top:calc(100% + 8px);right:0;width:280px;background:var(--surface);border-radius:12px;box-shadow:var(--shadow-lg);border:1px solid var(--border);padding:0;z-index:300;opacity:0;visibility:hidden;transform:translateY(-6px);transition:all .15s;pointer-events:none}
 .sf7-user-menu.open{opacity:1;visibility:visible;transform:translateY(0);pointer-events:all}
 .sf7-um-header{display:flex;gap:12px;align-items:center;padding:16px}
 .sf7-um-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--sf-blue-l),#7F56D9);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0}

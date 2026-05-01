@@ -1,14 +1,141 @@
-<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — สินค้า</title><link rel="stylesheet" href="../css/app.css"/></head><body>
+<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — สินค้า</title><link rel="stylesheet" href="../css/app.css"/></head><body>
 <div class="bg-pattern"></div><div id="nav"></div>
 <div class="page anim">
-  <div class="page-header"><div><div class="page-title">แคตตาล็อกสินค้า</div><div class="page-subtitle">จัดการสินค้าและบริการ</div></div><button class="btn btn-primary">+ เพิ่มสินค้า</button></div>
-  <input class="search-input" id="search" placeholder="ค้นหาสินค้า / SKU..." style="margin-bottom:20px;max-width:360px" oninput="render()"/>
-  <div class="card"><div class="table-wrap"><table><thead><tr><th>ชื่อสินค้า</th><th>SKU</th><th>ราคาต่อหน่วย</th><th>หน่วย</th><th>WHT %</th><th>สถานะ</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
+  <!-- List View -->
+  <div id="list-view">
+    <div class="page-header"><div><div class="page-title" data-i18n="prod_title">แคตตาล็อกสินค้า</div><div class="page-subtitle" data-i18n="prod_subtitle">จัดการสินค้าและบริการ</div></div><button class="btn btn-primary" onclick="openCreate()">+ เพิ่มสินค้า</button></div>
+    <input class="search-input" id="search" placeholder="ค้นหาสินค้า / SKU..." style="margin-bottom:20px;max-width:360px" oninput="renderTable()"/>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>ชื่อสินค้า</th><th>SKU</th><th>ราคาต่อหน่วย</th><th>หน่วย</th><th>WHT %</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
+  </div>
+
+  <!-- Create/Edit Form -->
+  <div id="form-view" style="display:none">
+    <div class="page-header"><div><div class="page-title" id="form-title">เพิ่มสินค้าใหม่</div><div class="page-subtitle">กรอกข้อมูลสินค้าหรือบริการ</div></div>
+      <div class="page-actions"><button class="btn btn-secondary" onclick="closeForm()">ยกเลิก</button><button class="btn btn-primary" onclick="saveProduct()">บันทึก</button></div>
+    </div>
+    <div class="card" style="padding:24px;max-width:640px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="grid-column:1/-1"><label class="field-label">ชื่อสินค้า / บริการ *</label><input type="text" class="field-input" id="p-name" placeholder="เช่น ระบบ ERP มาตรฐาน"/></div>
+        <div><label class="field-label">SKU *</label><input type="text" class="field-input" id="p-sku" placeholder="เช่น ERP-STD-001"/></div>
+        <div><label class="field-label">ราคาต่อหน่วย (บาท) *</label><input type="number" class="field-input" id="p-price" placeholder="0.00" min="0" step="0.01"/></div>
+        <div><label class="field-label">หน่วยนับ</label>
+          <select class="field-input" id="p-unit">
+            <option value="ชุด">ชุด</option><option value="เครื่อง">เครื่อง</option><option value="ครั้ง">ครั้ง</option>
+            <option value="ปี">ปี</option><option value="เดือน">เดือน</option><option value="ชิ้น">ชิ้น</option>
+            <option value="กล่อง">กล่อง</option><option value="ตัว">ตัว</option><option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
+        <div><label class="field-label">WHT %</label>
+          <select class="field-input" id="p-wht">
+            <option value="0">0% — ไม่หัก ณ ที่จ่าย</option><option value="1">1%</option><option value="2">2%</option>
+            <option value="3" selected>3% — บริการ</option><option value="5">5%</option>
+          </select>
+        </div>
+        <div><label class="field-label">สถานะ</label>
+          <select class="field-input" id="p-active"><option value="true">ใช้งาน</option><option value="false">ปิดใช้งาน</option></select>
+        </div>
+        <div style="grid-column:1/-1"><label class="field-label">รายละเอียด</label><textarea class="field-input" id="p-desc" rows="3" placeholder="รายละเอียดสินค้าหรือบริการ (ถ้ามี)"></textarea></div>
+      </div>
+    </div>
+  </div>
 </div>
 <script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
 <script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('products');
-function render(){const q=(document.getElementById('search').value||'').toLowerCase();const f=PRODUCTS.filter(p=>p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q));document.getElementById('tbody').innerHTML=f.map(p=>`<tr><td style="font-weight:500">${p.name}</td><td style="color:var(--text2)">${p.sku}</td><td style="font-weight:500;color:var(--sf-blue)">${fmt(p.price)}</td><td style="color:var(--text2)">${p.unit}</td><td style="color:var(--text2)">${p.wht}%</td><td><span class="status-badge" style="background:${p.active?'rgba(48,209,88,.12)':'rgba(128,128,128,.1)'};color:${p.active?'#1a7d39':'var(--text2)'}">${p.active?'ใช้งาน':'ปิดใช้งาน'}</span></td></tr>`).join('');}
-render();
+var editingId=null;
+
+function renderTable(){
+  var q=(document.getElementById('search').value||'').toLowerCase();
+  var f=PRODUCTS.filter(function(p){return p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q)});
+  document.getElementById('tbody').innerHTML=f.map(function(p){
+    var lineBtn='<button class="btn btn-secondary" style="padding:3px 10px;font-size:11px;color:#06C755;border-color:#06C755" onclick="sendProductLine('+p.id+')">LINE</button>';
+    return '<tr>'+
+      '<td style="font-weight:500">'+esc(p.name)+'</td>'+
+      '<td style="color:var(--text2)">'+esc(p.sku)+'</td>'+
+      '<td style="font-weight:500;color:var(--sf-blue)">'+fmt(p.price)+'</td>'+
+      '<td style="color:var(--text2)">'+esc(p.unit)+'</td>'+
+      '<td style="color:var(--text2)">'+p.wht+'%</td>'+
+      '<td><span class="status-badge" style="background:'+(p.active?'rgba(48,209,88,.12)':'rgba(128,128,128,.1)')+';color:'+(p.active?'#1a7d39':'var(--text2)')+'">'+
+        (p.active?'ใช้งาน':'ปิดใช้งาน')+'</span></td>'+
+      '<td style="display:flex;gap:6px"><button class="btn btn-secondary" style="padding:3px 10px;font-size:11px" onclick="editProduct('+p.id+')">แก้ไข</button>'+lineBtn+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function openCreate(){
+  editingId=null;
+  document.getElementById('form-title').textContent='เพิ่มสินค้าใหม่';
+  document.getElementById('p-name').value='';
+  document.getElementById('p-sku').value='';
+  document.getElementById('p-price').value='';
+  document.getElementById('p-unit').value='ชุด';
+  document.getElementById('p-wht').value='3';
+  document.getElementById('p-active').value='true';
+  document.getElementById('p-desc').value='';
+  document.getElementById('list-view').style.display='none';
+  document.getElementById('form-view').style.display='block';
+  window.scrollTo(0,0);
+}
+
+function editProduct(id){
+  var p=PRODUCTS.find(function(x){return x.id===id});
+  if(!p)return;
+  editingId=id;
+  document.getElementById('form-title').textContent='แก้ไขสินค้า';
+  document.getElementById('p-name').value=p.name;
+  document.getElementById('p-sku').value=p.sku;
+  document.getElementById('p-price').value=p.price;
+  document.getElementById('p-unit').value=p.unit;
+  document.getElementById('p-wht').value=p.wht;
+  document.getElementById('p-active').value=String(p.active);
+  document.getElementById('p-desc').value=p.desc||'';
+  document.getElementById('list-view').style.display='none';
+  document.getElementById('form-view').style.display='block';
+  window.scrollTo(0,0);
+}
+
+function closeForm(){
+  document.getElementById('form-view').style.display='none';
+  document.getElementById('list-view').style.display='block';
+}
+
+function saveProduct(){
+  var name=document.getElementById('p-name').value.trim();
+  var sku=document.getElementById('p-sku').value.trim();
+  var price=parseFloat(document.getElementById('p-price').value);
+  if(!name){alert('กรุณาใส่ชื่อสินค้า');return}
+  if(!sku){alert('กรุณาใส่ SKU');return}
+  if(!price||price<=0){alert('กรุณาใส่ราคา');return}
+
+  var obj={
+    name:name, sku:sku, price:price,
+    unit:document.getElementById('p-unit').value,
+    wht:parseInt(document.getElementById('p-wht').value),
+    active:document.getElementById('p-active').value==='true',
+    desc:document.getElementById('p-desc').value.trim()
+  };
+
+  if(editingId){
+    var idx=PRODUCTS.findIndex(function(x){return x.id===editingId});
+    if(idx>=0){obj.id=editingId;PRODUCTS[idx]=obj}
+  }else{
+    obj.id=PRODUCTS.length?Math.max.apply(null,PRODUCTS.map(function(x){return x.id}))+1:1;
+    PRODUCTS.push(obj);
+  }
+  closeForm();
+  renderTable();
+}
+
+function sendProductLine(id){
+  var p=PRODUCTS.find(function(x){return x.id===id});
+  if(!p)return;
+  var lineId=prompt('กรอก LINE User ID ของลูกค้า:');
+  if(!lineId)return;
+  // In production: POST /line/send/product
+  alert('✅ ส่งสินค้า "'+p.name+'" ผ่าน LINE ไปยัง '+lineId+' เรียบร้อยแล้ว');
+}
+
+renderTable();
 </script></body></html>
