@@ -1199,20 +1199,21 @@ All 18 security issues from the audit have been fixed.
 
 Configured during deployment via `deploy.sh`:
 
-| Field | Default (if not specified) |
-|-------|--------------------------|
-| Email | `admin@salesfast7.com` |
-| Password | `Admin@1234` |
+| Field | Value |
+|-------|-------|
+| Email | (your `--email` flag) |
+| Password | (your `--password` flag) |
 | Role | Admin (full access) |
 
-Set any email/password during deployment:
-```bash
-export ADMIN_EMAIL="yourname@company.com"
-export ADMIN_PASSWORD="YourSecurePassword!"
-bash deploy.sh
-```
+> ไม่มี default password — ต้องตั้งเองตอน deploy ทุกครั้ง
+> ระบบบังคับเปลี่ยนรหัสผ่านครั้งแรก (`force_password_change: true`)
 
-The system will prompt for password change on first login (`force_password_change: true`).
+```bash
+bash deploy.sh \
+  --email yourname@company.com \
+  --password "YourSecurePassword!" \
+  ...
+```
 
 ---
 

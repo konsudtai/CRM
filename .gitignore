@@ -7,5 +7,21 @@ coverage/
 .env
 .env.local
 .env.*.local
-crm-kiro_accessKeys.csv
+
+# Secrets & credentials — NEVER commit these
+*.csv
+*.pem
+*.key
+*accessKey*
+*credential*
+*.p12
+*.pfx
+.aws/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp
 docs/test.txt
+/tmp/

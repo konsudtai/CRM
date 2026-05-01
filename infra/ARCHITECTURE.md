@@ -117,5 +117,5 @@ User -> CloudFront (Flat Rate PRO)
 
 ## Default Credentials
 
-- Admin: `admin@salesfast7.com` / `Admin@1234`
+- Admin: (configured during deploy via `--email` and `--password` flags)
 - 4 default roles: Admin, Sales Manager, Sales Rep, Viewer
