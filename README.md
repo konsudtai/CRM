@@ -26,6 +26,7 @@ SalesFAST 7 is a full-featured Customer Relationship Management platform designe
 - [Data Flow Diagram](#data-flow-diagram)
 - [i18n — Thai / English](#i18n--thai--english)
 - [Default Credentials](#default-credentials)
+- [Operations — Destroy / Redeploy / Update](#operations--destroy--redeploy--update)
 - [Deploy Readiness Checklist](#deploy-readiness-checklist)
 
 ---
@@ -111,8 +112,10 @@ CRM/
 │   └── README.md
 │
 ├── infra/
-│   ├── cloudformation.yaml      # Full AWS stack (~1,186 lines)
-│   ├── deploy.sh                # One-command interactive deploy for CloudShell
+│   ├── cloudformation.yaml      # Full AWS stack (~1,300 lines)
+│   ├── cloudformation-ai.yaml   # AI stack (S3 KB + IAM roles)
+│   ├── deploy.sh                # One-command deploy (10 steps, auto DB init)
+│   ├── destroy.sh               # Destroy all stacks (6 steps)
 │   ├── ARCHITECTURE.md          # Architecture & cost documentation
 │   └── SECURITY-AUDIT.md        # Security audit report (18 issues — all fixed)
 │
@@ -1220,6 +1223,115 @@ bash deploy.sh \
 ## License
 
 Proprietary. All rights reserved.
+
+---
+
+## Operations — Destroy / Redeploy / Update
+
+### Destroy Stack (ลบทุกอย่าง)
+
+```bash
+# ⚠️ ลบ database, files, Lambda, CloudFront ทั้งหมด — กู้คืนไม่ได้
+cd CRM/infra
+bash destroy.sh
+```
+
+Script จะถาม confirm พิมพ์ `destroy` เพื่อยืนยัน
+
+```bash
+# ระบุ region (ถ้าไม่ใช่ default Singapore)
+bash destroy.sh --region ap-southeast-7
+
+# Skip confirmation (สำหรับ CI/CD)
+bash destroy.sh --yes
+```
+
+**Destroy ทำอะไรบ้าง (6 steps):**
+```
+[1/6] Disable RDS deletion protection
+[2/6] Empty S3 buckets (frontend, files, KB)
+[3/6] Remind to cancel CloudFront Pro Plan (manual)
+[4/6] Delete AI stack (S3 KB + IAM roles)
+[5/6] Delete CRM stack (VPC, RDS, Lambda, API GW, CloudFront, DynamoDB)
+[6/6] Cleanup leftover S3 buckets
+```
+
+> ถ้า subscribe CloudFront Pro Plan อยู่ ต้อง cancel ใน Console ก่อน delete distribution
+> Console > CloudFront > Distribution > Cancel pricing plan > แล้วค่อย run destroy.sh
+
+### Clean Redeploy (ลบแล้ว deploy ใหม่ทั้งหมด)
+
+```bash
+# One-liner: destroy + redeploy ใน command เดียว
+cd CRM/infra
+
+# Step 1: Destroy
+bash destroy.sh --yes
+
+# Step 2: Redeploy
+bash deploy.sh \
+  --email    admin@mycompany.com \
+  --name     "Somchai Jaidee" \
+  --password "MyPass@123" \
+  --db-pass  auto \
+  --tenant   "My Company Ltd"
+```
+
+> Clean redeploy ใช้เวลา ~25-30 นาที (destroy ~15 min + deploy ~15 min)
+> Database จะถูกสร้างใหม่ทั้งหมด — ข้อมูลเก่าหายหมด
+
+### Update Code (อัปเดต version ใหม่ — ไม่ลบ database)
+
+```bash
+# ดึง code ใหม่จาก git แล้ว deploy ทับ (ไม่กระทบ database)
+cd CRM
+git pull origin main
+cd infra
+
+# Deploy ทับ — CloudFormation จะ update เฉพาะส่วนที่เปลี่ยน
+bash deploy.sh \
+  --email    admin@mycompany.com \
+  --name     "Somchai Jaidee" \
+  --password "MyPass@123" \
+  --db-pass  "<SAME_DB_PASSWORD>" \
+  --tenant   "My Company Ltd"
+```
+
+> ใช้ `--db-pass` เดิม (ที่ใช้ตอน deploy ครั้งแรก) ไม่งั้น RDS password จะเปลี่ยน
+> CloudFormation จะ update เฉพาะ resources ที่เปลี่ยน (no-fail-on-empty-changeset)
+> Frontend จะ upload ใหม่ + invalidate CloudFront cache อัตโนมัติ
+> Database ไม่ถูกลบ — ข้อมูลเดิมยังอยู่ครบ
+
+**สิ่งที่ update ได้โดยไม่กระทบ data:**
+- Frontend (HTML/CSS/JS) — upload ทับ S3
+- Lambda code — update function code
+- CloudFormation resources — add/modify/remove
+- CloudFront config — cache behaviors, headers
+- API Gateway routes — add/modify
+
+**สิ่งที่ต้องระวัง:**
+- `--db-pass` ต้องใช้ค่าเดิม (ถ้าเปลี่ยน RDS password จะ update ด้วย)
+- ถ้าแก้ schema.sql → ต้อง run migration เอง (Lambda DB Init จะ skip ถ้า tables มีอยู่แล้ว)
+- ถ้าแก้ seed.sql → ไม่มีผล (seed run แค่ครั้งแรก)
+
+### Quick Reference — CloudShell Commands
+
+```bash
+# ── First Deploy ──
+git clone https://github.com/konsudtai/CRM.git && cd CRM/infra && \
+bash deploy.sh --email admin@co.com --name "John" --password "Pass@1" --db-pass auto --tenant "My Co"
+
+# ── Update Code ──
+cd CRM && git pull origin main && cd infra && \
+bash deploy.sh --email admin@co.com --name "John" --password "Pass@1" --db-pass "<SAME>" --tenant "My Co"
+
+# ── Destroy ──
+cd CRM/infra && bash destroy.sh
+
+# ── Clean Redeploy ──
+cd CRM/infra && bash destroy.sh --yes && \
+bash deploy.sh --email admin@co.com --name "John" --password "Pass@1" --db-pass auto --tenant "My Co"
+```
 
 ---
 
