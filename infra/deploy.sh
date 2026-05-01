@@ -173,11 +173,12 @@ elif [ "$STACK_STATUS" = "DOES_NOT_EXIST" ]; then
   ORPHAN_FOUND=false
 
   # Check orphaned S3 buckets
-  for B in "sf7-${ENV}-frontend-${ACCOUNT_ID}" "sf7-${ENV}-files-${ACCOUNT_ID}"; do
-    if aws s3api head-bucket --bucket "$B" --region "$REGION" 2>/dev/null; then
-      echo "  Found orphaned bucket: $B — removing..."
-      aws s3 rm "s3://$B" --recursive --region "$REGION" 2>/dev/null || true
-      aws s3 rb "s3://$B" --force --region "$REGION" 2>/dev/null || true
+  for B_PREFIX in "sf7-${ENV}-frontend-" "sf7-${ENV}-files-"; do
+    FOUND_BUCKET=$(aws s3 ls 2>/dev/null | grep -o "${B_PREFIX}[^ ]*" || echo "")
+    if [ -n "$FOUND_BUCKET" ]; then
+      echo "  Found orphaned bucket: $FOUND_BUCKET — removing..."
+      aws s3 rm "s3://$FOUND_BUCKET" --recursive --region "$REGION" 2>/dev/null || true
+      aws s3 rb "s3://$FOUND_BUCKET" --force --region "$REGION" 2>/dev/null || true
       ORPHAN_FOUND=true
     fi
   done
