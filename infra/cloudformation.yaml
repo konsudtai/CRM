@@ -642,13 +642,68 @@ Resources:
       QueueName: !Sub 'sf7-${Environment}-events-dlq'
       MessageRetentionPeriod: 1209600
 
+  # Agent Events Queue — fan-out from SNS topic so both
+  # Notification Lambda and Agent Service receive all events
+  AgentEventsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub 'sf7-${Environment}-agent-events'
+      VisibilityTimeout: 120
+      MessageRetentionPeriod: 86400
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt EventsDLQ.Arn
+        maxReceiveCount: 3
+
+  # SNS Topic for fan-out — services publish here,
+  # both EventsQueue and AgentEventsQueue subscribe
+  EventsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub 'sf7-${Environment}-events-topic'
+
+  EventsQueueSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref EventsTopic
+      Protocol: sqs
+      Endpoint: !GetAtt EventsQueue.Arn
+      RawMessageDelivery: true
+
+  AgentQueueSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref EventsTopic
+      Protocol: sqs
+      Endpoint: !GetAtt AgentEventsQueue.Arn
+      RawMessageDelivery: true
+
+  EventsQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref EventsQueue
+        - !Ref AgentEventsQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: sqs:SendMessage
+            Resource:
+              - !GetAtt EventsQueue.Arn
+              - !GetAtt AgentEventsQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref EventsTopic
+
   # ============================================================
   # IAM Role for Lambda
   # ============================================================
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub 'sf7-${Environment}-lambda-role'
+      RoleName: !Sub 'sf7-${Environment}-lambda-role-${AWS::StackName}'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -1129,7 +1184,7 @@ Resources:
   RDSProxyRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub 'sf7-${Environment}-rds-proxy-role'
+      RoleName: !Sub 'sf7-${Environment}-rds-proxy-role-${AWS::StackName}'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -1199,7 +1254,7 @@ Resources:
   BackupRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub 'sf7-${Environment}-backup-role'
+      RoleName: !Sub 'sf7-${Environment}-backup-role-${AWS::StackName}'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -1244,7 +1299,7 @@ Resources:
 
   # ============================================================
   # DB Init Lambda — Executes SQL against RDS from within VPC
-  # Used by deploy.sh to auto-initialize database
+  # deploy.sh will update this with pg layer after stack creation
   # ============================================================
   DBInitFunction:
     Type: AWS::Lambda::Function
@@ -1257,28 +1312,8 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Code:
         ZipFile: |
-          const { Client } = require('pg');
           exports.handler = async (event) => {
-            const client = new Client({
-              host: process.env.DB_HOST,
-              port: 5432,
-              user: process.env.DB_USER,
-              password: process.env.DB_PASS,
-              database: process.env.DB_NAME,
-              ssl: { rejectUnauthorized: false },
-              statement_timeout: 60000,
-            });
-            try {
-              await client.connect();
-              const sql = event.sql || '';
-              if (!sql.trim()) return { statusCode: 400, body: 'No SQL provided' };
-              await client.query(sql);
-              await client.end();
-              return { statusCode: 200, body: 'OK' };
-            } catch (err) {
-              try { await client.end(); } catch(_) {}
-              return { statusCode: 500, body: err.message };
-            }
+            return { statusCode: 200, body: 'Placeholder — deploy.sh will update with pg layer' };
           };
       VpcConfig:
         SubnetIds:
@@ -1292,20 +1327,6 @@ Resources:
           DB_USER: salesfast7
           DB_PASS: !Ref DBPassword
           DB_NAME: salesfast7
-      Layers:
-        - !Ref PgLayer
-
-  # pg (node-postgres) Lambda Layer — built by deploy.sh and uploaded
-  PgLayer:
-    Type: AWS::Lambda::LayerVersion
-    Properties:
-      LayerName: !Sub 'sf7-${Environment}-pg-layer'
-      Description: 'node-postgres (pg) for DB Init Lambda'
-      CompatibleRuntimes:
-        - nodejs20.x
-      Content:
-        S3Bucket: !Ref FilesBucket
-        S3Key: 'layers/pg-layer.zip'
 
 # ============================================================
 # Outputs
@@ -1354,3 +1375,11 @@ Outputs:
   DBInitFunction:
     Value: !Ref DBInitFunction
     Description: Lambda function for database initialization (used by deploy.sh)
+
+  AgentEventsQueueUrl:
+    Value: !Ref AgentEventsQueue
+    Description: SQS queue URL for Agent Service events (fan-out from SNS)
+
+  EventsTopicArn:
+    Value: !Ref EventsTopic
+    Description: SNS topic ARN — services publish events here

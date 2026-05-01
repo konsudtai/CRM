@@ -10,6 +10,7 @@ export const SQS_QUEUES = {
   SALES_EVENTS: 'sales-events',
   QUOTATION_EVENTS: 'quotation-events',
   NOTIFICATION_EVENTS: 'notification-events',
+  AGENT_EVENTS: 'agent-events',
 } as const;
 
 export type SqsQueueName = (typeof SQS_QUEUES)[keyof typeof SQS_QUEUES];
@@ -44,6 +45,12 @@ export const EVENT_TYPES = {
   QUOTATION_FINALIZED: 'quotation.finalized',
   QUOTATION_SENT: 'quotation.sent',
   QUOTATION_STATUS_CHANGED: 'quotation.status_changed',
+
+  // Agent events (น้องขายไว proactive actions)
+  AGENT_LEAD_SCORED: 'agent.lead_scored',
+  AGENT_DAILY_DIGEST_SENT: 'agent.daily_digest_sent',
+  AGENT_DEAL_HEALTH_CHECKED: 'agent.deal_health_checked',
+  AGENT_FOLLOW_UP_CREATED: 'agent.follow_up_created',
 } as const;
 
 export type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];

@@ -77,19 +77,15 @@ function render(){
 const sections={
 overview:`
 <h2 style="font-size:21px;font-weight:800;letter-spacing:-.4px;margin-bottom:20px">Admin Dashboard</h2>
-<div class="admin-stat-grid">
-  <div class="admin-stat"><div class="admin-stat-label">Total Tenants</div><div class="admin-stat-value">12</div><div class="admin-stat-sub">3 active this month</div></div>
-  <div class="admin-stat"><div class="admin-stat-label">Total Users</div><div class="admin-stat-value">156</div><div class="admin-stat-sub">18 active today</div></div>
-  <div class="admin-stat"><div class="admin-stat-label">API Requests (24h)</div><div class="admin-stat-value">24.3K</div><div class="admin-stat-sub">Avg 1,012/hr</div></div>
-  <div class="admin-stat"><div class="admin-stat-label">System Health</div><div class="admin-stat-value" style="color:#2E844A">OK</div><div class="admin-stat-sub">All services running</div></div>
+<div class="admin-stat-grid" id="admin-stats">
+  <div class="admin-stat"><div class="admin-stat-label">Total Tenants</div><div class="admin-stat-value" id="stat-tenants">—</div><div class="admin-stat-sub" id="stat-tenants-sub">Loading...</div></div>
+  <div class="admin-stat"><div class="admin-stat-label">Total Users</div><div class="admin-stat-value" id="stat-users">—</div><div class="admin-stat-sub" id="stat-users-sub">Loading...</div></div>
+  <div class="admin-stat"><div class="admin-stat-label">API Requests (24h)</div><div class="admin-stat-value" id="stat-api">—</div><div class="admin-stat-sub" id="stat-api-sub">Loading...</div></div>
+  <div class="admin-stat"><div class="admin-stat-label">System Health</div><div class="admin-stat-value" id="stat-health" style="color:#2E844A">—</div><div class="admin-stat-sub" id="stat-health-sub">Loading...</div></div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-  <div class="admin-card"><div style="font-size:15px;font-weight:700;margin-bottom:14px">Service Status</div>
-    ${['Auth Service','CRM Service','Sales Service','Quotation Service','Notification Service'].map(s=>'<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px">'+s+'</span><span style="font-size:11px;font-weight:600;color:#2E844A;background:rgba(46,132,74,.1);padding:2px 8px;border-radius:20px">Running</span></div>').join('')}
-  </div>
-  <div class="admin-card"><div style="font-size:15px;font-weight:700;margin-bottom:14px">Recent Activity</div>
-    ${[{t:'New tenant created',d:'Somjai Tech Co.',m:'2 hours ago'},{t:'User login',d:'admin@salesfast7.com',m:'3 hours ago'},{t:'API key generated',d:'Production key',m:'1 day ago'},{t:'Webhook configured',d:'ERP integration',m:'2 days ago'}].map(a=>'<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="font-size:13px;font-weight:500">'+a.t+'</div><div style="font-size:11px;color:var(--text2)">'+a.d+' &middot; '+a.m+'</div></div>').join('')}
-  </div>
+  <div class="admin-card"><div style="font-size:15px;font-weight:700;margin-bottom:14px">Service Status</div><div id="admin-services">Loading...</div></div>
+  <div class="admin-card"><div style="font-size:15px;font-weight:700;margin-bottom:14px">Recent Activity</div><div id="admin-activity">Loading...</div></div>
 </div>`,
 
 tenants:`
@@ -192,8 +188,8 @@ line:`
 <div class="admin-card">
   <div style="font-size:15px;font-weight:700;margin-bottom:16px">Channel Settings</div>
   <div style="display:flex;flex-direction:column;gap:14px;max-width:500px">
-    <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Channel Access Token</label><input class="search-input" type="password" value="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" style="max-width:100%"/></div>
-    <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Channel Secret</label><input class="search-input" type="password" value="xxxxxxxxxxxxxxxx" style="max-width:100%"/></div>
+    <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Channel Access Token</label><input class="search-input" type="password" id="admin-line-token" placeholder="Enter Channel Access Token" style="max-width:100%"/></div>
+    <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Channel Secret</label><input class="search-input" type="password" id="admin-line-secret" placeholder="Enter Channel Secret" style="max-width:100%"/></div>
     <div><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Webhook URL</label><input class="search-input" value="https://api.salesfast7.com/line/webhook" readonly style="max-width:100%;background:var(--surface2)"/></div>
     <button class="btn btn-primary" style="padding:8px 20px;font-size:13px;width:fit-content">Save Configuration</button>
   </div>
@@ -235,6 +231,43 @@ system:`
 };
 
 render();
+
+// ── Load admin data from API ──
+const ADMIN_API_BASE = window.__SF7_API_BASE__ || '/api';
+async function adminApiFetch(path) {
+  const token = localStorage.getItem('sf7_token');
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(ADMIN_API_BASE + path, { headers });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+async function loadAdminOverview() {
+  try {
+    const [stats, services, activity] = await Promise.all([
+      adminApiFetch('/admin/stats').catch(()=>null),
+      adminApiFetch('/admin/services/health').catch(()=>null),
+      adminApiFetch('/admin/audit-logs?limit=5').catch(()=>null),
+    ]);
+    if (stats) {
+      const s = (id, v, sub) => { const el = document.getElementById(id); if (el) el.textContent = v; const subEl = document.getElementById(id+'-sub'); if (subEl && sub) subEl.textContent = sub; };
+      s('stat-tenants', stats.totalTenants || 0, stats.activeTenantsThisMonth ? stats.activeTenantsThisMonth + ' active this month' : '');
+      s('stat-users', stats.totalUsers || 0, stats.activeUsersToday ? stats.activeUsersToday + ' active today' : '');
+      s('stat-api', stats.apiRequests24h || 0, stats.avgRequestsPerHour ? 'Avg ' + stats.avgRequestsPerHour + '/hr' : '');
+      s('stat-health', stats.systemHealth || 'OK', stats.healthDetail || 'All services running');
+    }
+    const svcEl = document.getElementById('admin-services');
+    if (svcEl && services && Array.isArray(services)) {
+      svcEl.innerHTML = services.map(s => '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px">' + s.name + '</span><span style="font-size:11px;font-weight:600;color:' + (s.status==='Running'?'#2E844A':'#C23934') + ';background:' + (s.status==='Running'?'rgba(46,132,74,.1)':'rgba(194,57,52,.1)') + ';padding:2px 8px;border-radius:20px">' + s.status + '</span></div>').join('');
+    }
+    const actEl = document.getElementById('admin-activity');
+    if (actEl && activity && Array.isArray(activity)) {
+      actEl.innerHTML = activity.map(a => '<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="font-size:13px;font-weight:500">' + (a.action || '') + '</div><div style="font-size:11px;color:var(--text2)">' + (a.detail || '') + ' &middot; ' + (a.timeAgo || '') + '</div></div>').join('');
+    }
+  } catch(e) { console.error('Admin data load error:', e); }
+}
+loadAdminOverview();
 </script>
 </body>
 </html>

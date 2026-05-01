@@ -1,27 +1,56 @@
-/* SalesFAST 7 — Mock Data */
-const MOCK_KPI={month:{closed:4280000,target:6000000,leads:38,conv:24.7},quarter:{closed:11950000,target:18000000,leads:114,conv:27.2},year:{closed:38400000,target:50000000,leads:407,conv:29.4}};
-const STAGES=[{name:'New',color:'#1B96FF',deals:12,total:2400000,weighted:480000},{name:'Contacted',color:'#7F56D9',deals:9,total:3600000,weighted:1080000},{name:'Qualified',color:'#0B827C',deals:7,total:5100000,weighted:2550000},{name:'Proposal',color:'#DD7A01',deals:5,total:4800000,weighted:3360000},{name:'Negotiation',color:'#C23934',deals:3,total:3200000,weighted:2880000}];
-const REPS=[{name:'สมชาย ใจดี',initials:'สจ',color:'#0176D3',deals:14,revenue:3850000,acts:48,target:5000000},{name:'วิไล รักษ์ดี',initials:'วร',color:'#7F56D9',deals:11,revenue:3120000,acts:41,target:4000000},{name:'อรุณ แสงฟ้า',initials:'อส',color:'#0B827C',deals:9,revenue:2480000,acts:35,target:3500000},{name:'มณี ทองคำ',initials:'มท',color:'#DD7A01',deals:7,revenue:1950000,acts:28,target:3000000}];
-const LEADS_DATA={New:[{id:1,name:'บจก. สมใจ เทคโนโลยี',company:'Somjai Tech',source:'Website',value:850000,assigned:'สมชาย'},{id:2,name:'ร้านมณีเวชภัณฑ์',company:'',source:'Referral',value:120000,assigned:'วิไล'},{id:3,name:'หจก. พรชัยค้าวัสดุ',company:'',source:'Line OA',value:350000,assigned:''}],Contacted:[{id:4,name:'บจก. ไทยฟู้ดส์ กรุ๊ป',company:'TF Group',source:'Facebook',value:680000,assigned:'อรุณ'},{id:5,name:'ร้านไกรทอง',company:'',source:'Walk-in',value:95000,assigned:'มณี'}],Qualified:[{id:6,name:'บจก. อีสเทิร์น โลจิสติกส์',company:'EL Co.',source:'Website',value:2500000,assigned:'สมชาย'},{id:7,name:'โรงพยาบาลสุขใจ',company:'',source:'Referral',value:890000,assigned:'วิไล'}],Proposal:[{id:8,name:'บจก. ยูนิค แมนูแฟคเจอริ่ง',company:'Unique',source:'Event',value:1800000,assigned:'สมชาย'}],Negotiation:[{id:9,name:'กลุ่มบริษัท ศรีสมบูรณ์',company:'Srisomboon',source:'Referral',value:3200000,assigned:'อรุณ'}],Won:[{id:10,name:'บจก. เพชรดี อินเตอร์',company:'',source:'Website',value:950000,assigned:'วิไล'}],Lost:[{id:11,name:'ร้านเจ้าสัว',company:'',source:'Facebook',value:180000,assigned:'มณี'}]};
-const STAGE_COLORS={New:'#1B96FF',Contacted:'#7F56D9',Qualified:'#0B827C',Proposal:'#DD7A01',Negotiation:'#C23934',Won:'#2E844A',Lost:'#939393'};
-const STAGES_ORDER=['New','Contacted','Qualified','Proposal','Negotiation','Won','Lost'];
-const ACCOUNTS=[
-{id:1,name:'บจก. สมใจ เทคโนโลยี',industry:'เทคโนโลยี',phone:'02-111-2345',revenue:3850000,tags:['VIP','Tech'],taxId:'0105556012345',status:'Active',tier:'Platinum',email:'info@somjai.co.th',website:'somjai.co.th'},
-{id:2,name:'บจก. ไทยฟู้ดส์ กรุ๊ป',industry:'อาหาร',phone:'02-222-3456',revenue:1200000,tags:['Enterprise'],taxId:'0105558098765',status:'Active',tier:'Gold',email:'contact@thaifoods.co.th',website:'thaifoods.co.th'},
-{id:3,name:'โรงพยาบาลสุขใจ',industry:'การแพทย์',phone:'02-333-4567',revenue:890000,tags:['Healthcare'],taxId:'0105559054321',status:'Active',tier:'Silver',email:'info@sukjai.co.th',website:'sukjai.co.th'},
-{id:4,name:'หจก. พรชัยค้าวัสดุ',industry:'ก่อสร้าง',phone:'043-456-789',revenue:450000,tags:['SMB'],taxId:'0105560011111',status:'Active',tier:'Standard',email:'pornchai@gmail.com',website:''},
-{id:5,name:'บจก. อีสเทิร์น โลจิสติกส์',industry:'โลจิสติกส์',phone:'038-567-890',revenue:2100000,tags:['Logistics','VIP'],taxId:'0105561022222',status:'Active',tier:'Gold',email:'info@eastern.co.th',website:'eastern.co.th'},
-{id:6,name:'บจก. ยูนิค แมนูแฟคเจอริ่ง',industry:'การผลิต',phone:'035-678-901',revenue:1800000,tags:['Manufacturing'],taxId:'0105562033333',status:'Active',tier:'Silver',email:'sales@unique.co.th',website:'unique.co.th'},
-{id:7,name:'กลุ่มบริษัท ศรีสมบูรณ์',industry:'ค้าปลีก',phone:'02-789-0123',revenue:3200000,tags:['Retail','Enterprise'],taxId:'0105563044444',status:'Active',tier:'Platinum',email:'info@srisomboon.co.th',website:'srisomboon.co.th'},
-{id:8,name:'บจก. เพชรดี อินเตอร์',industry:'นำเข้า-ส่งออก',phone:'02-890-1234',revenue:950000,tags:['Import'],taxId:'0105564055555',status:'Inactive',tier:'Standard',email:'petdee@gmail.com',website:''}
-];
-const CONTACTS=[{id:1,accountId:1,name:'สมชาย วงศ์สวัสดิ์',account:'บจก. สมใจ เทคโนโลยี',title:'ผู้จัดการ',email:'somchai@somjai.co.th',phone:'081-234-5678',line:'somchai_v'},{id:2,accountId:2,name:'สุภาพร ใจดี',account:'บจก. ไทยฟู้ดส์ กรุ๊ป',title:'เจ้าของ',email:'supaporn@thaifoods.co.th',phone:'089-876-5432',line:'supaporn_j'},{id:3,accountId:3,name:'ดร.พิชัย ยิ้มสวย',account:'โรงพยาบาลสุขใจ',title:'ผอ.',email:'pichai@sukjai.co.th',phone:'086-111-2222',line:''},{id:4,accountId:5,name:'นภา ศรีสุข',account:'บจก. อีสเทิร์น โลจิสติกส์',title:'CEO',email:'napa@eastern.co.th',phone:'092-333-4444',line:'napa_s'},{id:5,accountId:7,name:'วิชัย เหล็กแข็ง',account:'กลุ่มบริษัท ศรีสมบูรณ์',title:'ผจก.จัดซื้อ',email:'wichai@srisomboon.co.th',phone:'095-555-6666',line:'wichai_l'}];
-const OPPS=[{id:1,name:'ระบบ ERP สมใจเทค',account:'บจก. สมใจ เทคโนโลยี',stage:'Proposal',value:1200000,prob:45,close:'2569-03-15',assigned:'สมชาย',days:13},{id:2,name:'เครื่องมือแพทย์ สุขใจ',account:'โรงพยาบาลสุขใจ',stage:'Qualified',value:890000,prob:30,close:'2569-04-01',assigned:'วิไล',days:5},{id:3,name:'ระบบขนส่ง อีสเทิร์น',account:'บจก. อีสเทิร์น โลจิสติกส์',stage:'Negotiation',value:2500000,prob:70,close:'2569-02-28',assigned:'อรุณ',days:22},{id:4,name:'POS ศรีสมบูรณ์',account:'กลุ่มบริษัท ศรีสมบูรณ์',stage:'Won',value:3200000,prob:100,close:'2569-02-10',assigned:'สมชาย',days:0},{id:5,name:'ระบบผลิต ยูนิค',account:'บจก. ยูนิค แมนูแฟคเจอริ่ง',stage:'Proposal',value:1800000,prob:40,close:'2569-05-20',assigned:'มณี',days:8}];
-const TASKS=[{id:1,title:'โทรติดตาม สมใจเทค',due:'2569-02-20',priority:'High',status:'Open',account:'บจก. สมใจ เทคโนโลยี'},{id:2,title:'ส่งใบเสนอราคา สุขใจ',due:'2569-02-18',priority:'Medium',status:'In Progress',account:'โรงพยาบาลสุขใจ'},{id:3,title:'ประชุม อีสเทิร์น',due:'2569-02-25',priority:'High',status:'Open',account:'บจก. อีสเทิร์น โลจิสติกส์'},{id:4,title:'อัพเดทข้อมูลลูกค้า',due:'2569-02-15',priority:'Low',status:'Completed',account:''},{id:5,title:'เตรียม Demo ซอฟต์แวร์',due:'2569-02-14',priority:'High',status:'Overdue',account:'กลุ่มบริษัท ศรีสมบูรณ์'},{id:6,title:'ส่ง follow-up ยูนิค',due:'2569-02-22',priority:'Medium',status:'Open',account:'บจก. ยูนิค แมนูแฟคเจอริ่ง'}];
-const QUOTATIONS=[{id:1,number:'QT-2569-0001',account:'บจก. สมใจ เทคโนโลยี',status:'sent',subtotal:1200000,vat:84000,wht:36000,grand:1248000,date:'10 ก.พ. 69'},{id:2,number:'QT-2569-0002',account:'โรงพยาบาลสุขใจ',status:'draft',subtotal:890000,vat:62300,wht:26700,grand:925600,date:'12 ก.พ. 69'},{id:3,number:'QT-2569-0003',account:'บจก. อีสเทิร์น โลจิสติกส์',status:'accepted',subtotal:2500000,vat:175000,wht:75000,grand:2600000,date:'28 ม.ค. 69'},{id:4,number:'QT-2569-0004',account:'กลุ่มบริษัท ศรีสมบูรณ์',status:'pending_approval',subtotal:3200000,vat:224000,wht:96000,grand:3328000,date:'15 ก.พ. 69'}];
-const PRODUCTS=[{id:1,name:'ระบบ ERP มาตรฐาน',sku:'ERP-STD-001',price:250000,unit:'ชุด',wht:3,active:true},{id:2,name:'บริการติดตั้งระบบ',sku:'SVC-INST-001',price:50000,unit:'ครั้ง',wht:3,active:true},{id:3,name:'เครื่องชงกาแฟ Pro',sku:'HW-COF-001',price:42500,unit:'เครื่อง',wht:0,active:true},{id:4,name:'แพ็คเกจบำรุงรักษา 1 ปี',sku:'SVC-MNT-001',price:120000,unit:'ปี',wht:3,active:true},{id:5,name:'อุปกรณ์เสริม ชุด A',sku:'HW-ACC-001',price:15000,unit:'ชุด',wht:0,active:false}];
-const NOTIFICATIONS=[{id:1,title:'ลีดใหม่ถูกมอบหมาย',body:'บจก. สมใจ เทคโนโลยี',time:'5 นาทีที่แล้ว',read:false,icon:'lead'},{id:2,title:'งานเกินกำหนด',body:'เตรียม Demo ซอฟต์แวร์',time:'2 ชม.',read:false,icon:'task'},{id:3,title:'ดีลปิดสำเร็จ',body:'POS ศรีสมบูรณ์ — ฿3.2M',time:'1 วัน',read:true,icon:'deal'},{id:4,title:'ใบเสนอราคาถูกยอมรับ',body:'QT-2569-0003',time:'2 วัน',read:true,icon:'quotation'},{id:5,title:'ข้อความ LINE ใหม่',body:'คุณนภา: สนใจขอรายละเอียดเพิ่มเติม',time:'3 วัน',read:true,icon:'line'}];
-const STATUS_LABELS={draft:'ร่าง',pending_approval:'รออนุมัติ',sent:'ส่งแล้ว',accepted:'ยอมรับ',rejected:'ปฏิเสธ'};
-const STATUS_COLORS={draft:'var(--text3)',pending_approval:'var(--orange)',sent:'var(--sf-blue)',accepted:'var(--green)',rejected:'var(--red)'};
-const PRI_COLORS={High:'var(--red)',Medium:'var(--orange)',Low:'var(--text3)'};
-const TASK_COLORS={Open:'var(--text2)','In Progress':'var(--sf-blue)',Completed:'var(--green)',Overdue:'var(--red)'};
+/* SalesFAST 7 — Data Layer
+ * Production: data loaded from API
+ * Constants (colors, labels) kept here for UI rendering
+ */
+
+// ── API Base URL ──
+const API_BASE = window.__SF7_API_BASE__ || '/api';
+
+// ── API helper ──
+async function apiFetch(path, options = {}) {
+  const token = localStorage.getItem('sf7_token');
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(API_BASE + path, { ...options, headers });
+  if (res.status === 401) { clearToken(); window.location.href = '../login.html'; return null; }
+  if (!res.ok) throw new Error('API error: ' + res.status);
+  return res.json();
+}
+
+// ── KPI defaults (overwritten by API response) ──
+const DEFAULT_KPI = {
+  month:   { closed: 0, target: 0, leads: 0, conv: 0 },
+  quarter: { closed: 0, target: 0, leads: 0, conv: 0 },
+  year:    { closed: 0, target: 0, leads: 0, conv: 0 },
+};
+
+// ── Pipeline stage colors (UI constants — not mock data) ──
+const STAGE_COLORS = {
+  New: '#1B96FF', Contacted: '#7F56D9', Qualified: '#0B827C',
+  Proposal: '#DD7A01', Negotiation: '#C23934', Won: '#2E844A', Lost: '#939393',
+};
+const STAGES_ORDER = ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost'];
+
+// ── Status labels & colors (UI constants) ──
+const STATUS_LABELS = {
+  draft: 'ร่าง', pending_approval: 'รออนุมัติ',
+  sent: 'ส่งแล้ว', accepted: 'ยอมรับ', rejected: 'ปฏิเสธ',
+};
+const STATUS_COLORS = {
+  draft: 'var(--text3)', pending_approval: 'var(--orange)',
+  sent: 'var(--sf-blue)', accepted: 'var(--green)', rejected: 'var(--red)',
+};
+const PRI_COLORS  = { High: 'var(--red)', Medium: 'var(--orange)', Low: 'var(--text3)' };
+const TASK_COLORS = { Open: 'var(--text2)', 'In Progress': 'var(--sf-blue)', Completed: 'var(--green)', Overdue: 'var(--red)' };
+
+// ── Empty datasets (populated from API in production) ──
+const STAGES       = [];
+const REPS         = [];
+const LEADS_DATA   = { New: [], Contacted: [], Qualified: [], Proposal: [], Negotiation: [], Won: [], Lost: [] };
+const ACCOUNTS     = [];
+const CONTACTS     = [];
+const OPPS         = [];
+const TASKS        = [];
+const QUOTATIONS   = [];
+const PRODUCTS     = [];
+const NOTIFICATIONS = [];

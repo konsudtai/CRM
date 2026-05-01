@@ -254,45 +254,68 @@ function initCoMessages(){
 }
 function notifySalesRep(r,l,i,b,t){var a=JSON.parse(localStorage.getItem('sf7-assigned-leads')||'[]');a.push({assignedTo:r,leadName:l,interest:i,budget:b,task:t||'ติดต่อลูกค้าภายในวันนี้',assignedAt:new Date().toISOString()});localStorage.setItem('sf7-assigned-leads',JSON.stringify(a))}
 function addCoMsg(type,text){var m=document.getElementById('co-messages'),d=document.createElement('div');d.className='co-msg '+type;d.innerHTML=text;m.appendChild(d);m.scrollTop=m.scrollHeight}
-function sendCoMsg(){var inp=document.getElementById('co-input'),t=inp.value.trim();if(!t)return;inp.value='';addCoMsg('user',esc(t));var ty=document.createElement('div');ty.className='co-typing';ty.id='co-typing';ty.innerHTML='<span></span><span></span><span></span>';document.getElementById('co-messages').appendChild(ty);setTimeout(function(){var e=document.getElementById('co-typing');if(e)e.remove();addCoMsg('agent',getCoReply(t))},1200)}
-function sendCoQuick(t){document.getElementById('co-input').value=t;sendCoMsg()}
-function getCoReply(q){
-  var ql=q.toLowerCase(),u=getUserProfile(),isM=u.role==='Sales Manager'||u.role==='Admin';
-  // Assign
-  if(ql.includes('assign')||ql.includes('มอบหมาย')){
-    if(!isM)return 'ขออภัยค่ะ ต้องทำโดย <strong>Sales Manager</strong> เท่านั้นค่ะ<br>ต้องการให้แจ้ง Manager ไหมคะ?';
-    var reps=['สมชาย','วิไล','อรุณ','มณี'],to=null;reps.forEach(function(r){if(ql.includes(r.toLowerCase()))to=r});
-    if(to){notifySalesRep(to,'คุณสมชาย (สมใจเทค)','ERP','฿250K','ติดต่อลูกค้าภายในวันนี้');return '✅ <strong>Assign เรียบร้อย</strong><br><br>Lead → <strong>'+to+'</strong><br><br>น้องขายไว ทำให้แล้ว:<br>1. ✅ แจ้ง '+to+' (pop up + LINE)<br>2. ✅ สร้าง Task ให้อัตโนมัติ<br>3. ✅ อัปเดต Lead → Contacted<br><br>เมื่อ '+to+' เปิด CRM จะเห็นทันทีค่ะ 🔔'}
-    return '<strong>Lead รอ assign:</strong><br>1. คุณสมชาย — ERP ฿250K<br>2. ร้านมณี — ฿120K<br>3. หจก.พรชัย — ฿350K<br><br><strong>Sales Rep:</strong> สมชาย(14) วิไล(11) อรุณ(9) มณี(7)<br><br>พิมพ์ "assign ให้ อรุณ" ค่ะ'}
-  // Approve/Reject QT
-  if(ql.includes('approve')||ql.includes('อนุมัติ')){if(!isM)return 'ต้องทำโดย Sales Manager ค่ะ';return '✅ <strong>อนุมัติ QT เรียบร้อย</strong><br>QT-2569-0004 ศรีสมบูรณ์ ฿3.3M<br><br>1. ✅ Status → Approved<br>2. ✅ แจ้ง สมชาย (ผู้สร้าง)<br>3. ✅ เปิด Download PDF + ส่ง LINE<br><br>'}
-  if(ql.includes('reject')||ql.includes('ปฏิเสธ')){if(!isM)return 'ต้องทำโดย Sales Manager ค่ะ';return '❌ <strong>ปฏิเสธ QT</strong><br>QT-2569-0004 ศรีสมบูรณ์<br>กรุณาระบุเหตุผลค่ะ น้องขายไว จะแจ้ง สมชาย พร้อมเหตุผลค่ะ'}
-  // QT Status
-  if(ql.includes('qt')||ql.includes('ใบเสนอราคา')||ql.includes('quotation')){
-    if(isM)return '<strong>📄 QT Status</strong><br><br><span style="color:#DD7A01">● รออนุมัติ:</span> QT-2569-0004 ศรีสมบูรณ์ ฿3.3M<br><span style="color:#2E844A">● อนุมัติแล้ว:</span> QT-2569-0003 อีสเทิร์น ฿2.6M, QT-2569-0001 สมใจเทค ฿1.2M<br><br>พิมพ์ "approve" เพื่ออนุมัติค่ะ';
-    return '<strong>📄 QT ของคุณ</strong><br><span style="color:#DD7A01">● รออนุมัติ:</span> QT-2569-0004 ฿3.3M<br><span style="color:#2E844A">● ส่งแล้ว:</span> QT-2569-0001 ฿1.2M<br><br>สร้าง QT ใหม่: <a href="quotations.html" style="color:#0176D3">คลิกที่นี่</a>'}
-  // สร้าง QT
-  if(ql.includes('สร้าง qt')||ql.includes('create qt'))return '📄 บอกชื่อลูกค้าค่ะ เช่น "สร้าง QT ให้ สมใจเทค"<br>หรือ <a href="quotations.html" style="color:#0176D3">ไปหน้า Quotations</a>';
-  // Lead
-  if(ql.includes('lead ของฉัน')||ql.includes('lead ของผม')){var my=JSON.parse(localStorage.getItem('sf7-assigned-leads')||'[]').filter(function(l){return l.assignedTo===u.firstName});if(!my.length)return 'ยังไม่มี Lead assign ให้คุณค่ะ รอ Sales Manager assign นะคะ';var h='<strong>Lead ของคุณ ('+my.length+')</strong><br><br>';my.forEach(function(l,i){h+=(i+1)+'. <strong>'+l.leadName+'</strong> — '+l.interest+' '+l.budget+'<br>&nbsp;&nbsp;📌 '+l.task+'<br><br>'});return h}
-  if(ql.includes('lead')||ql.includes('ลีด')){if(isM)return '<strong>Lead ใหม่ (3)</strong><br>1. คุณสมชาย — ERP ฿250K <span style="color:#DD7A01">รอ assign</span><br>2. ร้านมณี — ฿120K <span style="color:#DD7A01">รอ assign</span><br>3. หจก.พรชัย — ฿350K <span style="color:#DD7A01">รอ assign</span><br><br>พิมพ์ "assign" ค่ะ';return 'Pipeline: New 3 / Contacted 2 / Qualified 2 / Proposal 1 / Negotiation 1<br><br>พิมพ์ "lead ของฉัน" ดูเฉพาะของคุณค่ะ'}
-  // Deal
-  if(ql.includes('deal')||ql.includes('โฟกัส'))return '<strong>Deal โฟกัส</strong><br>1. ศรีสมบูรณ์ ฿3.2M (Negotiation) ใกล้ปิด!<br>2. ยูนิค ฿1.8M (Proposal) รอ QT<br>3. อีสเทิร์น ฿2.5M (Qualified) นัดสาธิต<br><br>';
-  // งานเกินกำหนด
-  if(ql.includes('เกินกำหนด')||ql.includes('overdue')){if(isM)return '<strong>🔴 งานเกินกำหนดของทีม</strong><br>1. เตรียม Demo ศรีสมบูรณ์ — สมชาย (2 วัน)<br>2. follow-up ยูนิค — มณี (1 วัน)<br><br>ต้องการให้แจ้งเตือนอีกครั้งไหมคะ?';return '<strong>🔴 งานเกินกำหนด</strong><br>1. เตรียม Demo ศรีสมบูรณ์ (2 วัน)<br><br>ควรทำวันนี้นะคะ!'}
-  // สรุปทีม
-  if(ql.includes('สรุปทีม')||ql.includes('ทีม')){if(!isM)return 'ข้อมูลทีมดูได้เฉพาะ Sales Manager ค่ะ';return '<strong>📊 สรุปทีม</strong><br><br>สมชาย — 14 deals ฿3.85M (77%)<br>วิไล — 11 deals ฿3.12M (78%)<br>อรุณ — 9 deals ฿2.48M (71%)<br>มณี — 7 deals ฿1.95M (65%)<br><br>Pipeline: <strong>฿19.1M</strong> / เป้า ฿24M<br><br>'}
-  // แจ้ง Manager
-  if(ql.includes('แจ้ง manager'))return '✅ แจ้ง Sales Manager เรียบร้อยค่ะ';
-  // Email
-  if(ql.includes('email')||ql.includes('อีเมล'))return 'บอกชื่อลูกค้าและเรื่องค่ะ เช่น "เขียน email follow-up สมใจเทค"<br><br>';
-  // สรุปลูกค้า
-  if(ql.includes('สรุป'))return 'บอกชื่อลูกค้าค่ะ เช่น "สรุปลูกค้า อีสเทิร์น"';
-  // งานวันนี้
-  if(ql.includes('งาน')||ql.includes('task')||ql.includes('วันนี้')){if(isM)return '<strong>📋 งานทีมวันนี้</strong><br>สมชาย: โทร สมใจเทค, Demo ศรีสมบูรณ์ 🔴<br>วิไล: ส่ง QT สุขใจ<br>อรุณ: ประชุม อีสเทิร์น<br>มณี: follow-up ยูนิค 🔴';return '<strong>📋 งานวันนี้</strong><br>1. โทรติดตาม สมใจเทค <span style="color:#C23934">High</span><br>2. ส่ง QT สุขใจ <span style="color:#DD7A01">Medium</span><br>3. ประชุม อีสเทิร์น <span style="color:#C23934">High</span><br>🔴 เกินกำหนด: Demo ศรีสมบูรณ์<br><br>เหลือ <strong>3 งาน</strong> สู้ๆ ค่ะ! 💪'}
-  // ข้อมูลลูกค้า
-  if(ql.includes('สมใจ'))return '<strong>บจก. สมใจ เทคโนโลยี</strong><br>Platinum / VIP / Revenue ฿3.85M<br>Deal: ERP ฿1.2M (Proposal)<br>Contact: คุณสมชาย 081-234-5678<br><br>แนะนำ: ส่ง QT สัปดาห์นี้ค่ะ<br>';
-  // Default
-  if(isM)return 'น้องขายไว ช่วยได้ค่ะ:<br>• <strong>assign</strong> — มอบหมาย Lead<br>• <strong>approve/reject</strong> — อนุมัติ QT<br>• <strong>สรุปทีม</strong> — ผลงานทีม<br>• <strong>QT</strong> — สถานะใบเสนอราคา<br>• <strong>งานเกินกำหนด</strong> — Task เลยกำหนด<br><br>';
-  return 'น้องขายไว ช่วยได้ค่ะ:<br>• <strong>lead ของฉัน</strong> — Lead ที่ assign ให้<br>• <strong>งานวันนี้</strong> — Task ทั้งหมด<br>• <strong>สร้าง QT</strong> — สร้างใบเสนอราคา<br>• <strong>QT</strong> — สถานะ QT<br>• <strong>deal</strong> — Deal โฟกัส<br>• <strong>เขียน email</strong> — AI เขียนให้<br><br>';
+
+function sendCoMsg(){
+  var inp=document.getElementById('co-input'),t=inp.value.trim();
+  if(!t)return;
+  inp.value='';
+  addCoMsg('user',esc(t));
+
+  // Show typing indicator
+  var ty=document.createElement('div');ty.className='co-typing';ty.id='co-typing';
+  ty.innerHTML='<span></span><span></span><span></span>';
+  document.getElementById('co-messages').appendChild(ty);
+
+  // Call Agent Service API (streaming)
+  var user=getUserProfile();
+  var agentApi=(window.__SF7_API_BASE__||'/api')+'/agents/stream';
+  var body=JSON.stringify({
+    message:t,
+    agentType:'sales-assistant',
+    tenantId:user.tenantId||'default',
+    userId:user.id||'unknown',
+    userRole:user.role||'Sales Rep'
+  });
+
+  fetch(agentApi,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sf7_token')||'')},
+    body:body
+  }).then(function(res){
+    var e=document.getElementById('co-typing');if(e)e.remove();
+    if(!res.ok||!res.body){addCoMsg('agent','ขออภัยค่ะ เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ');return}
+
+    // Read SSE stream
+    var reader=res.body.getReader();
+    var decoder=new TextDecoder();
+    var msgDiv=document.createElement('div');msgDiv.className='co-msg agent';
+    document.getElementById('co-messages').appendChild(msgDiv);
+    var fullText='';
+
+    function readChunk(){
+      reader.read().then(function(result){
+        if(result.done){if(!fullText)msgDiv.innerHTML='ขออภัยค่ะ ไม่มีข้อมูลตอบกลับค่ะ';return}
+        var chunk=decoder.decode(result.value,{stream:true});
+        var lines=chunk.split('\n');
+        lines.forEach(function(line){
+          if(!line.startsWith('data: '))return;
+          var data=line.slice(6).trim();
+          if(data==='[DONE]')return;
+          try{
+            var evt=JSON.parse(data);
+            if(evt.type==='text'&&evt.content){fullText+=evt.content;msgDiv.innerHTML=fullText}
+            if(evt.type==='tool_start'){msgDiv.innerHTML=fullText+'<br><span style="font-size:10px;color:var(--text3)">🔧 กำลังดำเนินการ...</span>'}
+          }catch(ex){}
+        });
+        var msgs=document.getElementById('co-messages');msgs.scrollTop=msgs.scrollHeight;
+        readChunk();
+      });
+    }
+    readChunk();
+  }).catch(function(err){
+    var e=document.getElementById('co-typing');if(e)e.remove();
+    addCoMsg('agent','ขออภัยค่ะ ไม่สามารถเชื่อมต่อ AI ได้ กรุณาลองใหม่ค่ะ');
+  });
 }
+function sendCoQuick(t){document.getElementById('co-input').value=t;sendCoMsg()}
+// getCoReply removed — now handled by Agent Service API via sendCoMsg()

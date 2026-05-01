@@ -587,42 +587,242 @@ Guards: `GatewayAuthGuard`, `TenantGuard`, `PermissionGuard`, `RateLimiterGuard`
 
 ---
 
-## AI Agents
+## AI Agents — Agentic AI CRM (Strands Agents SDK)
 
-SalesFAST 7 มี AI Agent 3 ตัว ทำงานร่วมกัน:
+SalesFAST 7 ใช้ **Strands Agents SDK (TypeScript)** + **Amazon Bedrock** สร้าง AI Agent 3 ตัวที่ทำงานจริง เรียก API จริง เขียนลง DB จริง ผ่าน service เดียวกับที่ UI ใช้ — user ยังทำ manual ผ่านหน้าจอได้เหมือนเดิม
 
-| # | Agent | ที่ไหน | หน้าที่ |
-|---|-------|--------|---------|
-| 1 | **Admin AI Agent** | LINE OA (ตอบลูกค้าอัตโนมัติ) | ตอบคำถามสินค้า/ราคา, ถามข้อมูลสร้าง Lead, จำ context follow-up |
-| 2 | **น้องขายไว** | ทุกหน้า CRM (floating widget มุมขวาล่าง) | Personal Assistant — assign lead, approve QT, แจ้ง task, สรุปลูกค้า |
-| 3 | **น้องวิ — Analytics** | Dashboard (floating widget มุมขวาล่าง) | วิเคราะห์ — forecast, churn risk, win rate, เปรียบเทียบทีม |
+### Architecture
 
 ```
-ลูกค้า (LINE OA)              ทีมขาย (CRM)                Dashboard
-       │                           │                           │
-       ▼                           ▼                           ▼
-┌──────────────┐          ┌──────────────┐          ┌──────────────┐
-│ Admin AI     │          │ น้องขายไว│          │ น้องวิ       │
-│ Agent        │─────────>│              │          │ Analytics    │
-│              │ แจ้ง Lead│ • Assign Lead│          │              │
-│ • ตอบ LINE   │          │ • Approve QT │          │ • Forecast   │
-│ • สร้าง Lead │          │ • แจ้ง Sales │          │ • Churn Risk │
-│ • ตอบสินค้า  │          │ • สรุปลูกค้า │          │ • Win Rate   │
-│ • จำ context │          │ • เขียน Email│          │ • Team Perf  │
-└──────────────┘          └──────────────┘          └──────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    Agent Service (Port 3006)                 │
+│                    Strands Agents SDK + NestJS               │
+│                                                             │
+│  ┌───────────────┐  ┌───────────────┐  ┌────────────────┐  │
+│  │ Admin AI      │  │ น้องขายไว      │  │ น้องวิ          │  │
+│  │ Agent         │  │ 42 tools      │  │ Analytics      │  │
+│  │               │  │               │  │ 7 tools        │  │
+│  │ 4 tools:      │  │ CRM + Scoring │  │                │  │
+│  │ • search_kb   │  │ + Activity    │  │ • KPI          │  │
+│  │ • create_lead │  │ + Deal Health │  │ • Forecast     │  │
+│  │ • products    │  │ + Follow-up   │  │ • Churn Risk   │  │
+│  │ • accounts    │  │ + Notification│  │ • Win Rate     │  │
+│  └───────┬───────┘  └───────┬───────┘  └───────┬────────┘  │
+│          │                  │                   │           │
+│          ▼                  ▼                   ▼           │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │              Orchestrator (auto-routing)              │  │
+│  └──────────────────────────────────────────────────────┘  │
+│          │                  │                   │           │
+│  ┌───────┴──────┐  ┌───────┴───────┐  ┌────────┴───────┐  │
+│  │ Event        │  │ Scheduler     │  │ Chat           │  │
+│  │ Listener     │  │ (Cron Jobs)   │  │ Controller     │  │
+│  │ (SQS)        │  │               │  │ (HTTP + SSE)   │  │
+│  └──────────────┘  └───────────────┘  └────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+         │                    │                   │
+         ▼                    ▼                   ▼
+   Same APIs as UI:  CRM / Sales / Quotation / Notification
+         │
+         ▼
+   Same Database (PostgreSQL with RLS)
 ```
 
-### น้องขายไว — แยกตาม Role
+### Agent 1: Admin AI — ตอบลูกค้า LINE OA
 
-**Sales Manager เห็น:**
-- Lead รอ assign + QT รออนุมัติ
-- พิมพ์ "assign ให้ อรุณ" → assign lead + แจ้ง Sales Rep อัตโนมัติ
-- พิมพ์ "approve" → อนุมัติ QT + แจ้งผู้สร้าง + เปิด PDF download
-- สรุปทีม, งานเกินกำหนดของทีม
+| รายการ | รายละเอียด |
+|---|---|
+| ที่ไหน | LINE OA webhook → Agent Service |
+| Model | Claude 3.5 Haiku (เร็ว, ถูก) |
+| Tools | search_knowledge_base, create_lead, search_products, search_accounts |
 
-**Sales Rep เห็น:**
-- Lead ที่ assign ให้ + งานวันนี้ + เกินกำหนด
-- สร้าง QT, ดูสถานะ QT, เขียน email, สรุปลูกค้า
+**Workflow:**
+```
+ลูกค้าทัก LINE: "สนใจระบบ ERP"
+  │
+  ▼ Admin AI
+  ├── search_knowledge_base → หาข้อมูล ERP จาก KB
+  ├── ตอบ: "ERP ราคา ฿250,000 รวมติดตั้ง+อบรมครับ"
+  ├── ถาม: "สะดวกให้ชื่อ-เบอร์ไหมครับ ทีมจะติดต่อกลับ"
+  │
+  ▼ ลูกค้าให้ข้อมูล
+  ├── create_lead → สร้าง Lead ใน DB จริง
+  ├── create_note → สรุป conversation เป็น handoff note
+  └── event: lead.created → น้องขายไว รับต่อ
+```
+
+### Agent 2: น้องขายไว — Sales Personal Assistant (42 Tools)
+
+| รายการ | รายละเอียด |
+|---|---|
+| ที่ไหน | ทุกหน้า CRM (floating widget) + Event-driven + Scheduled |
+| Model | Claude 3.5 Haiku |
+| Tools | 42 tools ครอบคลุม CRM, Scoring, Activity, Deal Health, Follow-up, Notification |
+
+**10 Agentic Features:**
+
+| # | Feature | ทำอะไร | เขียนลง DB |
+|---|---|---|---|
+| 1 | Smart Lead Scoring | ให้คะแนน Lead 0-100 (BANT) + แนะนำ assign ให้ใคร | `leads.ai_score`, `leads.metadata` |
+| 2 | Auto Activity Log | บันทึกทุก action ลง Timeline อัตโนมัติ | `activities` |
+| 3 | Smart Follow-up | สร้าง Task follow-up อัตโนมัติหลัง assign/ส่ง QT/meeting | `tasks` |
+| 4 | Conversation Summary | สรุป LINE conversation เป็น handoff note ให้ Sales | `notes` |
+| 5 | Deal Health Monitor | ตรวจ stale deals ทุก 6 ชม. ให้คะแนน green/yellow/red | `opportunities.metadata` |
+| 6 | Meeting Prep | ดึงข้อมูลลูกค้าทั้งหมดสรุปก่อน meeting + บันทึกหลัง meeting | `activities`, `notes` |
+| 7 | Smart Email/LINE | เขียน email/LINE ให้ Sales ส่งลูกค้า | `notifications` |
+| 8 | Auto-tagging | Tag industry/interest/urgency ให้ Account อัตโนมัติ | `account_tags`, `accounts` |
+| 9 | Daily Digest | สรุปทุกเช้า 8:30 ส่งให้แต่ละคนตาม Role | `notifications` |
+| 10 | Win/Loss Analysis | วิเคราะห์เมื่อ Deal ปิด + coaching recommendation | `opportunities`, `tasks` |
+
+**Workflow — Lead เข้ามาใหม่:**
+```
+event: lead.created
+  │
+  ▼ น้องขายไว
+  ├── get_lead_conversation_history → ดูประวัติ LINE
+  ├── update_lead_score → Score 85/100 (Hot)
+  ├── add_account_tag → tag: "ERP-interest", "retail"
+  ├── get_sales_rep_workload → อรุณ มี capacity
+  ├── send_notification → แจ้ง Manager:
+  │     "Lead ใหม่ Score 85 แนะนำ assign ให้ อรุณ"
+  └── log_activity → บันทึก
+  │
+  ▼ Manager: "assign ให้ อรุณ"
+  ├── assign_lead → อัปเดต DB
+  ├── create_follow_up_task → "ติดต่อลูกค้าภายใน 24 ชม."
+  ├── send_notification → แจ้ง อรุณ (in-app + LINE)
+  └── log_activity → บันทึก
+```
+
+**Workflow — ออก Quotation:**
+```
+Sales Rep: "ออก QT ให้สมใจเทค ERP 2 ชุด"
+  │
+  ▼ น้องขายไว
+  ├── search_accounts → หา สมใจเทค
+  ├── search_products → หา ERP
+  ├── สรุป: "ERP ฿600K x 2 = ฿1.2M + VAT = ฿1.284M ยืนยัน?"
+  │
+  ▼ Rep: "ยืนยัน"
+  ├── create_quotation → สร้าง QT-2569-0005 (draft)
+  ├── send_notification → แจ้ง Manager ให้ approve
+  ├── log_activity → บันทึก
+  │
+  ▼ Manager: "approve"
+  ├── approve_quotation → อนุมัติ
+  ├── send_notification → แจ้ง Rep
+  ├── create_follow_up_task → "follow-up QT 3 วัน"
+  └── log_activity → บันทึก
+```
+
+**Workflow — Deal ปิด (Won):**
+```
+event: opportunity.closed (won)
+  │
+  ▼ น้องขายไว
+  ├── send_notification → แจ้งทั้งทีม "🎉 Deal Won!"
+  ├── get_opportunity_history → วิเคราะห์ sales cycle
+  ├── update_account_tier → พิจารณาอัปเกรด tier
+  ├── create_follow_up_task → "ส่งมอบ + onboarding"
+  └── log_activity → บันทึก
+```
+
+**Event-driven (Proactive):**
+
+| Event | น้องขายไวทำอะไร |
+|---|---|
+| `lead.created` | Score + Tag + แจ้ง Manager |
+| `lead.assigned` | แจ้ง Rep + สร้าง Task + LINE |
+| `task.overdue` | เตือน Rep + แจ้ง Manager |
+| `quotation.finalized` | แจ้ง Manager ให้ approve |
+| `quotation.status_changed` | แจ้ง Rep + แนะนำ next step |
+| `opportunity.stage_changed` | แจ้ง + แนะนำ action + สร้าง Task |
+| `opportunity.closed` | Win/Loss analysis + Task ส่งมอบ |
+
+**Scheduled (Cron):**
+
+| Job | ความถี่ | ทำอะไร |
+|---|---|---|
+| Daily Digest | ทุกเช้า 8:30 | สรุป KPI, Tasks, Leads, QTs ส่งให้แต่ละคน |
+| Deal Health | ทุก 6 ชม. | ตรวจ stale deals + churn risk |
+| Task Reminders | ทุก 1 ชม. | เตือน Task ใกล้ครบกำหนด |
+
+**Role-based Permissions:**
+
+| Feature | Sales Rep | Sales Manager | Admin |
+|---|---|---|---|
+| ดู Lead ของตัวเอง | ✅ | ✅ ดูทั้งทีม | ✅ ทั้งหมด |
+| Assign Lead | ❌ แจ้ง Manager | ✅ | ✅ |
+| สร้าง QT (draft) | ✅ | ✅ | ✅ |
+| อนุมัติ QT | ❌ | ✅ | ✅ |
+| ดูผลงานทีม | ❌ เฉพาะตัวเอง | ✅ | ✅ |
+| อธิบายสินค้าแทน | ✅ | ✅ | ✅ |
+
+### Agent 3: น้องวิ — Analytics (7 Tools)
+
+| รายการ | รายละเอียด |
+|---|---|
+| ที่ไหน | Dashboard (floating widget) |
+| Model | Claude 3.5 Haiku (temperature 0.2 — แม่นยำ) |
+| Tools | get_kpi_summary, get_pipeline_analysis, get_revenue_data, get_sales_rep_performance, get_churn_risk_accounts, get_sales_cycle_analysis, get_forecast |
+
+**ตัวอย่างคำถาม:**
+- "Forecast เดือนหน้า" → ดึง pipeline จริง + คำนวณ best/expected/worst
+- "ลูกค้าเสี่ยงหาย" → ดึง accounts ที่ไม่มี activity นาน
+- "เปรียบเทียบทีม" → ดึง performance แต่ละ rep จาก DB จริง
+- "Win rate แต่ละ stage" → วิเคราะห์ conversion จาก opportunity history
+
+### Agent Service — Tech Stack
+
+```
+services/agent-service/
+├── package.json              @strands-agents/sdk + NestJS
+├── src/
+│   ├── agents/
+│   │   ├── admin-ai.agent.ts       4 tools
+│   │   ├── sales-assistant.agent.ts 42 tools
+│   │   ├── analytics.agent.ts      7 tools
+│   │   └── orchestrator.ts         auto-routing + streaming
+│   ├── tools/
+│   │   ├── crm.tools.ts            Lead, Account, QT, Task, Email
+│   │   ├── activity.tools.ts       log_activity, create_note, notifications
+│   │   ├── scoring.tools.ts        lead_score, account_tier, tags
+│   │   ├── deal-health.tools.ts    health_score, stage_change, close
+│   │   ├── followup.tools.ts       follow_up_task, meeting_context
+│   │   ├── analytics.tools.ts      KPI, pipeline, revenue, forecast
+│   │   └── knowledge-base.tools.ts Bedrock KB search
+│   └── modules/
+│       ├── chat/                    HTTP + SSE streaming endpoints
+│       ├── events/                  SQS event listener (8 handlers)
+│       └── scheduler/              Cron jobs (3 scheduled tasks)
+│
+│ ENV VARS:
+│   BEDROCK_REGION, BEDROCK_MODEL_ID, KNOWLEDGE_BASE_ID,
+│   JWT_SECRET, CRM_API_URL, SALES_API_URL, QUOTATION_API_URL,
+│   NOTIFICATION_API_URL, SQS_AGENT_QUEUE_URL
+```
+
+### Agentic vs Manual — ทำงานคู่กัน
+
+```
+┌──────────────────────────────────────────────────┐
+│              SalesFAST 7 CRM                      │
+│                                                   │
+│  ┌──────────────┐     ┌───────────────────────┐  │
+│  │  Manual UI   │     │  AI Agents             │  │
+│  │  • Click ปุ่ม │     │  • พิมพ์สั่งงาน         │  │
+│  │  • กรอก form │     │  • Event-driven        │  │
+│  │  • ลาก Kanban│     │  • Scheduled           │  │
+│  └──────┬───────┘     └──────────┬────────────┘  │
+│         │                        │                │
+│         ▼                        ▼                │
+│  ┌───────────────────────────────────────────┐   │
+│  │       Same API / Same Database             │   │
+│  │  leads, accounts, quotations, tasks,       │   │
+│  │  activities, notifications, opportunities  │   │
+│  └───────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -1420,27 +1620,28 @@ bash deploy.sh \
 
 ## Deploy Readiness Checklist
 
-> Last verified: 1 May 2026
+> Last verified: 2 May 2026
 
 ### Pre-Deploy Requirements
 
 ```
 [ ] AWS Account with sufficient permissions
-    (CloudFormation, Lambda, RDS, S3, DynamoDB, SQS, API Gateway,
-     CloudFront, IAM, Secrets Manager, CloudWatch, Backup)
+    (CloudFormation, Lambda, RDS, S3, DynamoDB, SQS, SNS, API Gateway,
+     CloudFront, IAM, Secrets Manager, CloudWatch, Backup, Bedrock)
 [ ] AWS CLI configured (aws configure)
 [ ] Git installed
+[ ] Node.js 20+ installed
 [ ] Region selected:
-    - CRM: ap-southeast-7 (Thailand) or ap-southeast-1 (Singapore)
-    - AI:  ap-southeast-1 (Singapore, recommended — has Bedrock)
+    - CRM: ap-southeast-1 (Singapore, recommended)
+    - AI:  ap-southeast-1 (Singapore — has Bedrock)
 ```
 
 ### Deploy Command
 
 ```bash
-# Singapore (default — recommended)
-git clone https://github.com/konsudtai/CRM.git
-cd CRM/infra
+# Clone and deploy
+git clone https://github.com/nicekonsudtai/2PCRM.git
+cd 2PCRM/infra
 bash deploy.sh \
   --email    admin@mycompany.com \
   --name     "Somchai Jaidee" \
@@ -1448,14 +1649,8 @@ bash deploy.sh \
   --db-pass  auto \
   --tenant   "My Company Ltd"
 
-# Thailand (override region)
-bash deploy.sh \
-  --email    admin@mycompany.com \
-  --name     "Somchai Jaidee" \
-  --password "MyPass@123" \
-  --db-pass  auto \
-  --tenant   "My Company Ltd" \
-  --region   ap-southeast-7
+# db-pass auto จะถามให้กรอก password เอง (interactive)
+# หรือระบุตรง: --db-pass "MyDbP@ss99"
 ```
 
 ### Post-Deploy Steps
@@ -1485,17 +1680,18 @@ bash deploy.sh \
 | Component | Files | Status |
 |-----------|------:|:------:|
 | Frontend Pages | 13 pages + admin portal + manual | OK |
-| Backend Services | 5 NestJS microservices | OK |
-| Database Schema | 30+ tables with RLS | OK |
+| Backend Services | 6 NestJS microservices (incl. Agent Service) | OK |
+| Agent Service | Strands SDK, 42 tools, 3 agents, event listener, scheduler | OK |
+| Database Schema | 30+ tables with RLS + ai_score column | OK |
 | Seed Data | 5 placeholders, 4 default roles | OK |
-| CloudFormation (CRM) | ~1,280 lines, 11 outputs | OK |
+| CloudFormation (CRM) | SNS fan-out + Agent SQS queue | OK |
 | CloudFormation (AI) | S3 + IAM roles, 6 outputs | OK |
-| Deploy Script | Pre-check + 9 steps, auto DB init, orphan cleanup | OK |
+| Deploy Script | Pre-check + 9 steps, interactive DB password | OK |
 | i18n | 150+ keys TH/EN | OK |
-| Mock Data | 8 datasets (accounts, leads, tasks, etc.) | OK |
-| AI Agents | 3 agents (Admin AI, น้องขายไว, น้องวิ) | OK |
+| Mock Data | Removed — all data from API/DB | OK |
+| AI Agents | 3 agents (Admin AI, น้องขายไว 42 tools, น้องวิ 7 tools) | OK |
 | LINE OA | Webhook + auto-lead + send product/QT | OK |
-| Security | 18 issues fixed, RLS, bcrypt, JWT | OK |
+| Security | JWT throw on missing secret, no dev fallbacks | OK |
 
 ### Monthly Cost Summary
 

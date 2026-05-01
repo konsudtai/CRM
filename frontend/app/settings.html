@@ -265,11 +265,35 @@
           <div class="sf7-form-group">
             <label class="sf7-form-label">Bedrock Region</label>
             <select class="sf7-form-input" id="ai-region">
-              <option value="us-east-1">US East (N. Virginia)</option>
-              <option value="us-west-2">US West (Oregon)</option>
-              <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
-              <option value="ap-northeast-1">Asia Pacific (Tokyo)</option>
-              <option value="eu-west-1">Europe (Ireland)</option>
+              <optgroup label="US">
+                <option value="us-east-1">US East — N. Virginia</option>
+                <option value="us-east-2">US East — Ohio</option>
+                <option value="us-west-1">US West — N. California</option>
+                <option value="us-west-2">US West — Oregon</option>
+              </optgroup>
+              <optgroup label="Asia Pacific">
+                <option value="ap-southeast-1">Asia Pacific — Singapore</option>
+                <option value="ap-southeast-2">Asia Pacific — Sydney</option>
+                <option value="ap-southeast-3">Asia Pacific — Jakarta</option>
+                <option value="ap-southeast-7">Asia Pacific — Thailand (Bangkok)</option>
+                <option value="ap-northeast-1">Asia Pacific — Tokyo</option>
+                <option value="ap-northeast-2">Asia Pacific — Seoul</option>
+                <option value="ap-south-1">Asia Pacific — Mumbai</option>
+              </optgroup>
+              <optgroup label="Europe">
+                <option value="eu-central-1">Europe — Frankfurt</option>
+                <option value="eu-west-1">Europe — Ireland</option>
+                <option value="eu-west-2">Europe — London</option>
+                <option value="eu-west-3">Europe — Paris</option>
+                <option value="eu-north-1">Europe — Stockholm</option>
+                <option value="eu-south-1">Europe — Milan</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="ca-central-1">Canada — Central</option>
+                <option value="sa-east-1">South America — São Paulo</option>
+                <option value="me-central-1">Middle East — UAE</option>
+                <option value="il-central-1">Israel — Tel Aviv</option>
+              </optgroup>
             </select>
             <div style="font-size:10px;color:var(--text3);margin-top:4px">เลือก region ที่ใกล้ที่สุดและมี model ที่ต้องการ</div>
           </div>
@@ -299,32 +323,78 @@
           <div class="sf7-form-group">
             <label class="sf7-form-label">Chat Model (สำหรับตอบลูกค้า + น้องขายไว)</label>
             <select class="sf7-form-input" id="ai-chat-model">
-              <optgroup label="Amazon">
-                <option value="amazon.nova-lite-v2:0">Amazon Nova Lite 2.0 — เร็ว, ถูกที่สุด</option>
-                <option value="amazon.nova-pro-v1:0">Amazon Nova Pro — สมดุล</option>
-              </optgroup>
-              <optgroup label="Anthropic">
-                <option value="anthropic.claude-3-haiku-20240307-v1:0" selected>Claude 3 Haiku — เร็ว, ถูก (แนะนำ)</option>
-                <option value="anthropic.claude-3-5-sonnet-20241022-v2:0">Claude 3.5 Sonnet — ฉลาดกว่า</option>
+              <optgroup label="Anthropic — Claude 4.x">
+                <option value="anthropic.claude-opus-4-7">Claude Opus 4.7 — ฉลาดที่สุด, ล่าสุด</option>
+                <option value="anthropic.claude-opus-4-6-v1">Claude Opus 4.6</option>
+                <option value="anthropic.claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                <option value="anthropic.claude-haiku-4-5-20251001-v1:0">Claude Haiku 4.5 — เร็ว, ถูก</option>
+                <option value="anthropic.claude-opus-4-5-20251101-v1:0">Claude Opus 4.5</option>
+                <option value="anthropic.claude-sonnet-4-5-20250929-v1:0">Claude Sonnet 4.5</option>
                 <option value="anthropic.claude-sonnet-4-20250514-v1:0">Claude Sonnet 4</option>
-                <option value="anthropic.claude-opus-4-20250514-v1:0">Claude Opus 4 — ฉลาดที่สุด</option>
+                <option value="anthropic.claude-opus-4-1-20250805-v1:0">Claude Opus 4.1</option>
               </optgroup>
-              <optgroup label="Meta (Open Source)">
+              <optgroup label="Anthropic — Claude 3.x">
+                <option value="anthropic.claude-3-5-haiku-20241022-v1:0" selected>Claude 3.5 Haiku — เร็ว, ถูก (แนะนำ)</option>
+                <option value="anthropic.claude-3-haiku-20240307-v1:0">Claude 3 Haiku — Legacy</option>
+              </optgroup>
+              <optgroup label="Amazon Nova">
+                <option value="amazon.nova-2-lite-v1:0">Nova 2 Lite — ใหม่ล่าสุด</option>
+                <option value="amazon.nova-lite-v1:0">Nova Lite — เร็ว, ถูกที่สุด</option>
+                <option value="amazon.nova-micro-v1:0">Nova Micro — เล็กสุด, เร็วสุด</option>
+                <option value="amazon.nova-pro-v1:0">Nova Pro — สมดุล</option>
+                <option value="amazon.nova-premier-v1:0">Nova Premier — ฉลาดที่สุดของ Amazon</option>
+              </optgroup>
+              <optgroup label="Meta — Llama 4">
+                <option value="meta.llama4-maverick-17b-instruct-v1:0">Llama 4 Maverick 17B — ใหม่ล่าสุด</option>
+                <option value="meta.llama4-scout-17b-instruct-v1:0">Llama 4 Scout 17B</option>
+              </optgroup>
+              <optgroup label="Meta — Llama 3.x">
+                <option value="meta.llama3-3-70b-instruct-v1:0">Llama 3.3 70B Instruct</option>
+                <option value="meta.llama3-1-405b-instruct-v1:0">Llama 3.1 405B — ใหญ่ที่สุด</option>
                 <option value="meta.llama3-1-70b-instruct-v1:0">Llama 3.1 70B</option>
                 <option value="meta.llama3-1-8b-instruct-v1:0">Llama 3.1 8B — เล็ก, เร็วมาก</option>
               </optgroup>
               <optgroup label="DeepSeek">
-                <option value="deepseek.deepseek-r1-v1:0">DeepSeek R1 — ถูกมาก, reasoning ดี</option>
+                <option value="deepseek.v3.2">DeepSeek V3.2 — ใหม่ล่าสุด</option>
+                <option value="deepseek.v3-v1:0">DeepSeek V3</option>
+                <option value="deepseek.r1-v1:0">DeepSeek R1 — reasoning ดี</option>
               </optgroup>
-              <optgroup label="Alibaba (Qwen)">
-                <option value="qwen.qwen2-5-72b-instruct-v1:0">Qwen 2.5 72B — ถูก, รองรับภาษาไทย</option>
-              </optgroup>
-              <optgroup label="Mistral">
-                <option value="mistral.mistral-large-2407-v1:0">Mistral Large</option>
-                <option value="mistral.mistral-small-2503-v1:0">Mistral Small — เร็ว, ถูกมาก</option>
+              <optgroup label="Mistral AI">
+                <option value="mistral.mistral-large-3-675b-instruct">Mistral Large 3 (675B) — ฉลาดที่สุด</option>
+                <option value="mistral.mistral-large-2402-v1:0">Mistral Large</option>
+                <option value="mistral.magistral-small-2509">Magistral Small 2509</option>
+                <option value="mistral.mistral-small-2402-v1:0">Mistral Small — เร็ว, ถูก</option>
+                <option value="mistral.pixtral-large-2502-v1:0">Pixtral Large — รองรับภาพ</option>
               </optgroup>
               <optgroup label="Cohere">
                 <option value="cohere.command-r-plus-v1:0">Command R+ — ดีสำหรับ RAG</option>
+                <option value="cohere.command-r-v1:0">Command R</option>
+              </optgroup>
+              <optgroup label="Qwen (Alibaba)">
+                <option value="qwen.qwen3-235b-a22b-2507-v1:0">Qwen3 235B — ใหญ่, ฉลาด</option>
+                <option value="qwen.qwen3-32b-v1:0">Qwen3 32B — สมดุล, รองรับภาษาไทย</option>
+              </optgroup>
+              <optgroup label="MiniMax">
+                <option value="minimax.minimax-m2.5">MiniMax M2.5</option>
+              </optgroup>
+              <optgroup label="Google">
+                <option value="google.gemma-3-27b-it">Gemma 3 27B IT</option>
+                <option value="google.gemma-3-12b-it">Gemma 3 12B IT</option>
+                <option value="google.gemma-3-4b-it">Gemma 3 4B IT — เล็ก, เร็ว</option>
+              </optgroup>
+              <optgroup label="Moonshot AI">
+                <option value="moonshotai.kimi-k2.5">Kimi K2.5</option>
+              </optgroup>
+              <optgroup label="NVIDIA">
+                <option value="nvidia.nemotron-nano-3-30b">Nemotron Nano 3 30B</option>
+              </optgroup>
+              <optgroup label="Writer">
+                <option value="writer.palmyra-x5-v1:0">Palmyra X5</option>
+                <option value="writer.palmyra-x4-v1:0">Palmyra X4</option>
+              </optgroup>
+              <optgroup label="Z.AI (Zhipu)">
+                <option value="zai.glm-4.7">GLM-4.7</option>
+                <option value="zai.glm-4.7-flash">GLM-4.7 Flash — เร็ว</option>
               </optgroup>
             </select>
             <div style="font-size:10px;color:var(--text3);margin-top:4px">ทุก model ใช้ผ่าน Amazon Bedrock API เดียวกัน เปลี่ยนได้ทุกเมื่อ</div>
@@ -332,8 +402,15 @@
           <div class="sf7-form-group">
             <label class="sf7-form-label">Embedding Model (สำหรับ Knowledge Base)</label>
             <select class="sf7-form-input" id="ai-embed-model">
-              <option value="amazon.titan-embed-text-v2:0">Amazon Titan Embed v2 (แนะนำ)</option>
-              <option value="cohere.embed-multilingual-v3">Cohere Multilingual v3</option>
+              <optgroup label="Amazon">
+                <option value="amazon.titan-embed-text-v2:0" selected>Amazon Titan Text Embeddings V2 (แนะนำ)</option>
+                <option value="amazon.titan-embed-text-v1">Amazon Titan Embeddings G1 - Text</option>
+                <option value="amazon.titan-embed-image-v1">Amazon Titan Multimodal Embeddings G1</option>
+              </optgroup>
+              <optgroup label="Cohere">
+                <option value="cohere.embed-multilingual-v3">Cohere Embed Multilingual v3 — รองรับหลายภาษา</option>
+                <option value="cohere.embed-english-v3">Cohere Embed English v3</option>
+              </optgroup>
             </select>
           </div>
           <div class="sf7-form-group">
@@ -477,31 +554,54 @@ if (getUserProfile().role !== 'Admin') {
   document.querySelector('.page').innerHTML = '<div class="empty-state" style="padding:80px"><div style="font-size:18px;font-weight:700;margin-bottom:8px">Access Denied</div><div style="color:var(--text2)">Settings is available for Admin only.<br>ตั้งค่าระบบสำหรับ Admin เท่านั้น</div></div>';
 }
 
-// Mock users
-var USERS = [
-  { id:1, first:'Somchai', last:'Jaidee', email:'somchai@company.co.th', phone:'081-234-5678', role:'Admin', active:true },
-  { id:2, first:'Wilai', last:'Rakdee', email:'wilai@company.co.th', phone:'089-345-6789', role:'Sales Manager', active:true },
-  { id:3, first:'Arun', last:'Sangfa', email:'arun@company.co.th', phone:'081-456-7890', role:'Sales Rep', active:true },
-  { id:4, first:'Manee', last:'Thongkam', email:'manee@company.co.th', phone:'043-567-8901', role:'Sales Rep', active:true },
-  { id:5, first:'Napa', last:'Srisuk', email:'napa@company.co.th', phone:'092-333-4444', role:'Accounting', active:true },
-  { id:6, first:'Wichai', last:'Lekkhaeng', email:'wichai@company.co.th', phone:'095-555-6666', role:'Support', active:true },
-  { id:7, first:'Pimchan', last:'Deemark', email:'pimchan@company.co.th', phone:'086-777-8888', role:'Marketing', active:true },
-  { id:8, first:'Pichai', last:'Yimswy', email:'pichai@company.co.th', phone:'095-999-0000', role:'Viewer', active:false },
-];
-
-var ROLES = ['Admin','Sales Manager','Sales Rep','Accounting','Support','Marketing','Viewer'];
+// Users & Roles — loaded from API
+var USERS = [];
+var ROLES = [];
 var MODULES = ['Dashboard','Accounts','Pipeline','Tasks','Calendar','Quotations','Products','Settings'];
-var PERMS = {
-  'Admin':         { Dashboard:'CRUD', Accounts:'CRUD', Pipeline:'CRUD', Tasks:'CRUD', Calendar:'CRUD', Quotations:'CRUD', Products:'CRUD', Settings:'CRUD' },
-  'Sales Manager': { Dashboard:'R',    Accounts:'CRU',  Pipeline:'CRUD', Tasks:'CRUD', Calendar:'CRU',  Quotations:'CRUD', Products:'CRU',  Settings:'R' },
-  'Sales Rep':     { Dashboard:'R',    Accounts:'CR',   Pipeline:'CRU',  Tasks:'CRU',  Calendar:'CR',   Quotations:'CR',   Products:'R',    Settings:'' },
-  'Accounting':    { Dashboard:'R',    Accounts:'R',    Pipeline:'R',    Tasks:'R',     Calendar:'R',    Quotations:'RU',   Products:'R',    Settings:'' },
-  'Support':       { Dashboard:'R',    Accounts:'RU',   Pipeline:'R',    Tasks:'CRU',   Calendar:'CR',   Quotations:'R',    Products:'R',    Settings:'' },
-  'Marketing':     { Dashboard:'R',    Accounts:'R',    Pipeline:'R',    Tasks:'CR',    Calendar:'R',    Quotations:'R',    Products:'R',    Settings:'' },
-  'Viewer':        { Dashboard:'R',    Accounts:'R',    Pipeline:'R',    Tasks:'R',     Calendar:'R',    Quotations:'R',    Products:'R',    Settings:'' },
-};
+var PERMS = {};
 
 var roleColors = { 'Admin':'#0176D3', 'Sales Manager':'#2E844A', 'Sales Rep':'#DD7A01', 'Accounting':'#7F56D9', 'Support':'#0B827C', 'Marketing':'#C23934', 'Viewer':'#939393' };
+
+// ── Load users and roles from API ──
+async function loadSettingsData() {
+  try {
+    const [usersRes, rolesRes] = await Promise.all([
+      apiFetch('/users').catch(()=>null),
+      apiFetch('/roles').catch(()=>null),
+    ]);
+    if (usersRes && Array.isArray(usersRes)) {
+      USERS = usersRes.map(function(u, i) {
+        return {
+          id: u.id || i + 1,
+          first: u.firstName || u.first_name || '',
+          last: u.lastName || u.last_name || '',
+          email: u.email || '',
+          phone: u.phone || '',
+          role: u.role || (u.roles && u.roles[0] && u.roles[0].name) || 'Viewer',
+          active: u.isActive !== undefined ? u.isActive : true,
+        };
+      });
+    }
+    if (rolesRes && Array.isArray(rolesRes)) {
+      ROLES = rolesRes.map(function(r) { return r.name || r; });
+      rolesRes.forEach(function(r) {
+        if (r.permissions) {
+          var permMap = {};
+          MODULES.forEach(function(m) { permMap[m] = ''; });
+          (Array.isArray(r.permissions) ? r.permissions : []).forEach(function(p) {
+            var mod = p.module ? p.module.charAt(0).toUpperCase() + p.module.slice(1) : '';
+            var act = p.action ? p.action.charAt(0).toUpperCase() : '';
+            if (permMap[mod] !== undefined) permMap[mod] += act;
+          });
+          PERMS[r.name] = permMap;
+        }
+      });
+    }
+  } catch(e) { console.error('Settings data load error:', e); }
+  renderUsers();
+  renderPermissions();
+}
+loadSettingsData();
 
 function showTab(id, btn) {
   document.querySelectorAll('.tab-content').forEach(function(el){ el.classList.remove('active'); });
@@ -549,26 +649,40 @@ function closeAddUser() { document.getElementById('add-user-form').style.display
 
 function saveUser(e) {
   e.preventDefault();
-  USERS.push({
-    id: USERS.length + 1,
-    first: document.getElementById('u-first').value,
-    last: document.getElementById('u-last').value,
+  var userData = {
+    firstName: document.getElementById('u-first').value,
+    lastName: document.getElementById('u-last').value,
     email: document.getElementById('u-email').value,
     phone: document.getElementById('u-phone').value,
     role: document.getElementById('u-role').value,
-    active: true,
+    password: document.getElementById('u-pass').value,
+  };
+  apiFetch('/users', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  }).then(function(res) {
+    if (res) {
+      closeAddUser();
+      loadSettingsData();
+    }
+  }).catch(function(err) {
+    alert('Error creating user: ' + err.message);
   });
-  closeAddUser();
-  renderUsers();
 }
 
 function changeRole(id) {
   var u = USERS.find(function(x){ return x.id === id; });
   if (!u) return;
-  var newRole = prompt('Change role for ' + u.first + ' ' + u.last + '\n\nCurrent: ' + u.role + '\n\nOptions: Admin, Sales Manager, Sales Rep, Viewer', u.role);
+  var newRole = prompt('Change role for ' + u.first + ' ' + u.last + '\n\nCurrent: ' + u.role + '\n\nOptions: ' + ROLES.join(', '), u.role);
   if (newRole && ROLES.indexOf(newRole) >= 0) {
-    u.role = newRole;
-    renderUsers();
+    apiFetch('/users/' + id + '/role', {
+      method: 'PATCH',
+      body: JSON.stringify({ role: newRole }),
+    }).then(function() {
+      loadSettingsData();
+    }).catch(function(err) {
+      alert('Error changing role: ' + err.message);
+    });
   }
 }
 
@@ -577,7 +691,14 @@ function resetPw(id) {
   if (!u) return;
   var newPw = prompt('Set new temporary password for ' + u.first + ' ' + u.last + ':');
   if (newPw && newPw.length >= 8) {
-    alert('Password reset for ' + u.email + '. User must change on next login.');
+    apiFetch('/users/' + id + '/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ password: newPw }),
+    }).then(function() {
+      alert('Password reset for ' + u.email + '. User must change on next login.');
+    }).catch(function(err) {
+      alert('Error resetting password: ' + err.message);
+    });
   } else if (newPw) {
     alert('Password must be at least 8 characters');
   }
@@ -586,8 +707,14 @@ function resetPw(id) {
 function toggleActive(id) {
   var u = USERS.find(function(x){ return x.id === id; });
   if (!u) return;
-  u.active = !u.active;
-  renderUsers();
+  apiFetch('/users/' + id + '/status', {
+    method: 'PATCH',
+    body: JSON.stringify({ isActive: !u.active }),
+  }).then(function() {
+    loadSettingsData();
+  }).catch(function(err) {
+    alert('Error updating user status: ' + err.message);
+  });
 }
 
 function renderPermissions() {
@@ -617,8 +744,7 @@ function renderPermissions() {
   document.getElementById('perm-grid').style.gridTemplateColumns = '140px repeat(' + ROLES.length + ', 1fr)';
 }
 
-renderUsers();
-renderPermissions();
+// Initial render handled by loadSettingsData()
 
 // ── LINE Add-on ──
 function toggleLineAddon(cb) {
@@ -659,14 +785,19 @@ function saveLineConfig() {
   var token = document.getElementById('line-token').value;
   var secret = document.getElementById('line-secret').value;
   if (!token || !secret) { alert('กรุณากรอก Channel Access Token และ Channel Secret'); return; }
-  // Save to localStorage for demo (production: POST /line/configure)
-  localStorage.setItem('sf7-line-config', JSON.stringify({
-    token: token,
-    secret: secret,
-    name: document.getElementById('line-name').value || '@MyCompany',
-    enabled: true
-  }));
-  alert('✅ LINE OA configuration saved!\n\nRemember to set the Webhook URL in LINE Developers Console.');
+  apiFetch('/settings/line', {
+    method: 'PUT',
+    body: JSON.stringify({
+      channelAccessToken: token,
+      channelSecret: secret,
+      channelName: document.getElementById('line-name').value || '',
+      enabled: true,
+    }),
+  }).then(function(res) {
+    if (res) alert('✅ LINE OA configuration saved!\n\nRemember to set the Webhook URL in LINE Developers Console.');
+  }).catch(function(err) {
+    alert('Error saving LINE config: ' + err.message);
+  });
 }
 
 function disconnectLine() {

@@ -12,7 +12,7 @@ import { AuthService } from './auth.service';
 @Module({
   imports: [
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
+      secret: (() => { const s = process.env.JWT_SECRET; if (!s) throw new Error('JWT_SECRET env var is required'); return s; })(),
       signOptions: { expiresIn: '15m' },
     }),
     TypeOrmModule.forFeature([User, UserRole, RolePermission]),

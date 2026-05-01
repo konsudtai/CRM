@@ -10,6 +10,9 @@
 #     --password "MyPass@123" \
 #     --db-pass auto \
 #     --tenant "My Company"
+#
+#   --db-pass auto   → prompts you to enter password interactively
+#   --db-pass MyP@ss → uses the provided password directly
 # ============================================================
 
 set -e
@@ -47,7 +50,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --email     Admin login email"
       echo "  --name      Admin full name"
       echo "  --password  Admin login password"
-      echo "  --db-pass   Database password (or 'auto')"
+      echo "  --db-pass   Database password ('auto' to enter interactively)"
       echo "  --tenant    Company / tenant name"
       echo ""
       echo "OPTIONAL flags:"
@@ -80,8 +83,21 @@ fi
 
 # ── Auto-generate secrets ──
 if [ "$DB_PASSWORD" = "auto" ]; then
-  DB_PASSWORD=$(openssl rand -base64 16 | tr -d '/+=' | head -c 20)
-  echo "  DB password: $DB_PASSWORD"
+  echo ""
+  echo "  Enter database password (min 8 chars, no / + = @ \" spaces):"
+  read -s -p "  DB Password: " DB_PASSWORD
+  echo ""
+  if [ ${#DB_PASSWORD} -lt 8 ]; then
+    echo "ERROR: DB password must be at least 8 characters."
+    exit 1
+  fi
+  read -s -p "  Confirm DB Password: " DB_PASSWORD_CONFIRM
+  echo ""
+  if [ "$DB_PASSWORD" != "$DB_PASSWORD_CONFIRM" ]; then
+    echo "ERROR: Passwords do not match."
+    exit 1
+  fi
+  echo "  DB password set."
 fi
 [ -z "$JWT_SECRET" ] && JWT_SECRET=$(openssl rand -base64 32)
 
@@ -554,8 +570,8 @@ echo ""
 echo "  NEXT: Subscribe CloudFront Pro Plan (\$15/mo)"
 echo "    Console > CloudFront > $CLOUDFRONT_ID > Pricing plan > Pro"
 echo ""
-echo "  DB Password: $DB_PASSWORD"
-echo "  (save this — needed for RDS access)"
+echo "  DB Password: (as specified — keep it safe)"
+echo "  (needed for RDS access)"
 echo ""
 echo "============================================"
 echo "  Open: $CLOUDFRONT_URL"

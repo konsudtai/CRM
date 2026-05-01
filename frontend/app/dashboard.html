@@ -85,12 +85,33 @@
 <script>
 document.getElementById('nav').innerHTML=renderNav('dashboard');
 let P='month';
-const MD=[2.1,2.8,3.2,2.9,3.8,4.1,3.5,4.6,5.2,4.8,5.9,4.3];
+let KPI_DATA = { ...DEFAULT_KPI };
+let MD=Array(12).fill(0);
 const ML=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const OC={'New Lead':'#64748B','Qualification':'#0176D3','Needs Analysis':'#0B827C','Proposal':'#DD7A01','Negotiation':'#C23934','Closed Won':'#2E844A','Closed Lost':'#9CA3AF'};
-const OPPS_K={'New Lead':[{n:'CRM — Pornchai',c:'Pornchai Materials',a:320000,d:'30 Jun',o:'Manee'}],'Qualification':[{n:'Cloud POS — Thai Foods',c:'Thai Foods Group',a:680000,d:'15 May',o:'Wilai'},{n:'AI Platform — EL',c:'Eastern Logistics',a:950000,d:'20 May',o:'Arun'}],'Needs Analysis':[{n:'CRM+Support — Sukjai',c:'Sukjai Hospital',a:1200000,d:'31 May',o:'Arun'}],'Proposal':[{n:'CRM — ProClinic',c:'ProClinic Group',a:850000,d:'30 May',o:'Somchai'},{n:'ERP+CRM — Unique',c:'Unique Mfg',a:1800000,d:'10 Jun',o:'Somchai'}],'Negotiation':[{n:'Enterprise CRM — Srisomboon',c:'Srisomboon Group',a:2500000,d:'05 May',o:'Wilai'}],'Closed Won':[{n:'CRM — Petdee',c:'Petdee Intl',a:1800000,d:'25 Apr',o:'Somchai'}]};
-const CUSTS=[{n:'Srisomboon Group',c:'Khun Nattaya',s:'Active',r:6100000,l:'25 Apr'},{n:'Petdee International',c:'Khun Tanit',s:'Active',r:5400000,l:'22 Apr'},{n:'ProClinic Group',c:'Khun Nicha',s:'Active',r:4200000,l:'25 Apr'},{n:'Eastern Logistics',c:'Khun Apinya',s:'Renewal',r:3600000,l:'23 Apr'},{n:'Thai Foods Group',c:'Khun Somkit',s:'Active',r:2800000,l:'24 Apr'}];
-const ACTS=[{bg:'rgba(1,118,211,.08)',c:'#0176D3',lbl:'CL',title:'Call follow-up — ProClinic Group',who:'Somchai',when:'Today 10:30'},{bg:'rgba(11,130,124,.08)',c:'#0B827C',lbl:'EM',title:'Sent revised quotation — Unique Mfg',who:'Somchai',when:'Today 09:15'},{bg:'rgba(46,132,74,.08)',c:'#2E844A',lbl:'MT',title:'Meeting — Eastern Logistics',who:'Arun',when:'Yesterday 14:00'},{bg:'rgba(221,122,1,.08)',c:'#DD7A01',lbl:'NT',title:'Negotiation notes — Srisomboon',who:'Wilai',when:'Yesterday 11:30'},{bg:'rgba(194,57,52,.08)',c:'#C23934',lbl:'TK',title:'Urgent ticket — Eastern Logistics',who:'Support',when:'Yesterday 09:00'}];
+const OC={'New':'#1B96FF','Contacted':'#7F56D9','Qualified':'#0B827C','Proposal':'#DD7A01','Negotiation':'#C23934','Won':'#2E844A','Lost':'#939393'};
+let OPPS_K={New:[],Contacted:[],Qualified:[],Proposal:[],Negotiation:[],Won:[],Lost:[]};
+let CUSTS=[];
+let ACTS=[];
+
+// ── Load dashboard data from API ──
+async function loadDashboardData(){
+  try {
+    const [kpi, opps, customers, activities, revenue] = await Promise.all([
+      apiFetch('/dashboard/kpi?period=' + P).catch(()=>null),
+      apiFetch('/dashboard/opportunities').catch(()=>null),
+      apiFetch('/dashboard/customers').catch(()=>null),
+      apiFetch('/dashboard/activities').catch(()=>null),
+      apiFetch('/dashboard/revenue').catch(()=>null),
+    ]);
+    if (kpi) KPI_DATA = kpi;
+    if (opps) OPPS_K = opps;
+    if (customers) CUSTS = customers;
+    if (activities) ACTS = activities;
+    if (revenue && revenue.monthly) MD = revenue.monthly;
+  } catch(e) { console.error('Dashboard data load error:', e); }
+  renderAll();
+}
+loadDashboardData();
 const SV=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${{
   target:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
   dollar:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
@@ -104,7 +125,7 @@ const SV=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
   note:'<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>',
 }[k]}</svg>`;
 
-function setP(p,b){P=p;document.querySelectorAll('#pb .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderAll()}
+function setP(p,b){P=p;document.querySelectorAll('#pb .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');loadDashboardData()}
 
 function renderQA(){
   const items=[{l:'New Lead',c:'#0176D3',bg:'rgba(1,118,211,.06)',i:'lead',href:'leads.html'},{l:'Add Customer',c:'#2E844A',bg:'rgba(46,132,74,.06)',i:'users',href:'accounts.html'},{l:'Quotation',c:'#DD7A01',bg:'rgba(221,122,1,.06)',i:'doc',href:'quotations.html'},{l:'Log Call',c:'#7F56D9',bg:'rgba(127,86,217,.06)',i:'phone',href:'tasks.html'},{l:'Calendar',c:'#0B827C',bg:'rgba(11,130,124,.06)',i:'target',href:'calendar.html'},{l:'Products',c:'#C23934',bg:'rgba(194,57,52,.06)',i:'note',href:'products.html'}];
@@ -112,7 +133,7 @@ function renderQA(){
 }
 
 function renderKPIs(){
-  const k=MOCK_KPI[P],pct=Math.min((k.closed/k.target)*100,100);
+  const k=KPI_DATA[P]||DEFAULT_KPI[P],pct=Math.min((k.closed/(k.target||1))*100,100);
   const totalPipe=Object.values(OPPS_K).flat().reduce((s,o)=>s+o.a,0);
   const items=[
     {l:'Pipeline Value',v:fmt(totalPipe),c:'#0176D3',bg:'rgba(1,118,211,.06)',i:'target',tr:'+18%',d:'up',sub:'All stages',bar:72},
@@ -156,7 +177,7 @@ function renderTimeline(){
 }
 
 function renderAll(){renderQA();renderKPIs();renderPipeline();renderRevChart();renderKanban();renderCustomers();renderTimeline();initAnalyticsAgent()}
-renderAll();
+// Initial render handled by loadDashboardData()
 
 // ── Analytics Agent (floating widget — Dashboard only) ──
 function initAnalyticsAgent(){
@@ -226,24 +247,58 @@ function askAA(){
   var ty=document.createElement('div');ty.id='aa-ty';ty.style.cssText='padding:8px;align-self:flex-start;display:flex;gap:4px';
   ty.innerHTML='<span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:co-dot .6s ease infinite"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:co-dot .6s ease infinite;animation-delay:.1s"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:co-dot .6s ease infinite;animation-delay:.2s"></span>';
   document.getElementById('aa-msgs').appendChild(ty);
-  setTimeout(function(){var e=document.getElementById('aa-ty');if(e)e.remove();addAA('bot',getAAReply(q))},1500);
+
+  // Call Agent Service API (streaming)
+  var user=getUserProfile();
+  var agentApi=(window.__SF7_API_BASE__||'/api')+'/agents/stream';
+  var body=JSON.stringify({
+    message:q,
+    agentType:'analytics',
+    tenantId:user.tenantId||'default',
+    userId:user.id||'unknown',
+    userRole:user.role||'Sales Rep'
+  });
+
+  fetch(agentApi,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sf7_token')||'')},
+    body:body
+  }).then(function(res){
+    var e=document.getElementById('aa-ty');if(e)e.remove();
+    if(!res.ok||!res.body){addAA('bot','ขออภัยค่ะ เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ');return}
+
+    var reader=res.body.getReader();
+    var decoder=new TextDecoder();
+    var msgDiv=document.createElement('div');msgDiv.className='aa-msg bot';
+    document.getElementById('aa-msgs').appendChild(msgDiv);
+    var fullText='';
+
+    function readChunk(){
+      reader.read().then(function(result){
+        if(result.done){if(!fullText)msgDiv.innerHTML='ขออภัยค่ะ ไม่มีข้อมูลตอบกลับค่ะ';return}
+        var chunk=decoder.decode(result.value,{stream:true});
+        var lines=chunk.split('\n');
+        lines.forEach(function(line){
+          if(!line.startsWith('data: '))return;
+          var data=line.slice(6).trim();
+          if(data==='[DONE]')return;
+          try{
+            var evt=JSON.parse(data);
+            if(evt.type==='text'&&evt.content){fullText+=evt.content;msgDiv.innerHTML=fullText}
+            if(evt.type==='tool_start'){msgDiv.innerHTML=fullText+'<br><span style="font-size:10px;color:var(--text3)">📊 กำลังวิเคราะห์...</span>'}
+          }catch(ex){}
+        });
+        document.getElementById('aa-msgs').scrollTop=document.getElementById('aa-msgs').scrollHeight;
+        readChunk();
+      });
+    }
+    readChunk();
+  }).catch(function(err){
+    var e=document.getElementById('aa-ty');if(e)e.remove();
+    addAA('bot','ขออภัยค่ะ ไม่สามารถเชื่อมต่อ AI ได้ กรุณาลองใหม่ค่ะ');
+  });
 }
-function getAAReply(q){
-  var ql=q.toLowerCase();
-  if(ql.includes('forecast')||ql.includes('พยากรณ์')||ql.includes('เดือนหน้า'))
-    return '<strong>📈 Revenue Forecast</strong><br><br>จาก Pipeline ฿19.1M:<br>• Best: <strong>฿9.4M</strong><br>• Expected: <strong>฿6.2M</strong> (72%)<br>• Worst: ฿3.8M<br><br>ปัจจัยหลัก: ศรีสมบูรณ์ ฿3.2M (Negotiation)<br>ถ้าปิดได้ → ถึงเป้า 100%';
-  if(ql.includes('churn')||ql.includes('เสี่ยง')||ql.includes('หาย'))
-    return '<strong>⚠️ Churn Risk</strong><br><br>🔴 <strong>เพชรดี อินเตอร์</strong> — ไม่ติดต่อ 45 วัน, Inactive<br>🟡 <strong>หจก.พรชัย</strong> — ไม่ติดต่อ 30 วัน, revenue -20%<br><br>แนะนำ: โทรหา เพชรดี สัปดาห์นี้ค่ะ';
-  if(ql.includes('win rate')||ql.includes('conversion'))
-    return '<strong>📊 Win Rate</strong><br><br>New→Contacted: 85%<br>Contacted→Qualified: 60%<br>Qualified→Proposal: 71%<br>Proposal→Negotiation: <strong>55%</strong> ⚠️<br>Negotiation→Won: 67%<br><br>Overall: <strong>24.7%</strong><br>Bottleneck: Proposal→Negotiation';
-  if(ql.includes('เปรียบเทียบ')||ql.includes('ทีม')||ql.includes('rep'))
-    return '<strong>👥 Sales Performance</strong><br><br>⭐ สมชาย — ฿3.85M (77%) 14 deals<br>วิไล — ฿3.12M (78%) 11 deals<br>อรุณ — ฿2.48M (71%) 9 deals<br>⚠️ มณี — ฿1.95M (65%) 7 deals<br><br>แนะนำ: มณี ต้องการ coaching closing';
-  if(ql.includes('deal size')||ql.includes('avg'))
-    return '<strong>💰 Avg Deal Size</strong><br><br>รวม: <strong>฿278K</strong> (+6% MoM)<br><br>ตามอุตสาหกรรม:<br>เทคโนโลยี: ฿420K<br>ค้าปลีก: ฿310K<br>การผลิต: ฿280K<br>โลจิสติกส์: ฿250K<br>การแพทย์: ฿180K';
-  if(ql.includes('cycle')||ql.includes('ระยะเวลา'))
-    return '<strong>⏱️ Sales Cycle</strong><br><br>เฉลี่ย: <strong>28 วัน</strong><br><br>New→Contacted: 2 วัน<br>Contacted→Qualified: 5 วัน<br>Qualified→Proposal: 7 วัน<br>Proposal→Negotiation: <strong>8 วัน</strong> ⚠️ ช้าสุด<br>Negotiation→Won: 6 วัน<br><br>แนะนำ: ส่ง QT เร็วขึ้น + follow-up ภายใน 2 วัน';
-  return 'ถามได้เลยค่ะ เช่น:<br>• Forecast เดือนหน้า<br>• ลูกค้าที่เสี่ยงหาย<br>• Win rate แต่ละ stage<br>• เปรียบเทียบ Sales Rep<br>• Average deal size<br>• Sales cycle เฉลี่ย';
-}
+// getAAReply removed — now handled by Agent Service API via askAA()
 </script>
 </body>
 </html>

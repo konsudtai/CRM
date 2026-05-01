@@ -13,6 +13,7 @@ export interface Lead {
   source: string;
   status: string;
   assignedTo?: string;
+  aiScore?: number;
   tags: string[];
   createdAt: Date;
   updatedAt: Date;

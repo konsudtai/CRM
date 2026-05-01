@@ -395,6 +395,7 @@ CREATE TABLE leads (
   source        VARCHAR(100),
   status        VARCHAR(50) DEFAULT 'New',
   assigned_to   UUID REFERENCES users(id),
+  ai_score      INTEGER,                          -- AI Lead Score 0-100 (set by น้องขายไว)
   metadata      JSONB DEFAULT '{}',
   created_at    TIMESTAMPTZ DEFAULT NOW(),
   updated_at    TIMESTAMPTZ DEFAULT NOW()
