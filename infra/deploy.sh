@@ -149,6 +149,16 @@ if echo "$STACK_STATUS" | grep -qiE "ROLLBACK_COMPLETE|ROLLBACK_FAILED|DELETE_FA
     aws s3 rb "s3://$B" --force --region "$REGION" 2>/dev/null || true
   done
 
+  # Remove SNS subscriptions (must be done before deleting stack)
+  SNS_TOPIC_ARN=$(aws sns list-topics --region "$REGION" --query "Topics[?contains(TopicArn,'sf7-${ENV}-events-topic')].TopicArn" --output text 2>/dev/null || echo "")
+  if [ -n "$SNS_TOPIC_ARN" ] && [ "$SNS_TOPIC_ARN" != "None" ]; then
+    for SUB_ARN in $(aws sns list-subscriptions-by-topic --topic-arn "$SNS_TOPIC_ARN" --region "$REGION" --query 'Subscriptions[].SubscriptionArn' --output text 2>/dev/null || echo ""); do
+      if [ "$SUB_ARN" != "PendingConfirmation" ] && [ -n "$SUB_ARN" ]; then
+        aws sns unsubscribe --subscription-arn "$SUB_ARN" --region "$REGION" 2>/dev/null || true
+      fi
+    done
+  fi
+
   # Delete the failed stack
   aws cloudformation delete-stack --stack-name "$STACK_NAME" --region "$REGION" 2>/dev/null || true
   echo "  Waiting for cleanup (~5 min)..."
@@ -182,7 +192,7 @@ elif [ "$STACK_STATUS" = "DOES_NOT_EXIST" ]; then
   done
 
   # Check orphaned SQS queues
-  for Q in "sf7-${ENV}-events" "sf7-${ENV}-events-dlq"; do
+  for Q in "sf7-${ENV}-events" "sf7-${ENV}-events-dlq" "sf7-${ENV}-agent-events"; do
     Q_URL=$(aws sqs get-queue-url --queue-name "$Q" --region "$REGION" --query 'QueueUrl' --output text 2>/dev/null || echo "")
     if [ -n "$Q_URL" ] && [ "$Q_URL" != "None" ]; then
       echo "  Found orphaned queue: $Q — removing..."
@@ -191,8 +201,22 @@ elif [ "$STACK_STATUS" = "DOES_NOT_EXIST" ]; then
     fi
   done
 
+  # Check orphaned SNS topics
+  SNS_TOPIC_ARN=$(aws sns list-topics --region "$REGION" --query "Topics[?contains(TopicArn,'sf7-${ENV}-events-topic')].TopicArn" --output text 2>/dev/null || echo "")
+  if [ -n "$SNS_TOPIC_ARN" ] && [ "$SNS_TOPIC_ARN" != "None" ]; then
+    echo "  Found orphaned SNS topic: $SNS_TOPIC_ARN — removing subscriptions + topic..."
+    # Remove all subscriptions first
+    for SUB_ARN in $(aws sns list-subscriptions-by-topic --topic-arn "$SNS_TOPIC_ARN" --region "$REGION" --query 'Subscriptions[].SubscriptionArn' --output text 2>/dev/null || echo ""); do
+      if [ "$SUB_ARN" != "PendingConfirmation" ] && [ -n "$SUB_ARN" ]; then
+        aws sns unsubscribe --subscription-arn "$SUB_ARN" --region "$REGION" 2>/dev/null || true
+      fi
+    done
+    aws sns delete-topic --topic-arn "$SNS_TOPIC_ARN" --region "$REGION" 2>/dev/null || true
+    ORPHAN_FOUND=true
+  fi
+
   # Check orphaned Lambda functions
-  for FN in "sf7-${ENV}-auth" "sf7-${ENV}-crm" "sf7-${ENV}-sales" "sf7-${ENV}-quotation" "sf7-${ENV}-notification" "sf7-${ENV}-db-init"; do
+  for FN in "sf7-${ENV}-auth" "sf7-${ENV}-crm" "sf7-${ENV}-sales" "sf7-${ENV}-quotation" "sf7-${ENV}-notification" "sf7-${ENV}-db-init" "sf7-${ENV}-agent"; do
     if aws lambda get-function --function-name "$FN" --region "$REGION" 2>/dev/null | grep -q "FunctionArn"; then
       echo "  Found orphaned Lambda: $FN — removing..."
       aws lambda delete-function --function-name "$FN" --region "$REGION" 2>/dev/null || true
@@ -209,9 +233,33 @@ elif [ "$STACK_STATUS" = "DOES_NOT_EXIST" ]; then
     ORPHAN_FOUND=true
   fi
 
+  # Check orphaned IAM Roles (CloudFormation can't create if name exists)
+  for ROLE in "sf7-${ENV}-lambda-role-${STACK_NAME}" "sf7-${ENV}-rds-proxy-role-${STACK_NAME}" "sf7-${ENV}-backup-role-${STACK_NAME}"; do
+    if aws iam get-role --role-name "$ROLE" 2>/dev/null | grep -q "RoleName"; then
+      echo "  Found orphaned IAM Role: $ROLE — removing policies + role..."
+      # Detach managed policies
+      for POLICY_ARN in $(aws iam list-attached-role-policies --role-name "$ROLE" --query 'AttachedPolicies[].PolicyArn' --output text 2>/dev/null || echo ""); do
+        aws iam detach-role-policy --role-name "$ROLE" --policy-arn "$POLICY_ARN" 2>/dev/null || true
+      done
+      # Delete inline policies
+      for POLICY_NAME in $(aws iam list-role-policies --role-name "$ROLE" --query 'PolicyNames[]' --output text 2>/dev/null || echo ""); do
+        aws iam delete-role-policy --role-name "$ROLE" --policy-name "$POLICY_NAME" 2>/dev/null || true
+      done
+      aws iam delete-role --role-name "$ROLE" 2>/dev/null || true
+      ORPHAN_FOUND=true
+    fi
+  done
+
+  # Check orphaned RDS Proxy
+  if aws rds describe-db-proxies --db-proxy-name "sf7-${ENV}-proxy" --region "$REGION" 2>/dev/null | grep -q "DBProxyName"; then
+    echo "  Found orphaned RDS Proxy: sf7-${ENV}-proxy — removing..."
+    aws rds delete-db-proxy --db-proxy-name "sf7-${ENV}-proxy" --region "$REGION" 2>/dev/null || true
+    ORPHAN_FOUND=true
+  fi
+
   if [ "$ORPHAN_FOUND" = true ]; then
-    echo "  Waiting 30s for cleanup to propagate..."
-    sleep 30
+    echo "  Waiting 60s for cleanup to propagate..."
+    sleep 60
   fi
 
 else
