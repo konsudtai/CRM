@@ -132,49 +132,51 @@ CRM/
 
 ### One-Command Deploy
 
-Open [AWS CloudShell](https://console.aws.amazon.com/cloudshell/) in region `ap-southeast-7`, then run:
-
-**Step 1: Deploy CRM (Thailand)**
-```bash
-git clone https://github.com/konsudtai/CRM.git && cd CRM/infra && bash deploy.sh
-```
-
-**Step 2: Deploy AI Resources (Singapore — recommended)**
-```bash
-bash deploy-ai.sh
-```
-
-Or specify a different region:
-```bash
-bash deploy-ai.sh --region us-east-1
-```
-
-Or pass everything as flags in one line:
+Open [AWS CloudShell](https://console.aws.amazon.com/cloudshell/), then run:
 
 ```bash
 git clone https://github.com/konsudtai/CRM.git && cd CRM/infra && bash deploy.sh \
   --email    admin@mycompany.com \
-  --name     "John Doe" \
-  --password "MyAdminPass@123" \
-  --db-pass  "MyDbPass@456" \
-  --tenant   "My Company Ltd"
+  --name     "Somchai Jaidee" \
+  --password "MyPass@123" \
+  --db-pass  auto \
+  --tenant   "My Company Ltd" \
+  --region   ap-southeast-7
 ```
 
-Available flags:
+All flags are **required**:
+
+| Flag | Example | Description |
+|------|---------|-------------|
+| `--email` | `admin@company.com` | Admin login email |
+| `--name` | `"Somchai Jaidee"` | Admin full name |
+| `--password` | `"Pass@123"` | Admin login password |
+| `--db-pass` | `auto` or `"MyDbPass!"` | Database password (`auto` = generate random) |
+| `--tenant` | `"My Company Ltd"` | Company / tenant name |
+| `--region` | `ap-southeast-7` | CRM region |
+
+Optional flags:
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--email` | `admin@salesfast7.com` | Admin login email |
-| `--name` | `System Admin` | Admin full name (first + last) |
-| `--password` | `Admin@1234` | Admin login password |
-| `--db-pass` | Auto-generate | PostgreSQL master password |
+| `--ai-region` | `ap-southeast-1` (Singapore, recommended) | Bedrock AI region |
 | `--jwt` | Auto-generate | JWT signing key |
-| `--tenant` | `SalesFAST 7` | Company / tenant name |
-| `--region` | `ap-southeast-7` | AWS region |
 | `--stack` | `salesfast7-prod` | CloudFormation stack name |
-| `--help` | | Show usage |
 
-`--db-pass` and `--jwt` are auto-generated if not specified (recommended). Values are stored in AWS Secrets Manager automatically.
+The script deploys in 2 phases automatically:
+```
+Phase 1: CRM Stack (your --region)
+  [1/8] CloudFormation (VPC, RDS, Lambda, API GW, S3, CloudFront, WAF)
+  [2/8] Get outputs (URLs, endpoints)
+  [3/8] Generate seed.sql with your admin credentials
+  [4/8] Upload frontend to S3
+  [5/8] Invalidate CloudFront cache
+
+Phase 2: AI Stack (--ai-region, default Singapore)
+  [6/8] CloudFormation (S3 KB bucket, IAM roles)
+  [7/8] Get AI outputs
+  [8/8] Upload sample Knowledge Base documents
+```
 
 ### What the Deploy Script Does
 

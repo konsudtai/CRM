@@ -1,143 +1,142 @@
 #!/bin/bash
 # ============================================================
-# SalesFAST 7 — Deploy via CloudShell
+# SalesFAST 7 — Full Platform Deployment
+# Deploys CRM + AI Resources in one command
 #
-# USAGE — One-liner (all flags optional, defaults shown):
-#
+# USAGE:
 #   bash deploy.sh \
-#     --email    admin@company.com \
-#     --name     "John Doe" \
-#     --password "MyAdminPass!" \
-#     --db-pass  "MyDbPass123!" \
-#     --tenant   "My Company" \
-#     --region   ap-southeast-7
+#     --email admin@company.com \
+#     --name "John Doe" \
+#     --password "Pass@123" \
+#     --db-pass "DbPass@456" \
+#     --tenant "My Company" \
+#     --region ap-southeast-7 \
+#     --ai-region ap-southeast-1
 #
-# Or just: bash deploy.sh   (interactive prompts for everything)
+# All flags are REQUIRED (except --ai-region which defaults to ap-southeast-1)
 # ============================================================
 
 set -e
 
 # ── Defaults ──
 STACK_NAME="salesfast7-prod"
-REGION="${AWS_REGION:-ap-southeast-7}"
+AI_STACK_NAME="salesfast7-ai-prod"
 ENV="prod"
+REGION=""
+AI_REGION="ap-southeast-1"
+ADMIN_EMAIL=""
+ADMIN_PASSWORD=""
+ADMIN_FULLNAME=""
+DB_PASSWORD=""
+JWT_SECRET=""
+TENANT_NAME=""
 
 # ── Parse CLI flags ──
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --email)      ADMIN_EMAIL="$2";      shift 2 ;;
-    --name)       ADMIN_FULLNAME="$2";   shift 2 ;;
-    --password)   ADMIN_PASSWORD="$2";   shift 2 ;;
-    --db-pass)    DB_PASSWORD="$2";      shift 2 ;;
-    --jwt)        JWT_SECRET="$2";       shift 2 ;;
-    --tenant)     TENANT_NAME="$2";      shift 2 ;;
-    --region)     REGION="$2";           shift 2 ;;
-    --stack)      STACK_NAME="$2";       shift 2 ;;
+    --email)      ADMIN_EMAIL="$2";    shift 2 ;;
+    --name)       ADMIN_FULLNAME="$2"; shift 2 ;;
+    --password)   ADMIN_PASSWORD="$2"; shift 2 ;;
+    --db-pass)    DB_PASSWORD="$2";    shift 2 ;;
+    --jwt)        JWT_SECRET="$2";     shift 2 ;;
+    --tenant)     TENANT_NAME="$2";    shift 2 ;;
+    --region)     REGION="$2";         shift 2 ;;
+    --ai-region)  AI_REGION="$2";      shift 2 ;;
+    --stack)      STACK_NAME="$2";     shift 2 ;;
     --help|-h)
       echo ""
-      echo "SalesFAST 7 — Deploy Script"
+      echo "SalesFAST 7 — Full Platform Deployment"
       echo ""
-      echo "Usage:"
-      echo "  bash deploy.sh [OPTIONS]"
+      echo "REQUIRED flags:"
+      echo "  --email     <email>     Admin login email"
+      echo "  --name      <fullname>  Admin full name"
+      echo "  --password  <pass>      Admin login password"
+      echo "  --db-pass   <pass>      Database password (or 'auto' to generate)"
+      echo "  --tenant    <name>      Company / tenant name"
+      echo "  --region    <region>    CRM region (e.g. ap-southeast-7)"
       echo ""
-      echo "Options:"
-      echo "  --email     <email>     Admin login email     (default: admin@salesfast7.com)"
-      echo "  --name      <fullname>  Admin full name       (default: System Admin)"
-      echo "  --password  <pass>      Admin login password  (default: Admin@1234)"
-      echo "  --db-pass   <pass>      Database password     (default: auto-generate)"
-      echo "  --jwt       <secret>    JWT secret key        (default: auto-generate)"
-      echo "  --tenant    <name>      Company/tenant name   (default: SalesFAST 7)"
-      echo "  --region    <region>    AWS region            (default: ap-southeast-7)"
-      echo "  --stack     <name>      CloudFormation stack  (default: salesfast7-prod)"
+      echo "OPTIONAL flags:"
+      echo "  --ai-region <region>    AI/Bedrock region (default: ap-southeast-1)"
+      echo "  --jwt       <secret>    JWT secret (default: auto-generate)"
+      echo "  --stack     <name>      Stack name (default: salesfast7-prod)"
       echo ""
-      echo "Examples:"
-      echo "  # Interactive (prompts for all inputs)"
-      echo "  bash deploy.sh"
-      echo ""
-      echo "  # One-liner with all options"
-      echo "  bash deploy.sh --email admin@mycompany.com --name 'John Doe' --password 'Pass@123' --tenant 'My Company'"
-      echo ""
-      echo "  # Minimal (auto-generate DB password and JWT)"
-      echo "  bash deploy.sh --email admin@mycompany.com --name 'John Doe' --password 'Pass@123'"
+      echo "EXAMPLE:"
+      echo "  bash deploy.sh \\"
+      echo "    --email admin@mycompany.com \\"
+      echo "    --name 'Somchai Jaidee' \\"
+      echo "    --password 'MyPass@123' \\"
+      echo "    --db-pass auto \\"
+      echo "    --tenant 'My Company Ltd' \\"
+      echo "    --region ap-southeast-7"
       echo ""
       exit 0
       ;;
-    *)
-      echo "Unknown option: $1  (use --help for usage)"
-      exit 1
-      ;;
+    *) echo "Unknown option: $1 (use --help)"; exit 1 ;;
   esac
 done
 
-# ── Split full name into first/last if --name was used ──
-if [ -n "$ADMIN_FULLNAME" ]; then
-  ADMIN_FIRST_NAME=$(echo "$ADMIN_FULLNAME" | awk '{print $1}')
-  ADMIN_LAST_NAME=$(echo "$ADMIN_FULLNAME" | awk '{$1=""; print $0}' | xargs)
-  [ -z "$ADMIN_LAST_NAME" ] && ADMIN_LAST_NAME="."
+# ── Validate REQUIRED fields ──
+MISSING=""
+[ -z "$ADMIN_EMAIL" ]    && MISSING="$MISSING --email"
+[ -z "$ADMIN_FULLNAME" ] && MISSING="$MISSING --name"
+[ -z "$ADMIN_PASSWORD" ] && MISSING="$MISSING --password"
+[ -z "$DB_PASSWORD" ]    && MISSING="$MISSING --db-pass"
+[ -z "$TENANT_NAME" ]    && MISSING="$MISSING --tenant"
+[ -z "$REGION" ]         && MISSING="$MISSING --region"
+
+if [ -n "$MISSING" ]; then
+  echo ""
+  echo "ERROR: Missing required flags:$MISSING"
+  echo ""
+  echo "Usage:"
+  echo "  bash deploy.sh \\"
+  echo "    --email admin@company.com \\"
+  echo "    --name 'John Doe' \\"
+  echo "    --password 'Pass@123' \\"
+  echo "    --db-pass auto \\"
+  echo "    --tenant 'My Company' \\"
+  echo "    --region ap-southeast-7"
+  echo ""
+  echo "Run 'bash deploy.sh --help' for all options."
+  exit 1
 fi
 
-echo ""
-echo "============================================"
-echo "  SalesFAST 7 — Deployment"
-echo "  Region: $REGION  |  Stack: $STACK_NAME"
-echo "============================================"
-echo ""
-
-# ── Collect missing values interactively ──
-echo "--- Infrastructure Credentials ---"
-
-if [ -z "$DB_PASSWORD" ]; then
-  echo "  Generate random DB password? (Y/n)"
-  read -r GEN_DB
-  if [ "$GEN_DB" = "n" ] || [ "$GEN_DB" = "N" ]; then
-    read -sp "  Enter DB password (min 8 chars): " DB_PASSWORD; echo ""
-  else
-    DB_PASSWORD=$(openssl rand -base64 16 | tr -d '/+=' | head -c 20)
-    echo "  DB password: $DB_PASSWORD  (saved to AWS Secrets Manager)"
-  fi
+# ── Auto-generate secrets ──
+if [ "$DB_PASSWORD" = "auto" ]; then
+  DB_PASSWORD=$(openssl rand -base64 16 | tr -d '/+=' | head -c 20)
+  echo "DB password auto-generated: $DB_PASSWORD"
 fi
-
 if [ -z "$JWT_SECRET" ]; then
   JWT_SECRET=$(openssl rand -base64 32)
-  echo "  JWT secret:  auto-generated  (saved to AWS Secrets Manager)"
 fi
+
+# ── Split full name ──
+ADMIN_FIRST_NAME=$(echo "$ADMIN_FULLNAME" | awk '{print $1}')
+ADMIN_LAST_NAME=$(echo "$ADMIN_FULLNAME" | awk '{$1=""; print $0}' | xargs)
+[ -z "$ADMIN_LAST_NAME" ] && ADMIN_LAST_NAME="."
 
 echo ""
-echo "--- Admin Account ---"
-
-if [ -z "$ADMIN_EMAIL" ]; then
-  read -p "  Admin email [admin@salesfast7.com]: " ADMIN_EMAIL
-  ADMIN_EMAIL="${ADMIN_EMAIL:-admin@salesfast7.com}"
-fi
-
-if [ -z "$ADMIN_PASSWORD" ]; then
-  read -sp "  Admin password [Admin@1234]: " ADMIN_PASSWORD; echo ""
-  ADMIN_PASSWORD="${ADMIN_PASSWORD:-Admin@1234}"
-fi
-
-if [ -z "$ADMIN_FIRST_NAME" ]; then
-  read -p "  First name [System]: " ADMIN_FIRST_NAME
-  ADMIN_FIRST_NAME="${ADMIN_FIRST_NAME:-System}"
-fi
-
-if [ -z "$ADMIN_LAST_NAME" ]; then
-  read -p "  Last name [Admin]: " ADMIN_LAST_NAME
-  ADMIN_LAST_NAME="${ADMIN_LAST_NAME:-Admin}"
-fi
-
-if [ -z "$TENANT_NAME" ]; then
-  read -p "  Company name [SalesFAST 7]: " TENANT_NAME
-  TENANT_NAME="${TENANT_NAME:-SalesFAST 7}"
-fi
-
+echo "============================================"
+echo "  SalesFAST 7 — Full Deployment"
+echo "============================================"
 echo ""
-echo "  Email:    $ADMIN_EMAIL"
-echo "  Name:     $ADMIN_FIRST_NAME $ADMIN_LAST_NAME"
-echo "  Tenant:   $TENANT_NAME"
+echo "  CRM Region:  $REGION"
+echo "  AI Region:   $AI_REGION (Bedrock)"
+echo "  Admin:       $ADMIN_EMAIL ($ADMIN_FULLNAME)"
+echo "  Tenant:      $TENANT_NAME"
+echo "  Stack:       $STACK_NAME"
 echo ""
 
-# ── [1/7] Deploy CloudFormation ──
-echo "[1/7] Deploying CloudFormation stack..."
+# ══════════════════════════════════════════════════════════
+# PHASE 1: Deploy CRM Stack
+# ══════════════════════════════════════════════════════════
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  PHASE 1: CRM Stack ($REGION)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+echo "[1/8] Deploying CloudFormation stack..."
 aws cloudformation deploy \
   --template-file cloudformation.yaml \
   --stack-name "$STACK_NAME" \
@@ -148,10 +147,9 @@ aws cloudformation deploy \
     DBPassword="$DB_PASSWORD" \
     JWTSecret="$JWT_SECRET" \
   --no-fail-on-empty-changeset
-echo "  Stack deployed."
+echo "  Done."
 
-# ── [2/7] Get outputs ──
-echo "[2/7] Getting stack outputs..."
+echo "[2/8] Getting stack outputs..."
 _get() {
   aws cloudformation describe-stacks \
     --stack-name "$STACK_NAME" --region "$REGION" \
@@ -164,119 +162,132 @@ CLOUDFRONT_URL=$(_get CloudFrontUrl)
 CLOUDFRONT_ID=$(_get CloudFrontDistributionId)
 DB_ENDPOINT=$(_get DatabaseEndpoint)
 PROXY_ENDPOINT=$(_get RDSProxyEndpoint)
+echo "  CloudFront: $CLOUDFRONT_URL"
+echo "  API:        $API_URL"
+echo "  DB:         $DB_ENDPOINT"
 
-echo "  Website:  $CLOUDFRONT_URL"
-echo "  API:      $API_URL"
-echo "  DB:       $DB_ENDPOINT"
-echo "  Proxy:    $PROXY_ENDPOINT"
-
-# ── [3/7] Generate seed.sql ──
-echo "[3/7] Generating seed data..."
-
-# Hash password — try Node.js first, then Python
+echo "[3/8] Generating seed data..."
 ADMIN_HASH=""
-ADMIN_HASH=$(node -e "
-try {
-  const b = require('bcrypt');
-  b.hash(process.argv[1], 12).then(h => { process.stdout.write(h); process.exit(0); });
-} catch(e) { process.exit(1); }
-" "$ADMIN_PASSWORD" 2>/dev/null) || true
-
+ADMIN_HASH=$(node -e "try{const b=require('bcrypt');b.hash(process.argv[1],12).then(h=>{process.stdout.write(h);process.exit(0)})}catch(e){process.exit(1)}" "$ADMIN_PASSWORD" 2>/dev/null) || true
 if [ -z "$ADMIN_HASH" ]; then
-  ADMIN_HASH=$(python3 -c "
-import sys
-try:
-    import bcrypt
-    h = bcrypt.hashpw(sys.argv[1].encode(), bcrypt.gensalt(12)).decode()
-    print(h, end='')
-except ImportError:
-    sys.exit(1)
-" "$ADMIN_PASSWORD" 2>/dev/null) || true
+  ADMIN_HASH=$(python3 -c "import sys;exec('try:\n import bcrypt\n print(bcrypt.hashpw(sys.argv[1].encode(),bcrypt.gensalt(12)).decode(),end=\"\")\nexcept:\n sys.exit(1)')" "$ADMIN_PASSWORD" 2>/dev/null) || true
 fi
-
 if [ -z "$ADMIN_HASH" ]; then
-  echo "  WARNING: bcrypt not available — using default hash (Admin@1234)"
   ADMIN_HASH='$2b$12$LJ3m4ys3Lk0TSwMBQWJBaeQBfMQcfNpQOPKfMFHJFLDqxGMmVqHXe'
+  echo "  WARNING: bcrypt not available, using default hash"
 fi
-
 DB_DIR="../database"
 [ ! -d "$DB_DIR" ] && DB_DIR="database"
-
-TENANT_SQL=$(echo "$TENANT_NAME"    | sed "s/'/''/g")
-FIRST_SQL=$(echo "$ADMIN_FIRST_NAME" | sed "s/'/''/g")
-LAST_SQL=$(echo "$ADMIN_LAST_NAME"   | sed "s/'/''/g")
-
 sed \
   -e "s|__ADMIN_EMAIL__|${ADMIN_EMAIL}|g" \
   -e "s|__ADMIN_PASSWORD_HASH__|${ADMIN_HASH}|g" \
-  -e "s|__ADMIN_FIRST_NAME__|${FIRST_SQL}|g" \
-  -e "s|__ADMIN_LAST_NAME__|${LAST_SQL}|g" \
-  -e "s|__TENANT_NAME__|${TENANT_SQL}|g" \
+  -e "s|__ADMIN_FIRST_NAME__|$(echo "$ADMIN_FIRST_NAME" | sed "s/'/''/g")|g" \
+  -e "s|__ADMIN_LAST_NAME__|$(echo "$ADMIN_LAST_NAME" | sed "s/'/''/g")|g" \
+  -e "s|__TENANT_NAME__|$(echo "$TENANT_NAME" | sed "s/'/''/g")|g" \
   "$DB_DIR/seed.sql" > /tmp/sf7-seed-generated.sql
+echo "  Seed generated: $ADMIN_EMAIL"
 
-echo "  Seed generated: /tmp/sf7-seed-generated.sql"
-
-# ── [4/7] Upload frontend ──
-echo "[4/7] Uploading frontend to S3..."
+echo "[4/8] Uploading frontend..."
 FRONTEND_DIR="../frontend"
 [ ! -d "$FRONTEND_DIR" ] && FRONTEND_DIR="frontend"
-
 if [ -d "$FRONTEND_DIR" ]; then
   aws s3 sync "$FRONTEND_DIR" "s3://$FRONTEND_BUCKET" \
     --region "$REGION" --delete --cache-control "max-age=3600" --exclude ".DS_Store"
-
   for EXT in html css js; do
-    case $EXT in
-      html) CT="text/html" ;;
-      css)  CT="text/css" ;;
-      js)   CT="application/javascript" ;;
-    esac
+    case $EXT in html) CT="text/html";; css) CT="text/css";; js) CT="application/javascript";; esac
     aws s3 cp "s3://$FRONTEND_BUCKET" "s3://$FRONTEND_BUCKET" \
       --recursive --region "$REGION" --content-type "$CT" \
       --exclude "*" --include "*.$EXT" --metadata-directive REPLACE
   done
   echo "  Frontend uploaded."
-else
-  echo "  Frontend directory not found — skipping."
 fi
 
-# ── [5/7] Invalidate CloudFront ──
-echo "[5/7] Invalidating CloudFront cache..."
+echo "[5/8] Invalidating CloudFront cache..."
 if [ -n "$CLOUDFRONT_ID" ] && [ "$CLOUDFRONT_ID" != "None" ]; then
-  aws cloudfront create-invalidation \
-    --distribution-id "$CLOUDFRONT_ID" --paths "/*" \
-    --query 'Invalidation.Id' --output text
+  aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_ID" --paths "/*" --query 'Invalidation.Id' --output text
   echo "  Cache invalidated."
 fi
 
-# ── [6/7] Database init instructions ──
-echo "[6/7] Database ready — initialize with:"
+# ══════════════════════════════════════════════════════════
+# PHASE 2: Deploy AI Stack
+# ══════════════════════════════════════════════════════════
+
 echo ""
-echo "  psql -h $DB_ENDPOINT -U salesfast7 -d salesfast7 < $DB_DIR/schema.sql"
-echo "  psql -h $DB_ENDPOINT -U salesfast7 -d salesfast7 < /tmp/sf7-seed-generated.sql"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  PHASE 2: AI Stack ($AI_REGION)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# ── [7/7] Done ──
-echo "[7/7] Done!"
+echo "[6/8] Deploying AI resources to $AI_REGION..."
+aws cloudformation deploy \
+  --template-file cloudformation-ai.yaml \
+  --stack-name "$AI_STACK_NAME" \
+  --region "$AI_REGION" \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --parameter-overrides \
+    Environment="$ENV" \
+    CRMStackName="$STACK_NAME" \
+    CRMRegion="$REGION" \
+  --no-fail-on-empty-changeset
+echo "  AI stack deployed."
+
+echo "[7/8] Getting AI outputs..."
+_getai() {
+  aws cloudformation describe-stacks \
+    --stack-name "$AI_STACK_NAME" --region "$AI_REGION" \
+    --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" \
+    --output text
+}
+KB_BUCKET=$(_getai KBBucketName)
+echo "  KB Bucket: $KB_BUCKET"
+
+echo "[8/8] Uploading sample KB documents..."
+cat > /tmp/sf7-company.md << 'EOF'
+# Company Profile
+Replace this with your actual company information.
+EOF
+cat > /tmp/sf7-faq.md << 'EOF'
+# FAQ
+Q: How long does installation take?
+A: 2-4 weeks depending on business size.
+EOF
+aws s3 cp /tmp/sf7-company.md "s3://$KB_BUCKET/company/" --region "$AI_REGION" 2>/dev/null
+aws s3 cp /tmp/sf7-faq.md "s3://$KB_BUCKET/faq/" --region "$AI_REGION" 2>/dev/null
+echo "  Sample documents uploaded."
+
+# ══════════════════════════════════════════════════════════
+# SUMMARY
+# ══════════════════════════════════════════════════════════
+
 echo ""
 echo "============================================"
 echo "  SalesFAST 7 — Deployed!"
 echo "============================================"
 echo ""
-echo "  Website:  $CLOUDFRONT_URL"
-echo "  API:      $API_URL"
-echo "  DB:       $DB_ENDPOINT"
-echo "  Proxy:    $PROXY_ENDPOINT"
+echo "  CRM:"
+echo "    Website:  $CLOUDFRONT_URL"
+echo "    API:      $API_URL"
+echo "    DB:       $DB_ENDPOINT"
+echo "    Proxy:    $PROXY_ENDPOINT"
+echo "    Region:   $REGION"
 echo ""
-echo "  Login:"
+echo "  AI:"
+echo "    Region:   $AI_REGION"
+echo "    KB:       $KB_BUCKET"
+echo ""
+echo "  Admin:"
 echo "    Email:    $ADMIN_EMAIL"
-echo "    Password: (as configured)"
+echo "    Name:     $ADMIN_FULLNAME"
 echo "    Tenant:   $TENANT_NAME"
 echo ""
-echo "  Next steps:"
-echo "  1. Run database init commands above"
-echo "  2. Deploy Lambda code (replace placeholder functions)"
-echo "  3. (Optional) Add custom domain to CloudFront"
-echo "  4. (Optional) Subscribe CloudFront Flat Rate PRO"
-echo "     AWS Console > CloudFront > Savings Bundle"
+echo "  Database Init (run manually):"
+echo "    psql -h $DB_ENDPOINT -U salesfast7 -d salesfast7 < $DB_DIR/schema.sql"
+echo "    psql -h $DB_ENDPOINT -U salesfast7 -d salesfast7 < /tmp/sf7-seed-generated.sql"
+echo ""
+echo "  Bedrock Setup (do in AWS Console):"
+echo "    1. Open Bedrock Console in $AI_REGION"
+echo "    2. Create Knowledge Base → S3: $KB_BUCKET"
+echo "    3. Create 3 Agents (Admin AI, น้องขายไว, น้องวิ)"
+echo "    4. Enter IDs in CRM Settings > AI Configuration"
+echo ""
 echo "============================================"
