@@ -228,7 +228,7 @@ psql -h <RDS_ENDPOINT> -U salesfast7 -d salesfast7 < /tmp/sf7-seed-generated.sql
 | VPC Endpoints | 3 interface endpoints (S3, SQS, Secrets Manager) — replaces NAT Gateway | $22.00 |
 | RDS Proxy | Connection pooling — 2 vCPU × $0.015/hr × 730h | $15.00 |
 | CloudFront | Flat Rate PRO plan, OAC, HTTP/2+3, security headers | $10.00 |
-| WAF v2 | WebACL + 4 managed rules (rate limit, SQLi, XSS, bad bots) | $7.00 |
+| CloudFront Flat Rate | CDN + WAF + DDoS + DNS + TLS + Logging (included) | $10.00 |
 | AWS Backup | Daily snapshots, 7-day retention — RDS + S3 files (09:00 TH) | $2.00 |
 | CloudWatch | Logs + VPC Flow Logs (30-day retention) + 3 security alarms | $2.00 |
 | Lambda | 5 functions × 1024MB, ~100K req/month | $2.00 |
@@ -237,7 +237,7 @@ psql -h <RDS_ENDPOINT> -U salesfast7 -d salesfast7 < /tmp/sf7-seed-generated.sql
 | Secrets Manager | 2 secrets (DB credentials + JWT) | $1.00 |
 | SQS | ~50K messages + DLQ | $0.50 |
 | DynamoDB | 2 tables (chat history + AI state), on-demand, encrypted | $1.00 |
-| **Total** | | **~$121/mo** |
+| **Total** | | **~$114/mo** |
 
 **Cost Optimizations Applied:**
 - No NAT Gateway — saves $32/month, uses VPC Endpoints instead

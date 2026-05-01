@@ -10,7 +10,6 @@
 | RDS Proxy | Connection pooling (2 vCPU × $0.015/hr) | $15 |
 | VPC Endpoints | 3 (S3, SQS, Secrets Manager) | $22 |
 | CloudFront | Flat Rate PRO, OAC + API proxy | $10 |
-| WAF v2 | WebACL + 4 managed rules | $7 |
 | AWS Backup | Daily snapshots, 7-day retention (RDS + S3) | $2 |
 | CloudWatch Logs | basic + VPC Flow Logs | $2 |
 | Lambda (5 functions) | 1024MB, ~100K invocations | $2 |
@@ -19,7 +18,7 @@
 | Secrets Manager | 2 secrets | $1 |
 | SQS | ~50K messages | $0.50 |
 | DynamoDB | 2 tables (chat history + AI state), on-demand | $1 |
-| **Total** | | **~$121/mo** |
+| **Total** | | **~$114/mo** |
 
 No NAT Gateway ($32/mo saved) — uses VPC endpoints instead.
 
