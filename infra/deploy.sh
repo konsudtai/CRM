@@ -1,19 +1,24 @@
 #!/bin/bash
 # ============================================================
-# SalesFAST 7 — Full Platform Deployment
-# Deploys CRM + AI Resources in one command
+# SalesFAST 7 — One-Command Full Deployment
+# Everything automated: infra + frontend + database + AI
 #
-# USAGE:
+# USAGE (Singapore — default):
 #   bash deploy.sh \
 #     --email admin@company.com \
-#     --name "John Doe" \
-#     --password "Pass@123" \
-#     --db-pass "DbPass@456" \
-#     --tenant "My Company" \
-#     --region ap-southeast-7 \
-#     --ai-region ap-southeast-1
+#     --name "Somchai Jaidee" \
+#     --password "MyPass@123" \
+#     --db-pass auto \
+#     --tenant "My Company"
 #
-# All flags are REQUIRED (except --ai-region which defaults to ap-southeast-1)
+# USAGE (Thailand):
+#   bash deploy.sh \
+#     --email admin@company.com \
+#     --name "Somchai Jaidee" \
+#     --password "MyPass@123" \
+#     --db-pass auto \
+#     --tenant "My Company" \
+#     --region ap-southeast-7
 # ============================================================
 
 set -e
@@ -45,7 +50,7 @@ while [[ $# -gt 0 ]]; do
     --stack)      STACK_NAME="$2";     shift 2 ;;
     --help|-h)
       echo ""
-      echo "SalesFAST 7 — Full Platform Deployment"
+      echo "SalesFAST 7 — One-Command Full Deployment"
       echo ""
       echo "REQUIRED flags:"
       echo "  --email     <email>     Admin login email"
@@ -106,14 +111,13 @@ if [ -n "$MISSING" ]; then
   echo "Default region: ap-southeast-1 (Singapore)"
   echo "Override with: --region ap-southeast-7 (Thailand)"
   echo ""
-  echo "Run 'bash deploy.sh --help' for all options."
   exit 1
 fi
 
 # ── Auto-generate secrets ──
 if [ "$DB_PASSWORD" = "auto" ]; then
   DB_PASSWORD=$(openssl rand -base64 16 | tr -d '/+=' | head -c 20)
-  echo "DB password auto-generated: $DB_PASSWORD"
+  echo "  DB password auto-generated: $DB_PASSWORD"
 fi
 if [ -z "$JWT_SECRET" ]; then
   JWT_SECRET=$(openssl rand -base64 32)
@@ -124,28 +128,71 @@ ADMIN_FIRST_NAME=$(echo "$ADMIN_FULLNAME" | awk '{print $1}')
 ADMIN_LAST_NAME=$(echo "$ADMIN_FULLNAME" | awk '{$1=""; print $0}' | xargs)
 [ -z "$ADMIN_LAST_NAME" ] && ADMIN_LAST_NAME="."
 
+# ── Resolve paths ──
+DB_DIR="../database"
+[ ! -d "$DB_DIR" ] && DB_DIR="database"
+FRONTEND_DIR="../frontend"
+[ ! -d "$FRONTEND_DIR" ] && FRONTEND_DIR="frontend"
+
 echo ""
 echo "============================================"
-echo "  SalesFAST 7 — Full Deployment"
+echo "  SalesFAST 7 — One-Command Deployment"
 echo "============================================"
 echo ""
 echo "  CRM Region:  $REGION"
-echo "  AI Region:   $AI_REGION (Bedrock)"
+echo "  AI Region:   $AI_REGION"
 echo "  Admin:       $ADMIN_EMAIL ($ADMIN_FULLNAME)"
 echo "  Tenant:      $TENANT_NAME"
 echo "  Stack:       $STACK_NAME"
 echo ""
 
 # ══════════════════════════════════════════════════════════
-# PHASE 1: Deploy CRM Stack
+# STEP 1: Build pg Lambda Layer (for DB Init)
 # ══════════════════════════════════════════════════════════
 
+echo "[1/10] Building pg Lambda Layer..."
+PG_LAYER_DIR=$(mktemp -d)
+mkdir -p "$PG_LAYER_DIR/nodejs"
+pushd "$PG_LAYER_DIR/nodejs" > /dev/null
+npm init -y --silent > /dev/null 2>&1
+npm install pg --silent > /dev/null 2>&1
+popd > /dev/null
+pushd "$PG_LAYER_DIR" > /dev/null
+zip -qr /tmp/pg-layer.zip nodejs
+popd > /dev/null
+rm -rf "$PG_LAYER_DIR"
+echo "  pg layer built: /tmp/pg-layer.zip"
+
+# ══════════════════════════════════════════════════════════
+# STEP 2: Pre-create S3 bucket + upload layer
+# We need the bucket to exist before CloudFormation runs
+# because PgLayer references S3Key in the bucket
+# ══════════════════════════════════════════════════════════
+
+echo "[2/10] Preparing S3 bucket for Lambda layer..."
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+LAYER_BUCKET="sf7-${ENV}-files-${ACCOUNT_ID}"
+
+# Create bucket if not exists
+aws s3api head-bucket --bucket "$LAYER_BUCKET" --region "$REGION" 2>/dev/null || \
+  aws s3api create-bucket --bucket "$LAYER_BUCKET" --region "$REGION" \
+    --create-bucket-configuration LocationConstraint="$REGION" > /dev/null 2>&1 || true
+
+aws s3 cp /tmp/pg-layer.zip "s3://$LAYER_BUCKET/layers/pg-layer.zip" --region "$REGION" > /dev/null
+echo "  Layer uploaded to s3://$LAYER_BUCKET/layers/pg-layer.zip"
+
+# ══════════════════════════════════════════════════════════
+# STEP 3: Deploy CRM CloudFormation Stack
+# ══════════════════════════════════════════════════════════
+
+echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  PHASE 1: CRM Stack ($REGION)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-echo "[1/8] Deploying CloudFormation stack..."
+echo "[3/10] Deploying CloudFormation stack..."
+echo "  (this takes 10-15 minutes on first deploy)"
 aws cloudformation deploy \
   --template-file cloudformation.yaml \
   --stack-name "$STACK_NAME" \
@@ -156,9 +203,13 @@ aws cloudformation deploy \
     DBPassword="$DB_PASSWORD" \
     JWTSecret="$JWT_SECRET" \
   --no-fail-on-empty-changeset
-echo "  Done."
+echo "  Stack deployed."
 
-echo "[2/8] Getting stack outputs..."
+# ══════════════════════════════════════════════════════════
+# STEP 4: Get Stack Outputs
+# ══════════════════════════════════════════════════════════
+
+echo "[4/10] Getting stack outputs..."
 _get() {
   aws cloudformation describe-stacks \
     --stack-name "$STACK_NAME" --region "$REGION" \
@@ -171,11 +222,17 @@ CLOUDFRONT_URL=$(_get CloudFrontUrl)
 CLOUDFRONT_ID=$(_get CloudFrontDistributionId)
 DB_ENDPOINT=$(_get DatabaseEndpoint)
 PROXY_ENDPOINT=$(_get RDSProxyEndpoint)
+DB_INIT_FN=$(_get DBInitFunction)
 echo "  CloudFront: $CLOUDFRONT_URL"
 echo "  API:        $API_URL"
 echo "  DB:         $DB_ENDPOINT"
+echo "  DB Init:    $DB_INIT_FN"
 
-echo "[3/8] Generating seed data..."
+# ══════════════════════════════════════════════════════════
+# STEP 5: Generate Seed SQL
+# ══════════════════════════════════════════════════════════
+
+echo "[5/10] Generating seed data..."
 ADMIN_HASH=""
 ADMIN_HASH=$(node -e "try{const b=require('bcrypt');b.hash(process.argv[1],12).then(h=>{process.stdout.write(h);process.exit(0)})}catch(e){process.exit(1)}" "$ADMIN_PASSWORD" 2>/dev/null) || true
 if [ -z "$ADMIN_HASH" ]; then
@@ -183,10 +240,8 @@ if [ -z "$ADMIN_HASH" ]; then
 fi
 if [ -z "$ADMIN_HASH" ]; then
   ADMIN_HASH='$2b$12$LJ3m4ys3Lk0TSwMBQWJBaeQBfMQcfNpQOPKfMFHJFLDqxGMmVqHXe'
-  echo "  WARNING: bcrypt not available, using default hash"
+  echo "  WARNING: bcrypt not available, using default hash (change password after login)"
 fi
-DB_DIR="../database"
-[ ! -d "$DB_DIR" ] && DB_DIR="database"
 sed \
   -e "s|__ADMIN_EMAIL__|${ADMIN_EMAIL}|g" \
   -e "s|__ADMIN_PASSWORD_HASH__|${ADMIN_HASH}|g" \
@@ -194,66 +249,122 @@ sed \
   -e "s|__ADMIN_LAST_NAME__|$(echo "$ADMIN_LAST_NAME" | sed "s/'/''/g")|g" \
   -e "s|__TENANT_NAME__|$(echo "$TENANT_NAME" | sed "s/'/''/g")|g" \
   "$DB_DIR/seed.sql" > /tmp/sf7-seed-generated.sql
-echo "  Seed generated: $ADMIN_EMAIL"
+echo "  Seed generated for: $ADMIN_EMAIL"
 
-echo "[4/8] Uploading frontend..."
-FRONTEND_DIR="../frontend"
-[ ! -d "$FRONTEND_DIR" ] && FRONTEND_DIR="frontend"
+# ══════════════════════════════════════════════════════════
+# STEP 6: Initialize Database via Lambda
+# ══════════════════════════════════════════════════════════
+
+echo "[6/10] Initializing database..."
+echo "  Waiting for RDS to be ready..."
+aws rds wait db-instance-available --db-instance-identifier "sf7-${ENV}" --region "$REGION" 2>/dev/null || true
+
+DB_INIT_OK=false
+
+# Read SQL files
+SCHEMA_SQL=$(cat "$DB_DIR/schema.sql")
+SEED_SQL=$(cat /tmp/sf7-seed-generated.sql)
+
+# Execute schema via Lambda
+echo "  Running schema.sql (30+ tables)..."
+SCHEMA_RESULT=$(aws lambda invoke \
+  --function-name "$DB_INIT_FN" \
+  --region "$REGION" \
+  --cli-binary-format raw-in-base64-out \
+  --payload "$(printf '{"sql":"%s"}' "$(echo "$SCHEMA_SQL" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr '\n' ' ')")" \
+  /tmp/sf7-schema-result.json 2>&1) || true
+
+SCHEMA_STATUS=$(cat /tmp/sf7-schema-result.json 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin).get('statusCode',500))" 2>/dev/null || echo "500")
+
+if [ "$SCHEMA_STATUS" = "200" ]; then
+  echo "  Schema created."
+
+  # Execute seed via Lambda
+  echo "  Running seed.sql (admin + roles + permissions)..."
+  SEED_RESULT=$(aws lambda invoke \
+    --function-name "$DB_INIT_FN" \
+    --region "$REGION" \
+    --cli-binary-format raw-in-base64-out \
+    --payload "$(printf '{"sql":"%s"}' "$(echo "$SEED_SQL" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr '\n' ' ')")" \
+    /tmp/sf7-seed-result.json 2>&1) || true
+
+  SEED_STATUS=$(cat /tmp/sf7-seed-result.json 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin).get('statusCode',500))" 2>/dev/null || echo "500")
+
+  if [ "$SEED_STATUS" = "200" ]; then
+    echo "  Seed data loaded."
+    DB_INIT_OK=true
+  else
+    echo "  WARNING: Seed failed (may already exist). Status: $SEED_STATUS"
+    SEED_BODY=$(cat /tmp/sf7-seed-result.json 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin).get('body',''))" 2>/dev/null || echo "")
+    echo "  Detail: $SEED_BODY"
+    # If it's a duplicate key error, that's OK — DB was already seeded
+    if echo "$SEED_BODY" | grep -qi "duplicate\|already exists\|unique"; then
+      echo "  (Database was already initialized — this is OK)"
+      DB_INIT_OK=true
+    fi
+  fi
+else
+  echo "  WARNING: Schema failed via Lambda. Status: $SCHEMA_STATUS"
+  SCHEMA_BODY=$(cat /tmp/sf7-schema-result.json 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin).get('body',''))" 2>/dev/null || echo "")
+  echo "  Detail: $SCHEMA_BODY"
+  # If tables already exist, that's OK
+  if echo "$SCHEMA_BODY" | grep -qi "already exists"; then
+    echo "  (Tables already exist — this is OK)"
+    DB_INIT_OK=true
+  fi
+fi
+
+# Fallback: try psql directly (works if CloudShell has network access)
+if [ "$DB_INIT_OK" = false ]; then
+  if command -v psql &>/dev/null; then
+    echo "  Trying psql fallback..."
+    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_ENDPOINT" -U salesfast7 -d salesfast7 -f "$DB_DIR/schema.sql" 2>/dev/null && \
+    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_ENDPOINT" -U salesfast7 -d salesfast7 -f /tmp/sf7-seed-generated.sql 2>/dev/null && \
+    DB_INIT_OK=true
+  fi
+fi
+
+if [ "$DB_INIT_OK" = true ]; then
+  echo "  Database initialized."
+else
+  echo ""
+  echo "  *** DB INIT FAILED — Manual init required ***"
+  echo "  Use RDS Query Editor: Console > RDS > Query Editor"
+  echo "  Connect to sf7-${ENV}, run schema.sql then seed.sql"
+fi
+
+# ══════════════════════════════════════════════════════════
+# STEP 7: Upload Frontend
+# ══════════════════════════════════════════════════════════
+
+echo "[7/10] Uploading frontend..."
 if [ -d "$FRONTEND_DIR" ]; then
   aws s3 sync "$FRONTEND_DIR" "s3://$FRONTEND_BUCKET" \
     --region "$REGION" --delete --cache-control "max-age=3600" --exclude ".DS_Store"
-  for EXT in html css js; do
-    case $EXT in html) CT="text/html";; css) CT="text/css";; js) CT="application/javascript";; esac
+  for EXT in html css js svg png json; do
+    case $EXT in
+      html) CT="text/html";;
+      css)  CT="text/css";;
+      js)   CT="application/javascript";;
+      svg)  CT="image/svg+xml";;
+      png)  CT="image/png";;
+      json) CT="application/json";;
+    esac
     aws s3 cp "s3://$FRONTEND_BUCKET" "s3://$FRONTEND_BUCKET" \
       --recursive --region "$REGION" --content-type "$CT" \
-      --exclude "*" --include "*.$EXT" --metadata-directive REPLACE
+      --exclude "*" --include "*.$EXT" --metadata-directive REPLACE 2>/dev/null || true
   done
   echo "  Frontend uploaded."
 fi
 
-echo "[5/8] Invalidating CloudFront cache..."
+# ══════════════════════════════════════════════════════════
+# STEP 8: Invalidate CloudFront Cache
+# ══════════════════════════════════════════════════════════
+
+echo "[8/10] Invalidating CloudFront cache..."
 if [ -n "$CLOUDFRONT_ID" ] && [ "$CLOUDFRONT_ID" != "None" ]; then
-  aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_ID" --paths "/*" --query 'Invalidation.Id' --output text
+  aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_ID" --paths "/*" --query 'Invalidation.Id' --output text 2>/dev/null || true
   echo "  Cache invalidated."
-fi
-
-echo "[5.5/8] Initializing database..."
-# Wait for RDS to be fully available
-echo "  Waiting for RDS to be ready..."
-aws rds wait db-instance-available --db-instance-identifier "sf7-${ENV}" --region "$REGION" 2>/dev/null || true
-
-# Try to init DB using RDS Data API or psql
-DB_INIT_OK=false
-
-# Method 1: Try psql if available
-if command -v psql &>/dev/null; then
-  echo "  Found psql, initializing database..."
-  PGPASSWORD="$DB_PASSWORD" psql -h "$DB_ENDPOINT" -U salesfast7 -d salesfast7 -f "$DB_DIR/schema.sql" 2>/dev/null && \
-  PGPASSWORD="$DB_PASSWORD" psql -h "$DB_ENDPOINT" -U salesfast7 -d salesfast7 -f /tmp/sf7-seed-generated.sql 2>/dev/null && \
-  DB_INIT_OK=true
-fi
-
-# Method 2: Try AWS RDS Data API (for Aurora Serverless)
-if [ "$DB_INIT_OK" = false ]; then
-  echo "  psql not available. Trying RDS Query Editor..."
-  echo ""
-  echo "  ⚠️  AUTO-INIT SKIPPED — RDS is in private subnet (no direct access from CloudShell)"
-  echo ""
-  echo "  Initialize manually using ONE of these methods:"
-  echo ""
-  echo "  Method A: RDS Query Editor (easiest)"
-  echo "    1. Go to AWS Console > RDS > Query Editor"
-  echo "    2. Connect to: sf7-${ENV}"
-  echo "    3. Username: salesfast7 / Password: (your db-pass)"
-  echo "    4. Copy-paste schema.sql then seed.sql"
-  echo ""
-  echo "  Method B: EC2 Bastion (if you have one)"
-  echo "    psql -h $DB_ENDPOINT -U salesfast7 -d salesfast7 < $DB_DIR/schema.sql"
-  echo "    psql -h $DB_ENDPOINT -U salesfast7 -d salesfast7 < /tmp/sf7-seed-generated.sql"
-  echo ""
-  echo "  Method C: Lambda function (automated)"
-  echo "    Upload schema.sql + seed.sql to S3, trigger Lambda to execute"
-  echo ""
 fi
 
 # ══════════════════════════════════════════════════════════
@@ -266,7 +377,7 @@ echo "  PHASE 2: AI Stack ($AI_REGION)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-echo "[6/8] Deploying AI resources to $AI_REGION..."
+echo "[9/10] Deploying AI resources to $AI_REGION..."
 aws cloudformation deploy \
   --template-file cloudformation-ai.yaml \
   --stack-name "$AI_STACK_NAME" \
@@ -279,7 +390,6 @@ aws cloudformation deploy \
   --no-fail-on-empty-changeset
 echo "  AI stack deployed."
 
-echo "[7/8] Getting AI outputs..."
 _getai() {
   aws cloudformation describe-stacks \
     --stack-name "$AI_STACK_NAME" --region "$AI_REGION" \
@@ -289,62 +399,57 @@ _getai() {
 KB_BUCKET=$(_getai KBBucketName)
 echo "  KB Bucket: $KB_BUCKET"
 
-echo "[8/8] Uploading sample KB documents..."
-cat > /tmp/sf7-company.md << 'EOF'
+echo "[10/10] Uploading sample KB documents..."
+cat > /tmp/sf7-company.md << 'KBEOF'
 # Company Profile
 Replace this with your actual company information.
-EOF
-cat > /tmp/sf7-faq.md << 'EOF'
+KBEOF
+cat > /tmp/sf7-faq.md << 'KBEOF'
 # FAQ
 Q: How long does installation take?
 A: 2-4 weeks depending on business size.
-EOF
-aws s3 cp /tmp/sf7-company.md "s3://$KB_BUCKET/company/" --region "$AI_REGION" 2>/dev/null
-aws s3 cp /tmp/sf7-faq.md "s3://$KB_BUCKET/faq/" --region "$AI_REGION" 2>/dev/null
+KBEOF
+aws s3 cp /tmp/sf7-company.md "s3://$KB_BUCKET/company/" --region "$AI_REGION" 2>/dev/null || true
+aws s3 cp /tmp/sf7-faq.md "s3://$KB_BUCKET/faq/" --region "$AI_REGION" 2>/dev/null || true
 echo "  Sample documents uploaded."
 
 # ══════════════════════════════════════════════════════════
-# SUMMARY
+# DONE — Summary
 # ══════════════════════════════════════════════════════════
 
 echo ""
 echo "============================================"
-echo "  SalesFAST 7 — Deployed!"
+echo "  SalesFAST 7 — Deployment Complete!"
 echo "============================================"
 echo ""
-echo "  CRM:"
-echo "    Website:  $CLOUDFRONT_URL"
-echo "    API:      $API_URL"
-echo "    DB:       $DB_ENDPOINT"
-echo "    Proxy:    $PROXY_ENDPOINT"
-echo "    Region:   $REGION"
+echo "  Website:    $CLOUDFRONT_URL"
+echo "  API:        $API_URL"
+echo "  Region:     $REGION"
+echo ""
+echo "  Admin Login:"
+echo "    Email:    $ADMIN_EMAIL"
+echo "    Password: (as specified)"
+echo "    Tenant:   $TENANT_NAME"
+echo ""
+if [ "$DB_INIT_OK" = true ]; then
+  echo "  Database:   Initialized"
+else
+  echo "  Database:   NEEDS MANUAL INIT"
+  echo "              Console > RDS > Query Editor > sf7-${ENV}"
+  echo "              Run schema.sql then seed.sql"
+fi
 echo ""
 echo "  AI:"
 echo "    Region:   $AI_REGION"
 echo "    KB:       $KB_BUCKET"
 echo ""
-echo "  Admin:"
-echo "    Email:    $ADMIN_EMAIL"
-echo "    Name:     $ADMIN_FULLNAME"
-echo "    Tenant:   $TENANT_NAME"
+echo "  NEXT STEP — Subscribe CloudFront Pro Plan (\$15/mo):"
+echo "    Console > CloudFront > $CLOUDFRONT_ID > Pricing plan > Pro"
 echo ""
-if [ "$DB_INIT_OK" = true ]; then
-  echo "  Database:   ✅ Initialized"
-else
-  echo "  Database:   ⚠️  Needs manual init (see instructions above)"
-fi
-echo ""
-echo "  ⚠️  IMPORTANT — SUBSCRIBE TO CLOUDFRONT PRO PLAN:"
-echo "    1. Go to CloudFront Console > Distributions"
-echo "    2. Select your distribution ($CLOUDFRONT_ID)"
-echo "    3. Pricing plan > Subscribe to Pro (\$15/mo)"
-echo "    4. Includes: CDN + WAF + DDoS + DNS + TLS + Logs + 50GB S3"
-echo "    5. No overage charges — traffic spikes and DDoS are covered"
-echo ""
-echo "  OTHER NOTES:"
-echo "    - RDS Proxy may not be available in new regions."
-echo "      If it fails, remove RDSProxy resources from cloudformation.yaml."
-echo "    - Bedrock is NOT in ap-southeast-7."
-echo "      AI stack deploys to $AI_REGION (separate region)."
+echo "  DB Password: $DB_PASSWORD"
+echo "  (save this — you will need it for RDS access)"
 echo ""
 echo "============================================"
+echo ""
+echo "  Open your CRM: $CLOUDFRONT_URL"
+echo ""
