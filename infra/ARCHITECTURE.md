@@ -1,10 +1,10 @@
 # SalesFAST 7 — AWS Deployment Architecture
 
-## Region: ap-southeast-7 (Thailand)
+## Region: ap-southeast-1 (Singapore, default) — override with --region
 
 ## Cost Breakdown (~$130/mo budget)
 
-### CRM Infrastructure (ap-southeast-7)
+### CRM Infrastructure (default: ap-southeast-1)
 
 | Service | Spec | Est. Cost |
 |---------|------|-----------|
@@ -62,8 +62,13 @@ No NAT Gateway ($32/mo saved) — uses VPC endpoints instead.
 ## Deploy via CloudShell
 
 ```bash
-# One-command deploy (interactive — script will ask for all inputs)
-git clone https://github.com/konsudtai/CRM.git && cd CRM/infra && bash deploy.sh
+# One-command deploy (default: Singapore)
+git clone https://github.com/konsudtai/CRM.git && cd CRM/infra && bash deploy.sh \
+  --email admin@company.com --name "John Doe" --password "Pass@123" \
+  --db-pass auto --tenant "My Company"
+
+# Deploy to Thailand
+bash deploy.sh ... --region ap-southeast-7
 ```
 
 ## Stack Components

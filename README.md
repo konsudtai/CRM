@@ -1,6 +1,6 @@
 # SalesFAST 7
 
-**CRM Platform for Thai SMB** | Bilingual (TH/EN) | Serverless on AWS ap-southeast-7
+**CRM Platform for Thai SMB** | Bilingual (TH/EN) | Serverless on AWS (default: ap-southeast-1 Singapore)
 
 SalesFAST 7 is a full-featured Customer Relationship Management platform designed for Thai small and medium businesses. It provides account management, sales pipeline with drag-and-drop Kanban, quotation workflow with approval, task management, document storage, and a BI dashboard — all with Thai localization including Buddhist calendar, Thai address format, and VAT/WHT calculation.
 
@@ -66,7 +66,7 @@ SalesFAST 7 is a full-featured Customer Relationship Management platform designe
 | Secrets | AWS Secrets Manager |
 | IaC | AWS CloudFormation (~1,186 lines) |
 | Monorepo | Turborepo + npm workspaces |
-| Region | ap-southeast-7 (Thailand) |
+| Region | ap-southeast-1 (Singapore, default) — override with `--region` |
 
 ---
 
@@ -141,11 +141,13 @@ git clone https://github.com/konsudtai/CRM.git && cd CRM/infra && bash deploy.sh
   --name     "Somchai Jaidee" \
   --password "MyPass@123" \
   --db-pass  auto \
-  --tenant   "My Company Ltd" \
-  --region   ap-southeast-7
+  --tenant   "My Company Ltd"
 ```
 
-All flags are **required**:
+> Default region: **ap-southeast-1 (Singapore)** — รองรับทุก service + Bedrock อยู่ใน region เดียวกัน
+> ถ้าต้องการ deploy ที่ไทย: เพิ่ม `--region ap-southeast-7`
+
+All flags are **required** (ยกเว้น --region):
 
 | Flag | Example | Description |
 |------|---------|-------------|
@@ -154,13 +156,13 @@ All flags are **required**:
 | `--password` | `"Pass@123"` | Admin login password |
 | `--db-pass` | `auto` or `"MyDbPass!"` | Database password (`auto` = generate random) |
 | `--tenant` | `"My Company Ltd"` | Company / tenant name |
-| `--region` | `ap-southeast-7` | CRM region |
 
 Optional flags:
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--ai-region` | `ap-southeast-1` (Singapore, recommended) | Bedrock AI region |
+| `--region` | `ap-southeast-1` (Singapore, recommended) | CRM region |
+| `--ai-region` | `ap-southeast-1` (Singapore) | Bedrock AI region |
 | `--jwt` | Auto-generate | JWT signing key |
 | `--stack` | `salesfast7-prod` | CloudFormation stack name |
 
@@ -399,7 +401,7 @@ echo "Open: https://<CLOUDFRONT_DOMAIN>"
 
 ## AWS Cost Breakdown
 
-### CRM Infrastructure (ap-southeast-7 Thailand)
+### CRM Infrastructure (default: ap-southeast-1 Singapore)
 
 | Service | Specification | Monthly Cost |
 |---------|--------------|-------------:|
@@ -1329,8 +1331,17 @@ Proprietary. All rights reserved.
 ### Deploy Command
 
 ```bash
+# Singapore (default — recommended)
 git clone https://github.com/konsudtai/CRM.git
 cd CRM/infra
+bash deploy.sh \
+  --email    admin@mycompany.com \
+  --name     "Somchai Jaidee" \
+  --password "MyPass@123" \
+  --db-pass  auto \
+  --tenant   "My Company Ltd"
+
+# Thailand (override region)
 bash deploy.sh \
   --email    admin@mycompany.com \
   --name     "Somchai Jaidee" \
