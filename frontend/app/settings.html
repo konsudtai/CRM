@@ -472,6 +472,11 @@
 <script>
 document.getElementById('nav').innerHTML = renderNav('settings');
 
+// Admin-only guard
+if (getUserProfile().role !== 'Admin') {
+  document.querySelector('.page').innerHTML = '<div class="empty-state" style="padding:80px"><div style="font-size:18px;font-weight:700;margin-bottom:8px">Access Denied</div><div style="color:var(--text2)">Settings is available for Admin only.<br>ตั้งค่าระบบสำหรับ Admin เท่านั้น</div></div>';
+}
+
 // Mock users
 var USERS = [
   { id:1, first:'Somchai', last:'Jaidee', email:'somchai@company.co.th', phone:'081-234-5678', role:'Admin', active:true },

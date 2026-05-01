@@ -13,8 +13,7 @@ function getNavMenus() {
     { key:'sales', label:t('nav_sales'), items:[{page:'leads',name:t('nav_pipeline'),desc:t('nav_pipeline_desc')}] },
     { key:'activity', label:t('nav_activities'), items:[{page:'tasks',name:t('nav_tasks'),desc:t('nav_tasks_desc')},{page:'calendar',name:t('nav_calendar'),desc:t('nav_calendar_desc')}] },
     { key:'docs', label:t('nav_documents'), items:[{page:'quotations',name:t('nav_quotations'),desc:t('nav_quotations_desc')},{page:'products',name:t('nav_products'),desc:t('nav_products_desc')},{page:'manual',name:'User Manual',desc:'คู่มือการใช้งาน / User Guide'}] },
-    { key:'system', label:t('nav_settings'), items:[{page:'settings',name:t('nav_settings_page'),desc:t('nav_settings_desc')}] },
-  ];
+  ].concat(getUserProfile().role==='Admin'?[{ key:'system', label:t('nav_settings'), items:[{page:'settings',name:t('nav_settings_page'),desc:t('nav_settings_desc')}] }]:[]);
 }
 
 function renderNav(activePage) {
@@ -62,10 +61,10 @@ function renderNav(activePage) {
       <button class="sf7-util" onclick="toggleTheme()" title="Toggle theme"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
       <a href="notifications.html" class="sf7-util" title="${t('nav_notifications')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></a>
       <div class="sf7-user-wrap">
-        <button class="sf7-avatar" onclick="toggleUserMenu()" title="${user.firstName} ${user.lastName}">${initials||'U'}</button>
+        <button class="sf7-avatar" onclick="toggleUserMenu()" title="${user.firstName} ${user.lastName}">${user.avatarUrl?'<img src="'+user.avatarUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>':initials||'U'}</button>
         <div class="sf7-user-menu" id="sf7-user-menu">
           <div class="sf7-um-header">
-            <div class="sf7-um-avatar">${initials||'U'}</div>
+            <div class="sf7-um-avatar">${user.avatarUrl?'<img src="'+user.avatarUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>':initials||'U'}</div>
             <div><div class="sf7-um-name">${user.firstName} ${user.lastName}</div><div class="sf7-um-email">${user.email}</div><div class="sf7-um-role">${user.role}</div></div>
           </div>
           <div class="sf7-um-divider"></div>
@@ -82,6 +81,14 @@ function renderNav(activePage) {
     <div class="sf7-modal">
       <div class="sf7-modal-header"><div style="font-size:17px;font-weight:700">${t('profile_title')}</div><button class="sf7-modal-close" onclick="closeProfileModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <form onsubmit="saveProfile(event)">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+          <div style="position:relative">
+            <div id="pf-avatar-preview" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--sf-blue-l,#1B96FF),#7F56D9);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;overflow:hidden;cursor:pointer;border:3px solid var(--border)" onclick="document.getElementById('pf-avatar-input').click()">${initials||'U'}</div>
+            <div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--sf-blue,#0176D3);display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--surface,#fff)" onclick="document.getElementById('pf-avatar-input').click()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+            <input type="file" id="pf-avatar-input" accept="image/*" style="display:none" onchange="handleAvatarUpload(this.files)"/>
+          </div>
+          <div style="font-size:12px;color:var(--text3)">คลิกที่รูปเพื่อเปลี่ยน<br>รองรับ JPG, PNG (max 2MB)</div>
+        </div>
         <div class="sf7-form-row"><div class="sf7-form-group"><label class="sf7-form-label">${t('pf_first')}</label><input class="sf7-form-input" id="pf-first" required/></div><div class="sf7-form-group"><label class="sf7-form-label">${t('pf_last')}</label><input class="sf7-form-input" id="pf-last" required/></div></div>
         <div class="sf7-form-group"><label class="sf7-form-label">${t('pf_username')}</label><input class="sf7-form-input" id="pf-username" required/></div>
         <div class="sf7-form-group"><label class="sf7-form-label">${t('pf_email')}</label><input class="sf7-form-input" id="pf-email" type="email" required/></div>
@@ -108,9 +115,25 @@ function renderNav(activePage) {
 function toggleMobileMenu(){document.getElementById('sf7-mobile-menu').classList.toggle('open')}
 function toggleUserMenu(){document.getElementById('sf7-user-menu').classList.toggle('open')}
 document.addEventListener('click',e=>{const m=document.getElementById('sf7-user-menu');if(m&&!e.target.closest('.sf7-user-wrap'))m.classList.remove('open')});
-function openProfileModal(){document.getElementById('sf7-user-menu').classList.remove('open');const p=getUserProfile();document.getElementById('pf-first').value=p.firstName||'';document.getElementById('pf-last').value=p.lastName||'';document.getElementById('pf-username').value=p.username||'';document.getElementById('pf-email').value=p.email||'';document.getElementById('pf-role').value=p.role||'';document.getElementById('pf-phone').value=p.phone||'';document.getElementById('pf-birthday').value=p.birthday||'';document.getElementById('pf-address').value=p.address||'';document.getElementById('profile-modal').classList.add('open')}
+function openProfileModal(){document.getElementById('sf7-user-menu').classList.remove('open');const p=getUserProfile();document.getElementById('pf-first').value=p.firstName||'';document.getElementById('pf-last').value=p.lastName||'';document.getElementById('pf-username').value=p.username||'';document.getElementById('pf-email').value=p.email||'';document.getElementById('pf-role').value=p.role||'';document.getElementById('pf-phone').value=p.phone||'';document.getElementById('pf-birthday').value=p.birthday||'';document.getElementById('pf-address').value=p.address||'';if(p.avatarUrl){document.getElementById('pf-avatar-preview').innerHTML='<img src="'+p.avatarUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';}document.getElementById('profile-modal').classList.add('open')}
 function closeProfileModal(){document.getElementById('profile-modal').classList.remove('open')}
 function saveProfile(e){e.preventDefault();const p=getUserProfile();p.firstName=document.getElementById('pf-first').value;p.lastName=document.getElementById('pf-last').value;p.username=document.getElementById('pf-username').value;p.email=document.getElementById('pf-email').value;p.phone=document.getElementById('pf-phone').value;p.birthday=document.getElementById('pf-birthday').value;p.address=document.getElementById('pf-address').value;saveUserProfile(p);closeProfileModal();location.reload()}
+function handleAvatarUpload(files){
+  if(!files||!files.length)return;
+  var f=files[0];
+  if(f.size>2*1024*1024){alert('ไฟล์ใหญ่เกิน 2MB');return}
+  if(!f.type.startsWith('image/')){alert('รองรับเฉพาะไฟล์รูปภาพ');return}
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var url=ev.target.result;
+    document.getElementById('pf-avatar-preview').innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
+    // Save to profile (in production: upload to S3 via presigned URL)
+    var p=getUserProfile();
+    p.avatarUrl=url;
+    saveUserProfile(p);
+  };
+  reader.readAsDataURL(f);
+}
 function openPasswordModal(){document.getElementById('sf7-user-menu').classList.remove('open');document.getElementById('pw-current').value='';document.getElementById('pw-new').value='';document.getElementById('pw-confirm').value='';document.getElementById('password-modal').classList.add('open')}
 function closePasswordModal(){document.getElementById('password-modal').classList.remove('open')}
 function savePassword(e){e.preventDefault();if(document.getElementById('pw-new').value!==document.getElementById('pw-confirm').value){alert('Passwords do not match');return}alert('Password updated');closePasswordModal()}
