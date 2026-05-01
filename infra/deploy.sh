@@ -208,6 +208,45 @@ if [ -n "$CLOUDFRONT_ID" ] && [ "$CLOUDFRONT_ID" != "None" ]; then
   echo "  Cache invalidated."
 fi
 
+echo "[5.5/8] Initializing database..."
+# Wait for RDS to be fully available
+echo "  Waiting for RDS to be ready..."
+aws rds wait db-instance-available --db-instance-identifier "sf7-${ENV}" --region "$REGION" 2>/dev/null || true
+
+# Try to init DB using RDS Data API or psql
+DB_INIT_OK=false
+
+# Method 1: Try psql if available
+if command -v psql &>/dev/null; then
+  echo "  Found psql, initializing database..."
+  PGPASSWORD="$DB_PASSWORD" psql -h "$DB_ENDPOINT" -U salesfast7 -d salesfast7 -f "$DB_DIR/schema.sql" 2>/dev/null && \
+  PGPASSWORD="$DB_PASSWORD" psql -h "$DB_ENDPOINT" -U salesfast7 -d salesfast7 -f /tmp/sf7-seed-generated.sql 2>/dev/null && \
+  DB_INIT_OK=true
+fi
+
+# Method 2: Try AWS RDS Data API (for Aurora Serverless)
+if [ "$DB_INIT_OK" = false ]; then
+  echo "  psql not available. Trying RDS Query Editor..."
+  echo ""
+  echo "  ⚠️  AUTO-INIT SKIPPED — RDS is in private subnet (no direct access from CloudShell)"
+  echo ""
+  echo "  Initialize manually using ONE of these methods:"
+  echo ""
+  echo "  Method A: RDS Query Editor (easiest)"
+  echo "    1. Go to AWS Console > RDS > Query Editor"
+  echo "    2. Connect to: sf7-${ENV}"
+  echo "    3. Username: salesfast7 / Password: (your db-pass)"
+  echo "    4. Copy-paste schema.sql then seed.sql"
+  echo ""
+  echo "  Method B: EC2 Bastion (if you have one)"
+  echo "    psql -h $DB_ENDPOINT -U salesfast7 -d salesfast7 < $DB_DIR/schema.sql"
+  echo "    psql -h $DB_ENDPOINT -U salesfast7 -d salesfast7 < /tmp/sf7-seed-generated.sql"
+  echo ""
+  echo "  Method C: Lambda function (automated)"
+  echo "    Upload schema.sql + seed.sql to S3, trigger Lambda to execute"
+  echo ""
+fi
+
 # ══════════════════════════════════════════════════════════
 # PHASE 2: Deploy AI Stack
 # ══════════════════════════════════════════════════════════
@@ -280,14 +319,19 @@ echo "    Email:    $ADMIN_EMAIL"
 echo "    Name:     $ADMIN_FULLNAME"
 echo "    Tenant:   $TENANT_NAME"
 echo ""
-echo "  Database Init (run manually):"
-echo "    psql -h $DB_ENDPOINT -U salesfast7 -d salesfast7 < $DB_DIR/schema.sql"
-echo "    psql -h $DB_ENDPOINT -U salesfast7 -d salesfast7 < /tmp/sf7-seed-generated.sql"
+if [ "$DB_INIT_OK" = true ]; then
+  echo "  Database:   ✅ Initialized"
+else
+  echo "  Database:   ⚠️  Needs manual init (see instructions above)"
+fi
 echo ""
-echo "  Bedrock Setup (do in AWS Console):"
-echo "    1. Open Bedrock Console in $AI_REGION"
-echo "    2. Create Knowledge Base → S3: $KB_BUCKET"
-echo "    3. Create 3 Agents (Admin AI, น้องขายไว, น้องวิ)"
-echo "    4. Enter IDs in CRM Settings > AI Configuration"
+echo "  ⚠️  IMPORTANT NOTES:"
+echo "    - WAF (CLOUDFRONT scope) requires us-east-1."
+echo "      If deploying to ap-southeast-7, WAF may fail."
+echo "      Workaround: Remove WAF from template or deploy WAF separately in us-east-1."
+echo "    - RDS Proxy may not be available in new regions."
+echo "      If it fails, remove RDSProxy resources from cloudformation.yaml."
+echo "    - Bedrock is NOT in ap-southeast-7."
+echo "      AI stack deploys to $AI_REGION (separate region)."
 echo ""
 echo "============================================"

@@ -170,13 +170,30 @@ Phase 1: CRM Stack (your --region)
   [2/8] Get outputs (URLs, endpoints)
   [3/8] Generate seed.sql with your admin credentials
   [4/8] Upload frontend to S3
-  [5/8] Invalidate CloudFront cache
+  [5/8] Invalidate CloudFront cache + Auto-init database
 
 Phase 2: AI Stack (--ai-region, default Singapore)
   [6/8] CloudFormation (S3 KB bucket, IAM roles)
   [7/8] Get AI outputs
   [8/8] Upload sample Knowledge Base documents
 ```
+
+### Region Compatibility
+
+| Service | ap-southeast-7 (Thailand) | ap-southeast-1 (Singapore) |
+|---------|:------------------------:|:--------------------------:|
+| VPC, EC2, Lambda, S3, RDS | ✅ | ✅ |
+| API Gateway, SQS, DynamoDB | ✅ | ✅ |
+| CloudFront | ✅ Global | ✅ Global |
+| WAF v2 (CLOUDFRONT scope) | ⚠️ ต้อง deploy ที่ us-east-1 | ⚠️ ต้อง deploy ที่ us-east-1 |
+| RDS Proxy | ⚠️ อาจยังไม่มี | ✅ |
+| Amazon Bedrock | ❌ ไม่มี | ✅ ครบทุก model |
+
+**ถ้า deploy ที่ ap-southeast-7 แล้ว WAF หรือ RDS Proxy error:**
+- WAF: ลบ `WAFWebACL` + `WebACLId` ออกจาก cloudformation.yaml
+- RDS Proxy: ลบ `RDSProxy*` resources ออก, Lambda จะเชื่อม RDS ตรง
+
+**แนะนำสำหรับ production:** ใช้ `ap-southeast-1` (Singapore) เป็น CRM region เพราะรองรับทุก service + Bedrock อยู่ใน region เดียวกัน
 
 ### What the Deploy Script Does
 
