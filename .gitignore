@@ -7,3 +7,5 @@ coverage/
 .env
 .env.local
 .env.*.local
+crm-kiro_accessKeys.csv
+docs/test.txt
