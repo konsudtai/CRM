@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'SalesFAST 7 CRM Platform — Serverless Stack (~$20-50/mo)'
+Description: 'SalesFAST 7 CRM Platform - Serverless Stack'
 
 Parameters:
   Environment:
@@ -256,7 +256,7 @@ Resources:
     Type: AWS::RDS::DBParameterGroup
     Properties:
       Family: postgres16
-      Description: SF7 PostgreSQL parameters — enforce SSL
+      Description: SF7 PostgreSQL parameters - enforce SSL
       Parameters:
         rds.force_ssl: '1'
         log_connections: '1'
@@ -1249,7 +1249,6 @@ Resources:
     Type: AWS::Backup::BackupVault
     Properties:
       BackupVaultName: !Sub 'sf7-${Environment}-vault'
-      EncryptionKeyArn: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/backup'
 
   BackupRole:
     Type: AWS::IAM::Role
@@ -1346,7 +1345,7 @@ Outputs:
 
   DatabaseEndpoint:
     Value: !GetAtt Database.Endpoint.Address
-    Description: RDS PostgreSQL endpoint (direct — use Proxy endpoint for Lambda)
+    Description: RDS PostgreSQL endpoint (direct - use Proxy endpoint for Lambda)
 
   RDSProxyEndpoint:
     Value: !GetAtt RDSProxy.Endpoint
@@ -1382,4 +1381,4 @@ Outputs:
 
   EventsTopicArn:
     Value: !Ref EventsTopic
-    Description: SNS topic ARN — services publish events here
+    Description: SNS topic ARN - services publish events here

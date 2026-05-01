@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'SalesFAST 7 — AI Resources (Bedrock Agents + Knowledge Base)'
+Description: 'SalesFAST 7 - AI Resources (Bedrock Agents + Knowledge Base)'
 
 Parameters:
   Environment:
