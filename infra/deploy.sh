@@ -1,24 +1,15 @@
 #!/bin/bash
 # ============================================================
 # SalesFAST 7 — One-Command Full Deployment
-# Everything automated: infra + frontend + database + AI
+# Everything automated: infra + DB init + frontend + AI
 #
-# USAGE (Singapore — default):
+# USAGE:
 #   bash deploy.sh \
 #     --email admin@company.com \
 #     --name "Somchai Jaidee" \
 #     --password "MyPass@123" \
 #     --db-pass auto \
 #     --tenant "My Company"
-#
-# USAGE (Thailand):
-#   bash deploy.sh \
-#     --email admin@company.com \
-#     --name "Somchai Jaidee" \
-#     --password "MyPass@123" \
-#     --db-pass auto \
-#     --tenant "My Company" \
-#     --region ap-southeast-7
 # ============================================================
 
 set -e
@@ -53,82 +44,53 @@ while [[ $# -gt 0 ]]; do
       echo "SalesFAST 7 — One-Command Full Deployment"
       echo ""
       echo "REQUIRED flags:"
-      echo "  --email     <email>     Admin login email"
-      echo "  --name      <fullname>  Admin full name"
-      echo "  --password  <pass>      Admin login password"
-      echo "  --db-pass   <pass>      Database password (or 'auto' to generate)"
-      echo "  --tenant    <name>      Company / tenant name"
+      echo "  --email     Admin login email"
+      echo "  --name      Admin full name"
+      echo "  --password  Admin login password"
+      echo "  --db-pass   Database password (or 'auto')"
+      echo "  --tenant    Company / tenant name"
       echo ""
       echo "OPTIONAL flags:"
-      echo "  --region    <region>    CRM region (default: ap-southeast-1 Singapore)"
-      echo "  --ai-region <region>    AI/Bedrock region (default: ap-southeast-1)"
-      echo "  --jwt       <secret>    JWT secret (default: auto-generate)"
-      echo "  --stack     <name>      Stack name (default: salesfast7-prod)"
+      echo "  --region    CRM region (default: ap-southeast-1)"
+      echo "  --ai-region AI region  (default: ap-southeast-1)"
+      echo "  --jwt       JWT secret (default: auto-generate)"
+      echo "  --stack     Stack name (default: salesfast7-prod)"
       echo ""
-      echo "EXAMPLE (Singapore — default, recommended):"
-      echo "  bash deploy.sh \\"
-      echo "    --email admin@mycompany.com \\"
-      echo "    --name 'Somchai Jaidee' \\"
-      echo "    --password 'MyPass@123' \\"
-      echo "    --db-pass auto \\"
-      echo "    --tenant 'My Company Ltd'"
+      echo "EXAMPLE:"
+      echo "  bash deploy.sh --email admin@co.com --name 'Somchai' \\"
+      echo "    --password 'Pass@123' --db-pass auto --tenant 'My Co'"
       echo ""
-      echo "EXAMPLE (Thailand region):"
-      echo "  bash deploy.sh \\"
-      echo "    --email admin@mycompany.com \\"
-      echo "    --name 'Somchai Jaidee' \\"
-      echo "    --password 'MyPass@123' \\"
-      echo "    --db-pass auto \\"
-      echo "    --tenant 'My Company Ltd' \\"
-      echo "    --region ap-southeast-7"
-      echo ""
-      exit 0
-      ;;
-    *) echo "Unknown option: $1 (use --help)"; exit 1 ;;
+      exit 0 ;;
+    *) echo "Unknown: $1 (use --help)"; exit 1 ;;
   esac
 done
 
-# ── Validate REQUIRED fields ──
+# ── Validate ──
 MISSING=""
 [ -z "$ADMIN_EMAIL" ]    && MISSING="$MISSING --email"
 [ -z "$ADMIN_FULLNAME" ] && MISSING="$MISSING --name"
 [ -z "$ADMIN_PASSWORD" ] && MISSING="$MISSING --password"
 [ -z "$DB_PASSWORD" ]    && MISSING="$MISSING --db-pass"
 [ -z "$TENANT_NAME" ]    && MISSING="$MISSING --tenant"
-
 if [ -n "$MISSING" ]; then
-  echo ""
-  echo "ERROR: Missing required flags:$MISSING"
-  echo ""
-  echo "Usage:"
-  echo "  bash deploy.sh \\"
-  echo "    --email admin@company.com \\"
-  echo "    --name 'John Doe' \\"
-  echo "    --password 'Pass@123' \\"
-  echo "    --db-pass auto \\"
-  echo "    --tenant 'My Company'"
-  echo ""
-  echo "Default region: ap-southeast-1 (Singapore)"
-  echo "Override with: --region ap-southeast-7 (Thailand)"
-  echo ""
+  echo "ERROR: Missing:$MISSING"
+  echo "Run: bash deploy.sh --help"
   exit 1
 fi
 
 # ── Auto-generate secrets ──
 if [ "$DB_PASSWORD" = "auto" ]; then
   DB_PASSWORD=$(openssl rand -base64 16 | tr -d '/+=' | head -c 20)
-  echo "  DB password auto-generated: $DB_PASSWORD"
+  echo "  DB password: $DB_PASSWORD"
 fi
-if [ -z "$JWT_SECRET" ]; then
-  JWT_SECRET=$(openssl rand -base64 32)
-fi
+[ -z "$JWT_SECRET" ] && JWT_SECRET=$(openssl rand -base64 32)
 
-# ── Split full name ──
+# ── Split name ──
 ADMIN_FIRST_NAME=$(echo "$ADMIN_FULLNAME" | awk '{print $1}')
 ADMIN_LAST_NAME=$(echo "$ADMIN_FULLNAME" | awk '{$1=""; print $0}' | xargs)
 [ -z "$ADMIN_LAST_NAME" ] && ADMIN_LAST_NAME="."
 
-# ── Resolve paths ──
+# ── Paths ──
 DB_DIR="../database"
 [ ! -d "$DB_DIR" ] && DB_DIR="database"
 FRONTEND_DIR="../frontend"
@@ -136,63 +98,117 @@ FRONTEND_DIR="../frontend"
 
 echo ""
 echo "============================================"
-echo "  SalesFAST 7 — One-Command Deployment"
+echo "  SalesFAST 7 — Deploying"
+echo "============================================"
+echo "  Region:  $REGION | AI: $AI_REGION"
+echo "  Admin:   $ADMIN_EMAIL"
+echo "  Tenant:  $TENANT_NAME"
 echo "============================================"
 echo ""
-echo "  CRM Region:  $REGION"
-echo "  AI Region:   $AI_REGION"
-echo "  Admin:       $ADMIN_EMAIL ($ADMIN_FULLNAME)"
-echo "  Tenant:      $TENANT_NAME"
-echo "  Stack:       $STACK_NAME"
+
+# ══════════════════════════════════════════════
+# PRE-CHECK: Clean up leftover resources from failed deploys
+# ══════════════════════════════════════════════
+
+echo "[0/9] Pre-deploy check..."
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null || echo "")
+
+# Check if stack exists and is in a failed/rollback state
+STACK_STATUS=$(aws cloudformation describe-stacks \
+  --stack-name "$STACK_NAME" --region "$REGION" \
+  --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+
+if echo "$STACK_STATUS" | grep -qiE "ROLLBACK_COMPLETE|ROLLBACK_FAILED|DELETE_FAILED|CREATE_FAILED"; then
+  echo "  Found stack in $STACK_STATUS state. Cleaning up..."
+
+  # Disable RDS deletion protection if exists
+  aws rds modify-db-instance \
+    --db-instance-identifier "sf7-${ENV}" \
+    --no-deletion-protection \
+    --region "$REGION" 2>/dev/null || true
+
+  # Empty S3 buckets
+  for B in "sf7-${ENV}-frontend-${ACCOUNT_ID}" "sf7-${ENV}-files-${ACCOUNT_ID}"; do
+    aws s3 rm "s3://$B" --recursive --region "$REGION" 2>/dev/null || true
+    aws s3 rb "s3://$B" --force --region "$REGION" 2>/dev/null || true
+  done
+
+  # Delete the failed stack
+  aws cloudformation delete-stack --stack-name "$STACK_NAME" --region "$REGION" 2>/dev/null || true
+  echo "  Waiting for cleanup (~5 min)..."
+  aws cloudformation wait stack-delete-complete \
+    --stack-name "$STACK_NAME" --region "$REGION" 2>/dev/null || true
+  echo "  Cleaned up."
+
+elif [ "$STACK_STATUS" = "DOES_NOT_EXIST" ]; then
+  echo "  No existing stack. Fresh deploy."
+
+  # Check for orphaned resources that could block creation
+  ORPHAN_FOUND=false
+
+  # Check orphaned S3 buckets
+  for B in "sf7-${ENV}-frontend-${ACCOUNT_ID}" "sf7-${ENV}-files-${ACCOUNT_ID}"; do
+    if aws s3api head-bucket --bucket "$B" --region "$REGION" 2>/dev/null; then
+      echo "  Found orphaned bucket: $B — removing..."
+      aws s3 rm "s3://$B" --recursive --region "$REGION" 2>/dev/null || true
+      aws s3 rb "s3://$B" --force --region "$REGION" 2>/dev/null || true
+      ORPHAN_FOUND=true
+    fi
+  done
+
+  # Check orphaned DynamoDB tables
+  for T in "sf7-${ENV}-chat-history" "sf7-${ENV}-ai-state"; do
+    if aws dynamodb describe-table --table-name "$T" --region "$REGION" 2>/dev/null | grep -q "ACTIVE"; then
+      echo "  Found orphaned table: $T — removing..."
+      aws dynamodb delete-table --table-name "$T" --region "$REGION" 2>/dev/null || true
+      ORPHAN_FOUND=true
+    fi
+  done
+
+  # Check orphaned SQS queues
+  for Q in "sf7-${ENV}-events" "sf7-${ENV}-events-dlq"; do
+    Q_URL=$(aws sqs get-queue-url --queue-name "$Q" --region "$REGION" --query 'QueueUrl' --output text 2>/dev/null || echo "")
+    if [ -n "$Q_URL" ] && [ "$Q_URL" != "None" ]; then
+      echo "  Found orphaned queue: $Q — removing..."
+      aws sqs delete-queue --queue-url "$Q_URL" --region "$REGION" 2>/dev/null || true
+      ORPHAN_FOUND=true
+    fi
+  done
+
+  # Check orphaned Lambda functions
+  for FN in "sf7-${ENV}-auth" "sf7-${ENV}-crm" "sf7-${ENV}-sales" "sf7-${ENV}-quotation" "sf7-${ENV}-notification" "sf7-${ENV}-db-init"; do
+    if aws lambda get-function --function-name "$FN" --region "$REGION" 2>/dev/null | grep -q "FunctionArn"; then
+      echo "  Found orphaned Lambda: $FN — removing..."
+      aws lambda delete-function --function-name "$FN" --region "$REGION" 2>/dev/null || true
+      ORPHAN_FOUND=true
+    fi
+  done
+
+  # Check orphaned RDS
+  if aws rds describe-db-instances --db-instance-identifier "sf7-${ENV}" --region "$REGION" 2>/dev/null | grep -q "DBInstanceIdentifier"; then
+    echo "  Found orphaned RDS: sf7-${ENV} — disabling protection + deleting..."
+    aws rds modify-db-instance --db-instance-identifier "sf7-${ENV}" --no-deletion-protection --region "$REGION" 2>/dev/null || true
+    aws rds delete-db-instance --db-instance-identifier "sf7-${ENV}" --skip-final-snapshot --region "$REGION" 2>/dev/null || true
+    echo "  RDS deletion started (continues in background)..."
+    ORPHAN_FOUND=true
+  fi
+
+  if [ "$ORPHAN_FOUND" = true ]; then
+    echo "  Waiting 30s for cleanup to propagate..."
+    sleep 30
+  fi
+
+else
+  echo "  Stack exists ($STACK_STATUS). Will update."
+fi
 echo ""
 
-# ══════════════════════════════════════════════════════════
-# STEP 1: Build pg Lambda Layer (for DB Init)
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════
+# STEP 1: Deploy CloudFormation
+# ══════════════════════════════════════════════
 
-echo "[1/10] Building pg Lambda Layer..."
-PG_LAYER_DIR=$(mktemp -d)
-mkdir -p "$PG_LAYER_DIR/nodejs"
-pushd "$PG_LAYER_DIR/nodejs" > /dev/null
-npm init -y --silent > /dev/null 2>&1
-npm install pg --silent > /dev/null 2>&1
-popd > /dev/null
-pushd "$PG_LAYER_DIR" > /dev/null
-zip -qr /tmp/pg-layer.zip nodejs
-popd > /dev/null
-rm -rf "$PG_LAYER_DIR"
-echo "  pg layer built: /tmp/pg-layer.zip"
-
-# ══════════════════════════════════════════════════════════
-# STEP 2: Pre-create S3 bucket + upload layer
-# We need the bucket to exist before CloudFormation runs
-# because PgLayer references S3Key in the bucket
-# ══════════════════════════════════════════════════════════
-
-echo "[2/10] Preparing S3 bucket for Lambda layer..."
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-LAYER_BUCKET="sf7-${ENV}-files-${ACCOUNT_ID}"
-
-# Create bucket if not exists
-aws s3api head-bucket --bucket "$LAYER_BUCKET" --region "$REGION" 2>/dev/null || \
-  aws s3api create-bucket --bucket "$LAYER_BUCKET" --region "$REGION" \
-    --create-bucket-configuration LocationConstraint="$REGION" > /dev/null 2>&1 || true
-
-aws s3 cp /tmp/pg-layer.zip "s3://$LAYER_BUCKET/layers/pg-layer.zip" --region "$REGION" > /dev/null
-echo "  Layer uploaded to s3://$LAYER_BUCKET/layers/pg-layer.zip"
-
-# ══════════════════════════════════════════════════════════
-# STEP 3: Deploy CRM CloudFormation Stack
-# ══════════════════════════════════════════════════════════
-
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  PHASE 1: CRM Stack ($REGION)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-echo "[3/10] Deploying CloudFormation stack..."
-echo "  (this takes 10-15 minutes on first deploy)"
+echo "[1/9] Deploying CloudFormation stack..."
+echo "  (first deploy takes ~15 min)"
 aws cloudformation deploy \
   --template-file cloudformation.yaml \
   --stack-name "$STACK_NAME" \
@@ -205,11 +221,11 @@ aws cloudformation deploy \
   --no-fail-on-empty-changeset
 echo "  Stack deployed."
 
-# ══════════════════════════════════════════════════════════
-# STEP 4: Get Stack Outputs
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════
+# STEP 2: Get outputs
+# ══════════════════════════════════════════════
 
-echo "[4/10] Getting stack outputs..."
+echo "[2/9] Getting stack outputs..."
 _get() {
   aws cloudformation describe-stacks \
     --stack-name "$STACK_NAME" --region "$REGION" \
@@ -218,29 +234,115 @@ _get() {
 }
 API_URL=$(_get ApiUrl)
 FRONTEND_BUCKET=$(_get FrontendBucket)
+FILES_BUCKET=$(_get FilesBucket)
 CLOUDFRONT_URL=$(_get CloudFrontUrl)
 CLOUDFRONT_ID=$(_get CloudFrontDistributionId)
 DB_ENDPOINT=$(_get DatabaseEndpoint)
 PROXY_ENDPOINT=$(_get RDSProxyEndpoint)
 DB_INIT_FN=$(_get DBInitFunction)
-echo "  CloudFront: $CLOUDFRONT_URL"
-echo "  API:        $API_URL"
-echo "  DB:         $DB_ENDPOINT"
-echo "  DB Init:    $DB_INIT_FN"
+echo "  URL: $CLOUDFRONT_URL"
+echo "  DB:  $DB_ENDPOINT"
 
-# ══════════════════════════════════════════════════════════
-# STEP 5: Generate Seed SQL
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════
+# STEP 3: Build pg layer + update DB Init Lambda
+# ══════════════════════════════════════════════
 
-echo "[5/10] Generating seed data..."
+echo "[3/9] Building DB Init Lambda with pg..."
+
+# Build pg layer zip
+PG_DIR=$(mktemp -d)
+mkdir -p "$PG_DIR/nodejs"
+cd "$PG_DIR/nodejs"
+npm init -y > /dev/null 2>&1
+npm install pg --silent > /dev/null 2>&1
+cd "$PG_DIR"
+zip -qr /tmp/sf7-pg-layer.zip nodejs
+cd - > /dev/null
+rm -rf "$PG_DIR"
+
+# Publish as Lambda Layer
+LAYER_ARN=$(aws lambda publish-layer-version \
+  --layer-name "sf7-${ENV}-pg" \
+  --zip-file fileb:///tmp/sf7-pg-layer.zip \
+  --compatible-runtimes nodejs20.x \
+  --region "$REGION" \
+  --query 'LayerVersionArn' --output text)
+echo "  Layer: $LAYER_ARN"
+
+# Build DB Init function code
+cat > /tmp/sf7-db-init.js << 'DBEOF'
+const { Client } = require('pg');
+exports.handler = async (event) => {
+  const client = new Client({
+    host: process.env.DB_HOST,
+    port: 5432,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+    ssl: { rejectUnauthorized: false },
+    statement_timeout: 90000,
+  });
+  try {
+    await client.connect();
+    const sql = event.sql || '';
+    if (!sql.trim()) return { statusCode: 400, body: 'No SQL' };
+    const statements = sql.split(/;\s*\n/).filter(s => s.trim());
+    for (const stmt of statements) {
+      if (stmt.trim()) await client.query(stmt);
+    }
+    await client.end();
+    return { statusCode: 200, body: 'OK' };
+  } catch (err) {
+    try { await client.end(); } catch(_) {}
+    return { statusCode: 500, body: err.message };
+  }
+};
+DBEOF
+
+cd /tmp
+zip -qj sf7-db-init.zip sf7-db-init.js
+cd - > /dev/null
+
+# Update Lambda function code + layer
+aws lambda update-function-code \
+  --function-name "$DB_INIT_FN" \
+  --zip-file fileb:///tmp/sf7-db-init.zip \
+  --region "$REGION" > /dev/null
+
+# Wait for update to complete
+aws lambda wait function-updated --function-name "$DB_INIT_FN" --region "$REGION" 2>/dev/null || sleep 5
+
+aws lambda update-function-configuration \
+  --function-name "$DB_INIT_FN" \
+  --layers "$LAYER_ARN" \
+  --handler sf7-db-init.handler \
+  --region "$REGION" > /dev/null
+
+aws lambda wait function-updated --function-name "$DB_INIT_FN" --region "$REGION" 2>/dev/null || sleep 5
+echo "  DB Init Lambda ready."
+
+# ══════════════════════════════════════════════
+# STEP 4: Generate seed SQL
+# ══════════════════════════════════════════════
+
+echo "[4/9] Generating seed data..."
 ADMIN_HASH=""
-ADMIN_HASH=$(node -e "try{const b=require('bcrypt');b.hash(process.argv[1],12).then(h=>{process.stdout.write(h);process.exit(0)})}catch(e){process.exit(1)}" "$ADMIN_PASSWORD" 2>/dev/null) || true
-if [ -z "$ADMIN_HASH" ]; then
-  ADMIN_HASH=$(python3 -c "import sys;exec('try:\n import bcrypt\n print(bcrypt.hashpw(sys.argv[1].encode(),bcrypt.gensalt(12)).decode(),end=\"\")\nexcept:\n sys.exit(1)')" "$ADMIN_PASSWORD" 2>/dev/null) || true
+if command -v node &>/dev/null; then
+  ADMIN_HASH=$(node -e "try{const b=require('bcrypt');b.hash(process.argv[1],12).then(h=>{process.stdout.write(h);process.exit(0)})}catch(e){process.exit(1)}" "$ADMIN_PASSWORD" 2>/dev/null) || true
+fi
+if [ -z "$ADMIN_HASH" ] && command -v python3 &>/dev/null; then
+  ADMIN_HASH=$(python3 -c "
+import sys
+try:
+    import bcrypt
+    print(bcrypt.hashpw(sys.argv[1].encode(),bcrypt.gensalt(12)).decode(),end='')
+except:
+    sys.exit(1)
+" "$ADMIN_PASSWORD" 2>/dev/null) || true
 fi
 if [ -z "$ADMIN_HASH" ]; then
   ADMIN_HASH='$2b$12$LJ3m4ys3Lk0TSwMBQWJBaeQBfMQcfNpQOPKfMFHJFLDqxGMmVqHXe'
-  echo "  WARNING: bcrypt not available, using default hash (change password after login)"
+  echo "  WARNING: bcrypt unavailable, using default hash"
 fi
 sed \
   -e "s|__ADMIN_EMAIL__|${ADMIN_EMAIL}|g" \
@@ -248,136 +350,152 @@ sed \
   -e "s|__ADMIN_FIRST_NAME__|$(echo "$ADMIN_FIRST_NAME" | sed "s/'/''/g")|g" \
   -e "s|__ADMIN_LAST_NAME__|$(echo "$ADMIN_LAST_NAME" | sed "s/'/''/g")|g" \
   -e "s|__TENANT_NAME__|$(echo "$TENANT_NAME" | sed "s/'/''/g")|g" \
-  "$DB_DIR/seed.sql" > /tmp/sf7-seed-generated.sql
-echo "  Seed generated for: $ADMIN_EMAIL"
+  "$DB_DIR/seed.sql" > /tmp/sf7-seed.sql
+echo "  Seed: $ADMIN_EMAIL"
 
-# ══════════════════════════════════════════════════════════
-# STEP 6: Initialize Database via Lambda
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════
+# STEP 5: Initialize database via Lambda
+# ══════════════════════════════════════════════
 
-echo "[6/10] Initializing database..."
-echo "  Waiting for RDS to be ready..."
-aws rds wait db-instance-available --db-instance-identifier "sf7-${ENV}" --region "$REGION" 2>/dev/null || true
+echo "[5/9] Initializing database..."
+echo "  Waiting for RDS..."
+aws rds wait db-instance-available \
+  --db-instance-identifier "sf7-${ENV}" \
+  --region "$REGION" 2>/dev/null || true
 
 DB_INIT_OK=false
 
-# Read SQL files
-SCHEMA_SQL=$(cat "$DB_DIR/schema.sql")
-SEED_SQL=$(cat /tmp/sf7-seed-generated.sql)
+# Helper: invoke DB Init Lambda with SQL file
+run_sql() {
+  local DESC="$1"
+  local SQL_FILE="$2"
+  echo "  Running $DESC..."
 
-# Execute schema via Lambda
-echo "  Running schema.sql (30+ tables)..."
-SCHEMA_RESULT=$(aws lambda invoke \
-  --function-name "$DB_INIT_FN" \
-  --region "$REGION" \
-  --cli-binary-format raw-in-base64-out \
-  --payload "$(printf '{"sql":"%s"}' "$(echo "$SCHEMA_SQL" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr '\n' ' ')")" \
-  /tmp/sf7-schema-result.json 2>&1) || true
+  # Encode SQL as base64 to avoid JSON escaping issues
+  local SQL_B64=$(base64 < "$SQL_FILE" | tr -d '\n')
 
-SCHEMA_STATUS=$(cat /tmp/sf7-schema-result.json 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin).get('statusCode',500))" 2>/dev/null || echo "500")
+  cat > /tmp/sf7-payload.json << PEOF
+{"sql_base64":"$SQL_B64"}
+PEOF
 
-if [ "$SCHEMA_STATUS" = "200" ]; then
-  echo "  Schema created."
+  # Update handler to support base64
+  cat > /tmp/sf7-db-init.js << 'HANDLER'
+const { Client } = require('pg');
+exports.handler = async (event) => {
+  let sql = event.sql || '';
+  if (event.sql_base64) {
+    sql = Buffer.from(event.sql_base64, 'base64').toString('utf-8');
+  }
+  if (!sql.trim()) return { statusCode: 400, body: 'No SQL' };
+  const client = new Client({
+    host: process.env.DB_HOST, port: 5432,
+    user: process.env.DB_USER, password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+    ssl: { rejectUnauthorized: false }, statement_timeout: 90000,
+  });
+  try {
+    await client.connect();
+    await client.query(sql);
+    await client.end();
+    return { statusCode: 200, body: 'OK' };
+  } catch (err) {
+    try { await client.end(); } catch(_) {}
+    return { statusCode: 500, body: err.message };
+  }
+};
+HANDLER
 
-  # Execute seed via Lambda
-  echo "  Running seed.sql (admin + roles + permissions)..."
-  SEED_RESULT=$(aws lambda invoke \
+  cd /tmp
+  zip -qj sf7-db-init.zip sf7-db-init.js
+  cd - > /dev/null
+
+  aws lambda update-function-code \
+    --function-name "$DB_INIT_FN" \
+    --zip-file fileb:///tmp/sf7-db-init.zip \
+    --region "$REGION" > /dev/null 2>&1
+  aws lambda wait function-updated --function-name "$DB_INIT_FN" --region "$REGION" 2>/dev/null || sleep 5
+
+  aws lambda invoke \
     --function-name "$DB_INIT_FN" \
     --region "$REGION" \
     --cli-binary-format raw-in-base64-out \
-    --payload "$(printf '{"sql":"%s"}' "$(echo "$SEED_SQL" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr '\n' ' ')")" \
-    /tmp/sf7-seed-result.json 2>&1) || true
+    --payload file:///tmp/sf7-payload.json \
+    /tmp/sf7-db-result.json > /dev/null 2>&1
 
-  SEED_STATUS=$(cat /tmp/sf7-seed-result.json 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin).get('statusCode',500))" 2>/dev/null || echo "500")
+  local STATUS=$(python3 -c "import json;print(json.load(open('/tmp/sf7-db-result.json')).get('statusCode',500))" 2>/dev/null || echo "500")
+  local BODY=$(python3 -c "import json;print(json.load(open('/tmp/sf7-db-result.json')).get('body',''))" 2>/dev/null || echo "")
 
-  if [ "$SEED_STATUS" = "200" ]; then
-    echo "  Seed data loaded."
-    DB_INIT_OK=true
+  if [ "$STATUS" = "200" ]; then
+    echo "  $DESC done."
+    return 0
   else
-    echo "  WARNING: Seed failed (may already exist). Status: $SEED_STATUS"
-    SEED_BODY=$(cat /tmp/sf7-seed-result.json 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin).get('body',''))" 2>/dev/null || echo "")
-    echo "  Detail: $SEED_BODY"
-    # If it's a duplicate key error, that's OK — DB was already seeded
-    if echo "$SEED_BODY" | grep -qi "duplicate\|already exists\|unique"; then
-      echo "  (Database was already initialized — this is OK)"
-      DB_INIT_OK=true
+    echo "  $DESC status: $STATUS"
+    echo "  Detail: $BODY"
+    if echo "$BODY" | grep -qi "already exists\|duplicate"; then
+      echo "  (already initialized — OK)"
+      return 0
     fi
+    return 1
   fi
-else
-  echo "  WARNING: Schema failed via Lambda. Status: $SCHEMA_STATUS"
-  SCHEMA_BODY=$(cat /tmp/sf7-schema-result.json 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin).get('body',''))" 2>/dev/null || echo "")
-  echo "  Detail: $SCHEMA_BODY"
-  # If tables already exist, that's OK
-  if echo "$SCHEMA_BODY" | grep -qi "already exists"; then
-    echo "  (Tables already exist — this is OK)"
-    DB_INIT_OK=true
-  fi
-fi
+}
 
-# Fallback: try psql directly (works if CloudShell has network access)
+# Run schema then seed
+run_sql "schema.sql (30+ tables)" "$DB_DIR/schema.sql" && \
+run_sql "seed.sql (admin + roles)" "/tmp/sf7-seed.sql" && \
+DB_INIT_OK=true
+
 if [ "$DB_INIT_OK" = false ]; then
+  echo ""
+  echo "  DB init via Lambda failed. Trying psql fallback..."
   if command -v psql &>/dev/null; then
-    echo "  Trying psql fallback..."
-    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_ENDPOINT" -U salesfast7 -d salesfast7 -f "$DB_DIR/schema.sql" 2>/dev/null && \
-    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_ENDPOINT" -U salesfast7 -d salesfast7 -f /tmp/sf7-seed-generated.sql 2>/dev/null && \
-    DB_INIT_OK=true
+    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_ENDPOINT" -U salesfast7 -d salesfast7 \
+      -f "$DB_DIR/schema.sql" > /dev/null 2>&1 && \
+    PGPASSWORD="$DB_PASSWORD" psql -h "$DB_ENDPOINT" -U salesfast7 -d salesfast7 \
+      -f /tmp/sf7-seed.sql > /dev/null 2>&1 && \
+    DB_INIT_OK=true && echo "  DB initialized via psql."
   fi
 fi
 
-if [ "$DB_INIT_OK" = true ]; then
-  echo "  Database initialized."
-else
-  echo ""
-  echo "  *** DB INIT FAILED — Manual init required ***"
-  echo "  Use RDS Query Editor: Console > RDS > Query Editor"
-  echo "  Connect to sf7-${ENV}, run schema.sql then seed.sql"
-fi
+# ══════════════════════════════════════════════
+# STEP 6: Upload frontend
+# ══════════════════════════════════════════════
 
-# ══════════════════════════════════════════════════════════
-# STEP 7: Upload Frontend
-# ══════════════════════════════════════════════════════════
-
-echo "[7/10] Uploading frontend..."
+echo "[6/9] Uploading frontend..."
 if [ -d "$FRONTEND_DIR" ]; then
   aws s3 sync "$FRONTEND_DIR" "s3://$FRONTEND_BUCKET" \
-    --region "$REGION" --delete --cache-control "max-age=3600" --exclude ".DS_Store"
+    --region "$REGION" --delete --cache-control "max-age=3600" \
+    --exclude ".DS_Store" --exclude "*.map" > /dev/null
+  # Fix content types
   for EXT in html css js svg png json; do
     case $EXT in
-      html) CT="text/html";;
-      css)  CT="text/css";;
-      js)   CT="application/javascript";;
-      svg)  CT="image/svg+xml";;
-      png)  CT="image/png";;
-      json) CT="application/json";;
+      html) CT="text/html";;  css) CT="text/css";;
+      js) CT="application/javascript";;  svg) CT="image/svg+xml";;
+      png) CT="image/png";;  json) CT="application/json";;
     esac
     aws s3 cp "s3://$FRONTEND_BUCKET" "s3://$FRONTEND_BUCKET" \
       --recursive --region "$REGION" --content-type "$CT" \
-      --exclude "*" --include "*.$EXT" --metadata-directive REPLACE 2>/dev/null || true
+      --exclude "*" --include "*.$EXT" --metadata-directive REPLACE > /dev/null 2>&1 || true
   done
   echo "  Frontend uploaded."
 fi
 
-# ══════════════════════════════════════════════════════════
-# STEP 8: Invalidate CloudFront Cache
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════
+# STEP 7: Invalidate CloudFront
+# ══════════════════════════════════════════════
 
-echo "[8/10] Invalidating CloudFront cache..."
+echo "[7/9] Invalidating CloudFront cache..."
 if [ -n "$CLOUDFRONT_ID" ] && [ "$CLOUDFRONT_ID" != "None" ]; then
-  aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_ID" --paths "/*" --query 'Invalidation.Id' --output text 2>/dev/null || true
+  aws cloudfront create-invalidation \
+    --distribution-id "$CLOUDFRONT_ID" --paths "/*" > /dev/null 2>&1 || true
   echo "  Cache invalidated."
 fi
 
-# ══════════════════════════════════════════════════════════
-# PHASE 2: Deploy AI Stack
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════
+# STEP 8: Deploy AI Stack
+# ══════════════════════════════════════════════
 
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  PHASE 2: AI Stack ($AI_REGION)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-echo "[9/10] Deploying AI resources to $AI_REGION..."
+echo "[8/9] Deploying AI stack to $AI_REGION..."
 aws cloudformation deploy \
   --template-file cloudformation-ai.yaml \
   --stack-name "$AI_STACK_NAME" \
@@ -390,6 +508,11 @@ aws cloudformation deploy \
   --no-fail-on-empty-changeset
 echo "  AI stack deployed."
 
+# ══════════════════════════════════════════════
+# STEP 9: Upload sample KB docs
+# ══════════════════════════════════════════════
+
+echo "[9/9] Uploading sample KB documents..."
 _getai() {
   aws cloudformation describe-stacks \
     --stack-name "$AI_STACK_NAME" --region "$AI_REGION" \
@@ -397,59 +520,43 @@ _getai() {
     --output text
 }
 KB_BUCKET=$(_getai KBBucketName)
-echo "  KB Bucket: $KB_BUCKET"
+echo "# Company Profile — replace with your info" | \
+  aws s3 cp - "s3://$KB_BUCKET/company/company-profile.md" --region "$AI_REGION" 2>/dev/null || true
+echo "# FAQ — replace with your FAQ" | \
+  aws s3 cp - "s3://$KB_BUCKET/faq/faq.md" --region "$AI_REGION" 2>/dev/null || true
+echo "  KB: $KB_BUCKET"
 
-echo "[10/10] Uploading sample KB documents..."
-cat > /tmp/sf7-company.md << 'KBEOF'
-# Company Profile
-Replace this with your actual company information.
-KBEOF
-cat > /tmp/sf7-faq.md << 'KBEOF'
-# FAQ
-Q: How long does installation take?
-A: 2-4 weeks depending on business size.
-KBEOF
-aws s3 cp /tmp/sf7-company.md "s3://$KB_BUCKET/company/" --region "$AI_REGION" 2>/dev/null || true
-aws s3 cp /tmp/sf7-faq.md "s3://$KB_BUCKET/faq/" --region "$AI_REGION" 2>/dev/null || true
-echo "  Sample documents uploaded."
-
-# ══════════════════════════════════════════════════════════
-# DONE — Summary
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════
+# DONE
+# ══════════════════════════════════════════════
 
 echo ""
 echo "============================================"
 echo "  SalesFAST 7 — Deployment Complete!"
 echo "============================================"
 echo ""
-echo "  Website:    $CLOUDFRONT_URL"
-echo "  API:        $API_URL"
-echo "  Region:     $REGION"
+echo "  Website:  $CLOUDFRONT_URL"
+echo "  API:      $API_URL"
+echo "  Region:   $REGION"
 echo ""
-echo "  Admin Login:"
+echo "  Login:"
 echo "    Email:    $ADMIN_EMAIL"
 echo "    Password: (as specified)"
-echo "    Tenant:   $TENANT_NAME"
 echo ""
 if [ "$DB_INIT_OK" = true ]; then
-  echo "  Database:   Initialized"
+  echo "  Database: Initialized"
 else
-  echo "  Database:   NEEDS MANUAL INIT"
-  echo "              Console > RDS > Query Editor > sf7-${ENV}"
-  echo "              Run schema.sql then seed.sql"
+  echo "  Database: MANUAL INIT NEEDED"
+  echo "    Console > RDS > Query Editor > sf7-${ENV}"
+  echo "    Run schema.sql then seed.sql"
 fi
 echo ""
-echo "  AI:"
-echo "    Region:   $AI_REGION"
-echo "    KB:       $KB_BUCKET"
-echo ""
-echo "  NEXT STEP — Subscribe CloudFront Pro Plan (\$15/mo):"
+echo "  NEXT: Subscribe CloudFront Pro Plan (\$15/mo)"
 echo "    Console > CloudFront > $CLOUDFRONT_ID > Pricing plan > Pro"
 echo ""
 echo "  DB Password: $DB_PASSWORD"
-echo "  (save this — you will need it for RDS access)"
+echo "  (save this — needed for RDS access)"
 echo ""
 echo "============================================"
-echo ""
-echo "  Open your CRM: $CLOUDFRONT_URL"
-echo ""
+echo "  Open: $CLOUDFRONT_URL"
+echo "============================================"
