@@ -1,8 +1,8 @@
 # SalesFAST 7
 
-**CRM Platform for Thai SMB** | Bilingual (TH/EN) | Serverless on AWS (default: ap-southeast-1 Singapore)
+**Agentic AI CRM for Thai SMB** | Bilingual (TH/EN) | Serverless on AWS
 
-SalesFAST 7 is a full-featured Customer Relationship Management platform designed for Thai small and medium businesses. It provides account management, sales pipeline with drag-and-drop Kanban, quotation workflow with approval, task management, document storage, and a BI dashboard — all with Thai localization including Buddhist calendar, Thai address format, and VAT/WHT calculation.
+SalesFAST 7 is a full-featured CRM platform with 3 AI Agents (Strands Agents SDK + Amazon Bedrock) that work as real sales team members — scoring leads, creating quotations, sending notifications, and analyzing data. All agent actions write to the real database through the same APIs the UI uses.
 
 ---
 
@@ -11,9 +11,8 @@ SalesFAST 7 is a full-featured Customer Relationship Management platform designe
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
-- [Quick Start — Deploy on AWS CloudShell](#quick-start--deploy-on-aws-cloudshell)
-- [AWS Cost Breakdown](#aws-cost-breakdown)
-- [Capacity & Traffic](#capacity--traffic)
+- [Deployment](#deployment)
+- [AWS Cost](#aws-cost)
 - [Architecture](#architecture)
 - [Backend Services](#backend-services)
 - [AI Agents](#ai-agents)
@@ -22,12 +21,7 @@ SalesFAST 7 is a full-featured Customer Relationship Management platform designe
 - [Database Schema](#database-schema)
 - [Roles & Permissions](#roles--permissions)
 - [Security](#security)
-- [User Flow Diagram (Swimlane)](#user-flow-diagram-swimlane)
-- [Data Flow Diagram](#data-flow-diagram)
-- [i18n — Thai / English](#i18n--thai--english)
-- [Default Credentials](#default-credentials)
-- [Operations — Destroy / Redeploy / Update](#operations--destroy--redeploy--update)
-- [Deploy Readiness Checklist](#deploy-readiness-checklist)
+- [i18n — Thai / English](#i18n)
 
 ---
 
@@ -35,19 +29,18 @@ SalesFAST 7 is a full-featured Customer Relationship Management platform designe
 
 | Module | Description |
 |--------|-------------|
-| BI Dashboard | KPI cards, pipeline chart, revenue graph, mini Kanban, activity timeline, quick actions |
-| Account Management | Customer 360 — company info, tax ID (13 digits), contacts, deals, quotations, tasks, documents, timeline |
-| Document Storage | Upload, preview, download files per account (PDF, Word, Excel, images, ZIP, max 25MB) |
-| Pipeline (Leads) | Kanban board with drag-and-drop — New > Contacted > Qualified > Proposal > Negotiation > Won/Lost. Total value per stage on column header |
-| Quotation Workflow | Create, submit for approval, Sales Manager approves, then PDF download (A4). Company logo upload |
-| Task & Call Logging | Task list with filters, log call form, linked to accounts with clickable links |
-| Products / Catalog | Product catalog with SKU, pricing, WHT rate, create/edit form |
-| Calendar | Monthly calendar with task creation, tasks shown as colored dots per day |
-| Notifications | In-app notification center |
-| Settings | User management + Roles & Permissions (CRUD matrix) |
-| Admin Portal | Tenant management, audit logs, security, API keys, webhooks, PDPA, system health |
-| i18n | Thai / English toggle, 150+ keys, stored in localStorage |
-| Responsive | Desktop, tablet (768px), mobile (480px), small iPhone (380px) |
+| Dashboard | KPI cards, pipeline chart, revenue graph, mini Kanban, activity timeline |
+| Accounts | Customer 360 — company info, Thai tax ID, contacts, deals, quotations, tasks, documents |
+| Pipeline | Kanban board with drag-and-drop — New → Contacted → Qualified → Proposal → Negotiation → Won/Lost |
+| Quotations | Create, approval workflow, PDF generation, VAT 7% / WHT calculation |
+| Tasks | Task list with filters, call logging, linked to accounts |
+| Products | Product catalog with SKU, pricing, WHT rate |
+| Calendar | Monthly calendar with task creation |
+| Settings | User management, Roles & Permissions, LINE OA config, AI model selection |
+| Admin Portal | Tenant management, audit logs, security, API keys, webhooks, PDPA |
+| AI Agents | 3 agents: Admin AI (LINE), น้องขายไว (42 tools), น้องวิ Analytics (7 tools) |
+| LINE OA | Auto-reply, auto-create Lead, send product/quotation via LINE |
+| i18n | Thai / English, Buddhist calendar, Thai address format |
 
 ---
 
@@ -55,19 +48,16 @@ SalesFAST 7 is a full-featured Customer Relationship Management platform designe
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | HTML5, CSS3, Vanilla JavaScript — Salesforce Lightning design style |
-| Backend | NestJS (TypeScript) on AWS Lambda Node.js 20.x — 1024MB per function |
-| Database | PostgreSQL 16 on Amazon RDS db.t4g.medium + RDS Proxy |
-| Auth | bcrypt cost-12 + JWT (15min access / 7d refresh), account lockout |
-| CDN | Amazon CloudFront Pro Plan ($15/mo flat-rate) with OAC |
-| Security | AWS WAF (included in Pro plan, 25 rules), DDoS protection, Helmet, RLS, TLS 1.2+ |
-| Queue | Amazon SQS (event-driven notifications) + DLQ |
-| Storage | Amazon S3 AES-256 encrypted, private |
-| Backup | AWS Backup — daily snapshots, 7-day retention |
-| Secrets | AWS Secrets Manager |
-| IaC | AWS CloudFormation (~1,186 lines) |
+| Frontend | HTML5, CSS3, Vanilla JS — Salesforce Lightning design |
+| Backend | 6 NestJS microservices (TypeScript) on AWS Lambda |
+| AI Agents | Strands Agents SDK (TypeScript) + Amazon Bedrock |
+| Database | PostgreSQL 16 on RDS + RDS Proxy, Row Level Security |
+| Auth | bcrypt cost-12 + JWT (15min access / 7d refresh) |
+| CDN | CloudFront Pro Plan ($15/mo flat-rate, includes WAF + DDoS) |
+| Queue | SQS + SNS fan-out (event-driven agents) |
+| Storage | S3 AES-256 encrypted |
+| IaC | CloudFormation |
 | Monorepo | Turborepo + npm workspaces |
-| Region | ap-southeast-1 (Singapore, default) — override with `--region` |
 
 ---
 
@@ -75,71 +65,53 @@ SalesFAST 7 is a full-featured Customer Relationship Management platform designe
 
 ```
 CRM/
-├── frontend/                    # Static HTML/CSS/JS frontend
-│   ├── index.html               # Entry redirect
-│   ├── landing.html             # Marketing landing page (TH/EN)
-│   ├── login.html               # Login page (split layout)
-│   ├── css/app.css              # Shared stylesheet (Salesforce Lightning theme)
+├── frontend/                    Static HTML/CSS/JS
+│   ├── app/                     13 pages (dashboard, accounts, leads, quotations, etc.)
+│   ├── admin/                   Admin portal
 │   ├── js/
-│   │   ├── nav.js               # Shared navigation with dropdown menus
-│   │   ├── data.js              # Mock data (accounts, leads, tasks, etc.)
-│   │   ├── helpers.js           # Utilities: fmt(), esc(), auth helpers
-│   │   └── i18n.js              # Thai/English translations (150+ keys)
-│   ├── app/
-│   │   ├── dashboard.html       # BI Dashboard
-│   │   ├── accounts.html        # Account list + create form
-│   │   ├── account-detail.html  # Customer 360 (7 tabs incl. Documents)
-│   │   ├── leads.html           # Pipeline Kanban (drag-and-drop)
-│   │   ├── quotations.html      # Quotation list + create
-│   │   ├── quotation-detail.html# Approval workflow + PDF preview
-│   │   ├── tasks.html           # Task list + call logging
-│   │   ├── products.html        # Product catalog + create/edit
-│   │   ├── calendar.html        # Monthly calendar + task creation
-│   │   ├── notifications.html   # Notification center
-│   │   └── settings.html        # Users + Roles & Permissions
-│   └── admin/index.html         # Admin portal (12 sections)
+│   │   ├── nav.js               Navigation + น้องขายไว chat widget (calls Agent API)
+│   │   ├── data.js              API helper + UI constants (no mock data)
+│   │   ├── helpers.js           Utilities: fmt(), esc(), auth helpers
+│   │   └── i18n.js              Thai/English translations (150+ keys)
+│   └── css/app.css              Shared stylesheet
 │
-├── services/                    # NestJS backend (5 microservices)
-│   ├── auth-service/            # Auth, Users, Roles, API Keys, Security, Tenant
-│   ├── crm-service/             # Accounts, Contacts, Tasks, Notes, Tags, Timeline, Audit, Consent
-│   ├── sales-service/           # Leads, Opportunities, Pipeline, Targets, Reports
-│   ├── quotation-service/       # Products, Quotations, PDF generation
-│   └── notification-service/    # Notifications, Webhooks, LINE OA, Event consumer
+├── services/                    6 NestJS microservices
+│   ├── auth-service/            Port 3001 — Auth, Users, Roles, API Keys
+│   ├── crm-service/             Port 3002 — Accounts, Contacts, Tasks, Notes, Tags
+│   ├── sales-service/           Port 3003 — Leads, Opportunities, Pipeline, Targets
+│   ├── quotation-service/       Port 3004 — Products, Quotations, PDF
+│   ├── notification-service/    Port 3005 — Notifications, Webhooks, LINE OA
+│   └── agent-service/           Port 3006 — 3 AI Agents (Strands SDK)
 │
 ├── database/
-│   ├── schema.sql               # Complete PostgreSQL schema (30+ tables, RLS)
-│   ├── seed.sql                 # Template seed — placeholders replaced by deploy.sh
-│   └── README.md
+│   ├── schema.sql               30+ tables with RLS
+│   └── seed.sql                 Template — placeholders replaced by deploy.sh
 │
 ├── infra/
-│   ├── cloudformation.yaml      # Full AWS stack (~1,300 lines)
-│   ├── cloudformation-ai.yaml   # AI stack (S3 KB + IAM roles)
-│   ├── deploy.sh                # One-command deploy (pre-check + 9 steps, auto DB init)
-│   ├── destroy.sh               # Destroy all stacks (6 steps, safety confirm)
-│   ├── ARCHITECTURE.md          # Architecture & cost documentation
-│   └── SECURITY-AUDIT.md        # Security audit report (18 issues — all fixed)
+│   ├── cloudformation.yaml      CRM stack (VPC, RDS, Lambda, API GW, S3, CloudFront, SNS, SQS)
+│   ├── cloudformation-ai.yaml   AI stack (S3 KB bucket, IAM roles)
+│   ├── deploy.sh                Full deployment (9 steps + pre-check)
+│   ├── destroy.sh               Destroy all resources
+│   └── cloudshell-deploy.sh     Interactive CloudShell deploy
 │
 └── packages/
-    ├── shared-types/            # TypeScript type definitions
-    ├── ui-components/           # Shared React components (future use)
-    └── utils/                   # Thai localization utilities
+    ├── shared-types/            TypeScript interfaces
+    ├── ui-components/           Shared React components (future)
+    └── utils/                   Thai localization utilities
 ```
 
 ---
 
-## Quick Start — Deploy on AWS CloudShell
+## Deployment
 
-### Prerequisites
-
-- AWS Account with `ap-southeast-7` (Thailand) region enabled
-- IAM user/role with CloudFormation, Lambda, RDS, S3, CloudFront, WAF, VPC permissions
-
-### One-Command Deploy
-
-Open [AWS CloudShell](https://console.aws.amazon.com/cloudshell/), then run:
+### 1. First Time Deploy
 
 ```bash
-git clone https://github.com/konsudtai/CRM.git && cd CRM/infra && bash deploy.sh \
+# AWS CloudShell หรือ terminal ที่มี AWS CLI + Node.js 20+
+git clone https://github.com/konsudtai/CRM.git
+cd CRM/infra
+
+bash deploy.sh \
   --email    admin@mycompany.com \
   --name     "Somchai Jaidee" \
   --password "MyPass@123" \
@@ -147,1151 +119,327 @@ git clone https://github.com/konsudtai/CRM.git && cd CRM/infra && bash deploy.sh
   --tenant   "My Company Ltd"
 ```
 
-> Default region: **ap-southeast-1 (Singapore)** — รองรับทุก service + Bedrock อยู่ใน region เดียวกัน
-> ถ้าต้องการ deploy ที่ไทย: เพิ่ม `--region ap-southeast-7`
+`--db-pass auto` จะถามให้กรอก password เอง (interactive, ซ่อนตัวอักษร, ยืนยัน 2 ครั้ง)
+หรือระบุตรง: `--db-pass "MyDbP@ss99"`
 
-All flags are **required** (ยกเว้น --region):
-
-| Flag | Example | Description |
-|------|---------|-------------|
-| `--email` | `admin@company.com` | Admin login email |
-| `--name` | `"Somchai Jaidee"` | Admin full name |
-| `--password` | `"Pass@123"` | Admin login password |
-| `--db-pass` | `auto` or `"MyDbPass!"` | Database password (`auto` = generate random) |
-| `--tenant` | `"My Company Ltd"` | Company / tenant name |
-
-Optional flags:
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--region` | `ap-southeast-1` (Singapore, recommended) | CRM region |
-| `--ai-region` | `ap-southeast-1` (Singapore) | Bedrock AI region |
-| `--jwt` | Auto-generate | JWT signing key |
-| `--stack` | `salesfast7-prod` | CloudFormation stack name |
-
-The script deploys **everything automatically** in 10 steps (with pre-deploy cleanup):
+**ใช้เวลา ~15-20 นาที** Script ทำทุกอย่างอัตโนมัติ:
 
 ```
-Pre-check:
-  [0/9]   Pre-deploy cleanup (auto-detect + remove orphaned resources)
-          - Detects failed stacks (ROLLBACK_COMPLETE, DELETE_FAILED)
-          - Removes orphaned S3 buckets, DynamoDB tables, SQS queues
-          - Removes orphaned Lambda functions, RDS instances
-          - Safe: skips if no orphans found or stack is healthy
-
-Phase 1: CRM Stack
-  [1/9]   Deploy CloudFormation (VPC, RDS, Lambda, API GW, S3, CloudFront)
-  [2/9]   Get stack outputs (URLs, endpoints)
-  [3/9]   Build pg Lambda Layer + update DB Init Lambda
-  [4/9]   Generate seed.sql with admin credentials (bcrypt hash)
-  [5/9]   Initialize database via Lambda (schema + seed — automatic)
-  [6/9]   Upload frontend to S3
-  [7/9]   Invalidate CloudFront cache
-
-Phase 2: AI Stack
-  [8/9]   Deploy AI CloudFormation (S3 KB bucket, IAM roles)
-  [9/9]   Upload sample Knowledge Base documents
-```
-
-> Database init ทำอัตโนมัติผ่าน Lambda ที่อยู่ใน VPC เดียวกับ RDS
-> ไม่ต้อง init เอง ไม่ต้องเปิด RDS Query Editor
-> ถ้า deploy ซ้ำ (re-run) จะ handle gracefully — ไม่ error ถ้า tables มีอยู่แล้ว
-
-### Region Compatibility
-
-| Service | ap-southeast-7 (Thailand) | ap-southeast-1 (Singapore) |
-|---------|:------------------------:|:--------------------------:|
-| VPC, EC2, Lambda, S3, RDS | ✅ | ✅ |
-| API Gateway, SQS, DynamoDB | ✅ | ✅ |
-| CloudFront Pro Plan | ✅ Global (subscribe via Console) | ✅ Global |
-| WAF | ✅ Included in Pro plan | ✅ Included in Pro plan |
-| RDS Proxy | ⚠️ อาจยังไม่มี | ✅ |
-| Amazon Bedrock | ❌ ไม่มี | ✅ ครบทุก model |
-
-**ถ้า deploy ที่ ap-southeast-7 แล้ว RDS Proxy error:**
-- RDS Proxy: ลบ `RDSProxy*` resources ออก, Lambda จะเชื่อม RDS ตรง
-
-**CloudFront Pro Plan:** subscribe หลัง deploy ผ่าน CloudFront Console (ไม่ต้อง deploy WAF แยก)
-
-**แนะนำสำหรับ production:** ใช้ `ap-southeast-1` (Singapore) เป็น CRM region เพราะรองรับทุก service + Bedrock อยู่ใน region เดียวกัน
-
-### CloudFront Pro Plan — Setup หลัง Deploy
-
-CloudFront Pro Plan เป็น flat-rate pricing $15/mo ที่รวมทุกอย่างไว้ในราคาเดียว ไม่มี overage charges:
-
-```
-สิ่งที่รวมอยู่ใน Pro Plan ($15/mo):
-  - CloudFront CDN (750+ edge locations ทั่วโลก)
-  - AWS WAF (25 rules: SQL injection, XSS, PHP, WordPress)
-  - Always-on DDoS protection
-  - Amazon Route 53 DNS
-  - Amazon CloudWatch Logs ingestion
-  - TLS certificate (free)
-  - Serverless edge compute (CloudFront Functions)
-  - 50GB S3 storage credits/mo
-  - 10M requests/mo
-  - 50TB data transfer/mo
-  - Cache tag invalidation
-  - Logging
-```
-
-**วิธี Subscribe (ทำครั้งเดียวหลัง deploy):**
-
-```
-1. เปิด AWS Console > CloudFront
-2. เลือก Distribution ที่สร้างจาก deploy.sh
-3. คลิก "Pricing plan" tab
-4. เลือก "Pro" ($15/month)
-5. กด "Subscribe"
-6. เสร็จ — WAF + DDoS + DNS + Logs เปิดใช้งานอัตโนมัติ
-```
-
-**Usage Allowance:**
-- 10M requests/mo + 50TB data transfer/mo (เพียงพอสำหรับ 50+ users)
-- ถ้าเกิน: performance ลดลง (ใช้ edge locations น้อยลง) แต่ **ไม่มีค่าใช้จ่ายเพิ่ม**
-- DDoS attacks + WAF-blocked requests **ไม่นับ** usage allowance
-- AWS แจ้งเตือนที่ 50%, 80%, 100% ของ allowance
-
-**เปรียบเทียบ Plan:**
-
-| Plan | Price | Requests | Data Transfer | WAF Rules | S3 Credits |
-|------|------:|--------:|-------------:|----------:|-----------:|
-| Free | $0/mo | 1M | 100GB | 5 | 5GB |
-| **Pro** | **$15/mo** | **10M** | **50TB** | **25** | **50GB** |
-| Business | $200/mo | 125M | 50TB | 50 | 1TB |
-| Premium | $1,000/mo | 500M | 50TB | 75 | 5TB |
-
-> สำหรับ SalesFAST 7 (30-50 users, ~500K req/mo) → **Pro plan เพียงพอ**
-> ถ้า users เกิน 300+ หรือ requests เกิน 10M/mo → upgrade เป็น Business plan
-
-### What the Deploy Script Does
-
-```
-[0/9]  Pre-deploy cleanup
-       - Detect failed stacks → auto-delete
-       - Detect orphaned resources (S3, DynamoDB, SQS, Lambda, RDS) → auto-remove
-       - Safe: skips if stack is healthy or no orphans found
-[1/9]  Deploy CloudFormation stack (~10-15 min first time)
-[2/9]  Get stack outputs (CloudFront URL, API URL, DB endpoint)
-[3/9]  Build pg Lambda Layer (node-postgres) + update DB Init Lambda
+[0/9]  Pre-check — ลบ orphaned resources จาก deploy ครั้งก่อน (ถ้ามี)
+[1/9]  Deploy CloudFormation (VPC, RDS, Lambda, API GW, S3, CloudFront, SNS, SQS)
+[2/9]  Get stack outputs (URLs, endpoints)
+[3/9]  Build pg Lambda Layer + DB Init Lambda
 [4/9]  Generate seed.sql with bcrypt-hashed admin password
-[5/9]  Initialize database via Lambda (schema + seed — automatic)
-[6/9]  Upload frontend to S3 with correct content types
+[5/9]  Initialize database via Lambda (schema + seed)
+[6/9]  Upload frontend to S3
 [7/9]  Invalidate CloudFront cache
-[8/9]  Deploy AI stack (S3 KB bucket + IAM roles)
+[8/9]  Deploy AI stack (S3 KB bucket, IAM roles)
 [9/9]  Upload sample Knowledge Base documents
 ```
 
-> Database init ทำอัตโนมัติ ไม่ต้องทำเอง
-> Script ใช้ Lambda function ที่อยู่ใน VPC เดียวกับ RDS เป็นตัว execute SQL
-> Pre-deploy cleanup แก้ปัญหา `ResourceExistenceCheck` error เมื่อ deploy ซ้ำหลัง destroy ไม่สมบูรณ์
-
-### Post-Deploy: Subscribe CloudFront Pro Plan ($15/mo)
-
-> CloudFront Pro Plan ยังไม่มี CLI/API support — ต้องทำผ่าน Console (ทำครั้งเดียว ~2 นาที)
+**หลัง deploy:**
 
 ```
-1. เปิด https://console.aws.amazon.com/cloudfront/v4/home
-2. คลิก "Distributions"
-3. เลือก Distribution ที่มี Comment "SalesFAST 7 prod"
-4. คลิก "Edit" > เลือก Pricing plan "Pro" ($15/month)
-5. กด "Save changes"
-6. เสร็จ — WAF + DDoS + DNS + Logs + 50GB S3 เปิดใช้งานทันที
+1. Subscribe CloudFront Pro Plan ($15/mo)
+   Console > CloudFront > Distribution > Pricing plan > Pro
+
+2. เปิด CloudFront URL > Login > เปลี่ยนรหัสผ่าน
+
+3. (Optional) Setup LINE OA
+   Settings > Add-ons > LINE OA > กรอก Token/Secret
+
+4. (Optional) Setup Knowledge Base
+   Bedrock Console > Create Knowledge Base > S3 source
 ```
 
-### Post-Deploy: ทดสอบระบบ
+| Flag | Required | Description |
+|------|:--------:|-------------|
+| `--email` | ✅ | Admin login email |
+| `--name` | ✅ | Admin full name |
+| `--password` | ✅ | Admin login password |
+| `--db-pass` | ✅ | DB password (`auto` = interactive prompt) |
+| `--tenant` | ✅ | Company name |
+| `--region` | | Default: `ap-southeast-1` (Singapore) |
+| `--ai-region` | | Default: `ap-southeast-1` |
+| `--jwt` | | Default: auto-generate |
+| `--stack` | | Default: `salesfast7-prod` |
+
+### 2. Update Code
+
+อัปเดต code ใหม่โดยไม่ลบ database — ข้อมูลเดิมยังอยู่ครบ
 
 ```bash
-# 1. เปิด CloudFront URL (แสดงตอนจบ deploy)
-# 2. Login ด้วย admin email + password ที่ตั้งตอน deploy
-# 3. ระบบจะบังคับเปลี่ยนรหัสผ่านครั้งแรก
-# 4. ตรวจสอบ: Dashboard, Accounts, Pipeline, Quotations, Settings
+cd ~/CRM
+git pull origin main
+cd infra
+
+bash deploy.sh \
+  --email    admin@mycompany.com \
+  --name     "Somchai Jaidee" \
+  --password "MyPass@123" \
+  --db-pass  "SAME_PASSWORD_AS_FIRST_DEPLOY" \
+  --tenant   "My Company Ltd"
 ```
 
-### Troubleshooting
+**สำคัญ:** `--db-pass` ต้องใช้ค่าเดิมที่ตั้งตอน deploy ครั้งแรก
 
-**Error: `ResourceExistenceCheck` / `ChangeSet FAILED`**
+สิ่งที่อัปเดต: Frontend (S3), Lambda code, CloudFormation resources, CloudFront cache
+สิ่งที่ไม่กระทบ: Database, ข้อมูลลูกค้า, Users, Settings
 
-เกิดจาก resources ค้างจาก deploy ครั้งก่อนที่ destroy ไม่สมบูรณ์
+### 3. Clean & Deploy New
+
+ลบทุกอย่างแล้ว deploy ใหม่ตั้งแต่ต้น (~30 นาที) — **database จะถูกลบ**
 
 ```bash
-# วิธีแก้: git pull แล้ว deploy ใหม่ (v ใหม่มี auto-cleanup)
-cd ~/CRM && git pull origin main && cd infra
-bash deploy.sh --email ... --name ... --password ... --db-pass auto --tenant ...
-
-# หรือ destroy ก่อนแล้ว deploy ใหม่
+cd ~/CRM/infra
 bash destroy.sh --yes
-bash deploy.sh --email ... --name ... --password ... --db-pass auto --tenant ...
+
+bash deploy.sh \
+  --email    admin@mycompany.com \
+  --name     "Somchai Jaidee" \
+  --password "MyPass@123" \
+  --db-pass  auto \
+  --tenant   "My Company Ltd"
 ```
 
-**Error: `Database init failed`**
+### 4. Destroy
 
-```
-วิธี A: Run deploy.sh อีกครั้ง (จะ retry DB init)
-
-วิธี B: RDS Query Editor (manual)
-  1. Console > RDS > Query Editor
-  2. Connect: sf7-prod / salesfast7 / (db-pass)
-  3. Copy-paste database/schema.sql > Run
-  4. Copy-paste /tmp/sf7-seed.sql > Run
-```
-
-**Error: `RDS Proxy` not available in region**
+ลบทุกอย่าง — database, files, Lambda, CloudFront **กู้คืนไม่ได้**
 
 ```bash
-# ลบ RDSProxy resources ออกจาก cloudformation.yaml
-# Lambda จะเชื่อม RDS ตรง (ไม่ผ่าน Proxy)
-# แก้ Environment Variables ใน Lambda: DB_PROXY_HOST → DB_HOST (RDS endpoint ตรง)
+cd ~/CRM/infra
+bash destroy.sh
+# พิมพ์ "destroy" เพื่อยืนยัน
+
+# หรือ skip confirmation:
+bash destroy.sh --yes
 ```
 
-**Error: `Stack is in DELETE_IN_PROGRESS`**
-
-```bash
-# รอให้ delete เสร็จก่อน (~10-15 min)
-aws cloudformation wait stack-delete-complete \
-  --stack-name salesfast7-prod --region ap-southeast-1
-
-# แล้ว deploy ใหม่
-bash deploy.sh --email ... --name ... --password ... --db-pass auto --tenant ...
-```
+> ถ้า subscribe CloudFront Pro Plan อยู่ ต้อง cancel ใน Console ก่อน destroy
+> Console > CloudFront > Distribution > Cancel pricing plan
 
 ---
 
-## AWS Cost Breakdown
-
-### CRM Infrastructure (default: ap-southeast-1 Singapore)
-
-| Service | Specification | Monthly Cost |
-|---------|--------------|-------------:|
-| RDS PostgreSQL | db.t4g.medium (2 vCPU, 4GB RAM), 100GB gp3, single-AZ, encrypted | $56.00 |
-| VPC Endpoints | 3 interface endpoints (S3, SQS, Secrets Manager) — replaces NAT Gateway | $22.00 |
-| RDS Proxy | Connection pooling — 2 vCPU x $0.015/hr x 730h | $15.00 |
-| **CloudFront Pro Plan** | **Flat-rate $15/mo — CDN + WAF + DDoS + DNS + TLS + Logs + 50GB S3 credits (no overage)** | **$15.00** |
-| AWS Backup | Daily snapshots, 7-day retention — RDS + S3 (09:00 TH) | $2.00 |
-| CloudWatch | Logs + VPC Flow Logs (30-day retention) + 3 security alarms | $2.00 |
-| Lambda | 5 functions x 1024MB, ~100K req/month | $2.00 |
-| API Gateway | HTTP API, ~100K requests, throttled 50 req/s | $1.00 |
-| S3 (Frontend + Files) | ~5GB, AES-256 encrypted, private (50GB covered by Pro plan credits) | $0.00 |
-| Secrets Manager | 3 secrets (DB + JWT + LINE) | $1.50 |
-| SQS | ~50K messages + DLQ | $0.50 |
-| DynamoDB | 2 tables (chat history + AI state), on-demand, encrypted | $1.00 |
-| **CRM Subtotal** | | **~$118/mo** |
-
-> **CloudFront Pro Plan ($15/mo) includes:**
-> 10M requests/mo, 50TB data transfer/mo, 25 WAF rules (SQL/XSS/PHP/WordPress),
-> Always-on DDoS protection, Route 53 DNS, CloudWatch Logs ingestion, TLS certificate,
-> Serverless edge compute, 50GB S3 storage credits, Cache tag invalidation, Logging.
-> **No overage charges** — traffic spikes and DDoS attacks do not increase cost.
-> Subscribe via: CloudFront Console > Distributions > select distribution > Pricing plan > Pro
-
-### AI / Bedrock (ap-southeast-1 Singapore)
-
-| Service | Specification | Monthly Cost |
-|---------|--------------|-------------:|
-| S3 (Knowledge Base) | เก็บเอกสาร KB ~1GB, AES-256 | $0.25 |
-| IAM Roles | Bedrock Agent Role + KB Role (free) | $0.00 |
-| **Bedrock — Chat Model** | **ขึ้นอยู่กับ model + ปริมาณใช้งาน (ดูตารางด้านล่าง)** | **$5–80** |
-| Bedrock — Embedding | Amazon Titan Embed v2, ~10K chunks/mo | $0.10 |
-| **AI Subtotal** | | **~$5–80/mo** |
-
-### Bedrock Model Pricing (On-Demand, per 1K tokens)
-
-| Model | Input | Output | Est. Cost/mo (30 users) |
-|-------|------:|-------:|------------------------:|
-| Amazon Nova Lite 2.0 | $0.00006 | $0.00024 | **~$2–5** |
-| Claude 3 Haiku | $0.00025 | $0.00125 | **~$5–15** |
-| DeepSeek R1 | $0.00135 | $0.00540 | **~$8–20** |
-| Mistral Small | $0.001 | $0.003 | **~$5–15** |
-| Qwen 2.5 72B | $0.0008 | $0.0008 | **~$5–12** |
-| Llama 3.1 8B | $0.00022 | $0.00022 | **~$2–5** |
-| Claude 3.5 Sonnet | $0.003 | $0.015 | **~$20–50** |
-| Claude Sonnet 4 | $0.003 | $0.015 | **~$20–50** |
-| Claude Opus 4 | $0.015 | $0.075 | **~$50–150** |
-| Cohere Command R+ | $0.003 | $0.015 | **~$15–40** |
-
-> ประมาณการ: 30 users, ~500 conversations/mo, avg 2K input + 1K output tokens per conversation
-> แนะนำเริ่มต้น: **Claude 3 Haiku** หรือ **Amazon Nova Lite 2.0** (ถูกที่สุด, เร็วที่สุด)
-
-### รวมทั้งหมด
+## AWS Cost
 
 | Category | Monthly Cost |
-|----------|-------------:|
-| CRM Infrastructure | ~$118 |
-| AI (Nova Lite / Haiku) | ~$5-15 |
-| **Total (แนะนำ)** | **~$123-133/mo** |
-| AI (Sonnet 4 / Opus 4) | ~$20-150 |
-| **Total (Premium model)** | **~$138-268/mo** |
+|----------|------------:|
+| RDS PostgreSQL (db.t4g.medium, 100GB) | $56 |
+| VPC Endpoints (3x, replaces NAT Gateway) | $22 |
+| RDS Proxy | $15 |
+| CloudFront Pro (CDN + WAF + DDoS) | $15 |
+| Bedrock AI (Claude 3.5 Haiku, ~30 users) | $5-15 |
+| Other (Backup, CloudWatch, Lambda, API GW, S3, SQS, DynamoDB, Secrets) | $10 |
+| **Total** | **~$123-133/mo** |
 
-### Cost Optimizations Applied
-
-- CloudFront Pro Plan $15/mo flat-rate — รวม CDN + WAF + DDoS + DNS + TLS + Logs + 50GB S3 credits, no overage
-- No NAT Gateway — saves $32/month, uses VPC Endpoints instead
-- No Cognito — bcrypt + JWT in PostgreSQL saves ~$0-5/month
-- Serverless Lambda instead of EC2/ECS — no idle compute cost
-- Single-AZ RDS — acceptable for SMB, saves ~$56/month vs Multi-AZ
-- HTTP API Gateway — 70% cheaper than REST API
-- S3 storage covered by Pro plan — 50GB/mo credits included (frontend ~5GB ใช้ฟรี)
-- Bedrock On-Demand — จ่ายตามใช้จริง ไม่มี minimum, ไม่มี commitment
-- DynamoDB On-Demand — ไม่ต้อง provision capacity, จ่ายตาม request
-- AI stack แยก region — deploy Bedrock ที่ Singapore (ใกล้ไทย, มีทุก model)
-
----
-
-## Capacity & Traffic
-
-> CRM is designed for sales teams — not high-traffic consumer apps. Typical usage is 10-50 concurrent users during business hours.
-
-### Current Spec Limits
-
-| Component | Spec | Effective Limit |
-|-----------|------|----------------|
-| Lambda | 1024MB, 5 functions | 1,000 concurrent executions (AWS default) |
-| RDS Proxy | Connection pool | ~150 pooled connections to RDS |
-| RDS | db.t4g.medium, 4GB RAM | ~170 max DB connections |
-| API Gateway | HTTP API | 10,000 req/s (regional) |
-| CloudFront Pro | WAF 25 rules | SQL/XSS/PHP/WordPress + DDoS protection |
-| CloudFront Pro | Requests | 10M requests/mo (no overage) |
-| CloudFront Pro | Data Transfer | 50TB/mo (no overage) |
-
-### Recommended User Capacity at ~$130/mo
-
-| Usage Pattern | Concurrent Users | Req/month | Status |
-|--------------|-----------------|-----------|--------|
-| Light (5-10 sales users) | 10-20 | ~100K | Comfortable |
-| Normal (20-30 sales users) | 30-50 | ~500K | Good |
-| Peak (50 sales users) | 50-80 | ~1M | Optimal sweet spot |
-| Heavy (100+ users) | 100-150 | ~3M | RDS starts to strain |
-
-**Sweet spot: 30-50 active sales users** — ใช้งานได้สบายมากที่ ~$130/mo (CRM + AI)
-
-### Cost Scaling Scenarios
-
-| Users | Req/month | Changes Needed | Est. Cost |
-|-------|-----------|---------------|-----------|
-| 5-50 | 100K-1M | ไม่ต้องเปลี่ยน | **~$130/mo** |
-| 50-150 | 1M-3M | Lambda req cost เพิ่ม | **~$140-155/mo** |
-| 150-300 | 3M-8M | Upgrade RDS → db.t4g.large | **~$215-245/mo** |
-| 300-500 | 8M-20M | RDS db.t4g.xlarge + Read Replica | **~$365-415/mo** |
-| 500+ | 20M+ | Multi-AZ RDS + ElastiCache + CF Business plan | **$500+/mo** |
-
-### When to Upgrade
-
-- **RDS → db.t4g.large** เมื่อ concurrent users เกิน 150 (~$130/mo เพิ่ม)
-- **Read Replica** เมื่อ query หนัก หรือ report ใช้ CPU มาก (~$56/mo เพิ่ม)
-- **Lambda Provisioned Concurrency** เมื่อต้องการลด cold start (~$5-10/mo เพิ่ม)
-- **Multi-AZ RDS** เมื่อต้องการ 99.95% uptime SLA (~$56/mo เพิ่ม)
+Sweet spot: **30-50 active sales users** at ~$130/mo
 
 ---
 
 ## Architecture
 
 ```
-                         ┌─────────────────────────────┐
-                         │   CloudFront (Flat Rate PRO) │
-                         │   + WAF v2 (SQLi/XSS/Bots)  │
-                         │   + Security Headers (HSTS)  │
-                         └──────────┬──────────┬────────┘
-                                    │          │
-                          Static    │          │  API Routes
-                          Files     │          │
-                         ┌──────────▼──┐  ┌───▼──────────────┐
-                         │  S3 Bucket  │  │  API Gateway HTTP │
-                         │  (OAC,AES)  │  │  50 req/s throttle│
-                         └─────────────┘  └───┬──────────────┘
-                                              │
-              ┌──────────┬──────────┬─────────┴──┬──────────┐
-              │          │          │             │          │
-         ┌────▼───┐ ┌────▼───┐ ┌───▼────┐ ┌─────▼──┐ ┌─────▼──┐
-         │  Auth  │ │  CRM   │ │ Sales  │ │ Quota. │ │ Notif. │
-         │ Lambda │ │ Lambda │ │ Lambda │ │ Lambda │ │ Lambda │
-         │ 1024MB │ │ 1024MB │ │ 1024MB │ │ 1024MB │ │ 1024MB │
-         └────┬───┘ └────┬───┘ └───┬────┘ └─────┬──┘ └──┬─────┘
-              │          │         │             │       │
-              └──────────┴────┬────┴─────────────┘   ┌──▼──┐
-                              │                       │ SQS │
-                    ┌─────────▼──────────┐            └─────┘
-                    │    RDS Proxy       │
-                    │  (Connection Pool) │
-                    └─────────┬──────────┘
-                              │
-                    ┌─────────▼──────────┐
-                    │  RDS PostgreSQL 16  │
-                    │  db.t4g.medium      │
-                    │  100GB gp3 (private)│
-                    │  RLS on all tables  │
-                    └────────────────────┘
-
-         All Lambdas → Secrets Manager (VPC endpoint)
-         CRM/Quotation → S3 Files (VPC endpoint)
-         Auth/CRM/Sales/Quotation → SQS (VPC endpoint)
-         AWS Backup → Daily snapshot RDS + S3 (7-day retention)
+                    ┌──────────────────────────┐
+                    │  CloudFront Pro + WAF v2  │
+                    └─────────┬────────┬───────┘
+                     Static   │        │  API
+                    ┌─────────▼──┐  ┌──▼──────────────┐
+                    │  S3 Bucket │  │  API Gateway HTTP│
+                    └────────────┘  └──┬──────────────┘
+                                       │
+         ┌────────┬────────┬───────────┼────────┬────────┐
+    ┌────▼──┐┌────▼──┐┌────▼──┐┌──────▼──┐┌────▼──┐┌────▼──┐
+    │ Auth  ││ CRM   ││ Sales ││Quotation││Notif. ││Agent  │
+    │ 3001  ││ 3002  ││ 3003  ││  3004   ││ 3005  ││ 3006  │
+    └───┬───┘└───┬───┘└───┬───┘└────┬────┘└───┬───┘└───┬───┘
+        └────────┴────┬───┴─────────┘         │        │
+                      │                   ┌───▼───┐    │
+              ┌───────▼────────┐          │  SQS  │◄───┘
+              │   RDS Proxy    │          │+ SNS  │ (event listener)
+              └───────┬────────┘          └───────┘
+              ┌───────▼────────┐
+              │ PostgreSQL 16  │
+              │ 30+ tables RLS │
+              └────────────────┘
 ```
 
 ---
 
 ## Backend Services
 
-### auth-service (Port 3001)
-| Module | Description |
-|--------|-------------|
-| auth | Login, MFA verify, SSO, refresh token, logout, token blacklist |
-| users | List, create, update, deactivate, activate, reset password |
-| roles | Role CRUD, permission matrix |
-| api-keys | Create, list, revoke API keys (SHA-256 hashed) |
-| security-settings | IP allowlist, MFA settings |
-| tenant | Tenant management |
+| Service | Port | Modules |
+|---------|:----:|---------|
+| auth-service | 3001 | Auth (login, MFA, JWT), Users, Roles, API Keys, IP Allowlist, Tenant |
+| crm-service | 3002 | Accounts, Contacts, Notes, Tasks, Activities, Tags, Timeline, Search, Audit, Consent, Email Sync, Calendar Sync |
+| sales-service | 3003 | Leads, Opportunities, Pipeline, Targets, Reports |
+| quotation-service | 3004 | Products, Quotations (VAT/WHT), PDF, Approval workflow |
+| notification-service | 3005 | Notifications, Webhooks, LINE OA |
+| **agent-service** | **3006** | **3 AI Agents (Strands SDK), Event Listener (SQS), Scheduler (Cron)** |
 
-Guards: `GatewayAuthGuard`, `TenantGuard`, `PermissionGuard`, `RateLimiterGuard` (Redis sliding window), `IpAllowlistGuard`, `ApiKeyGuard`
-
-### crm-service (Port 3002)
-| Module | Description |
-|--------|-------------|
-| accounts | Customer 360 — CRUD, search, shareholders, documents |
-| contacts | Contact management per account |
-| notes | Notes + file attachments |
-| tasks | Task CRUD, assignment, status tracking |
-| activities | Activity timeline per entity |
-| tags | Account tagging |
-| timeline | Unified timeline view |
-| search | Full-text search |
-| audit | Audit log recording |
-| consent | PDPA consent records |
-| email | Email sync (Gmail/Outlook) |
-| calendar | Calendar sync (Google/Microsoft) |
-| event-bus | SQS event publishing |
-
-### sales-service (Port 3003)
-| Module | Description |
-|--------|-------------|
-| leads | Lead CRUD, status tracking, source tracking |
-| opportunities | Deal management, stage history |
-| pipeline | Pipeline stage configuration |
-| targets | Sales targets per user/period |
-| reports | Sales reports and analytics |
-| event-bus | SQS event publishing |
-
-### quotation-service (Port 3004)
-| Module | Description |
-|--------|-------------|
-| products | Product catalog CRUD, SKU, WHT rates |
-| quotations | Quotation CRUD, line items, VAT 7%, WHT, approval workflow, PDF |
-| event-bus | SQS event publishing |
-
-### notification-service (Port 3005)
-| Module | Description |
-|--------|-------------|
-| notifications | In-app, email, LINE notifications |
-| webhooks | Webhook config + delivery tracking |
-| line | LINE OA integration |
-| event-consumer | SQS event consumer (triggered by Lambda event source mapping) |
 
 ---
 
-## AI Agents — Agentic AI CRM (Strands Agents SDK)
+## AI Agents
 
-SalesFAST 7 ใช้ **Strands Agents SDK (TypeScript)** + **Amazon Bedrock** สร้าง AI Agent 3 ตัวที่ทำงานจริง เรียก API จริง เขียนลง DB จริง ผ่าน service เดียวกับที่ UI ใช้ — user ยังทำ manual ผ่านหน้าจอได้เหมือนเดิม
+Built with **Strands Agents SDK (TypeScript)** + **Amazon Bedrock**. All 3 agents call real APIs and write to the real database — users can still do everything manually through the UI.
 
-### Architecture
+### Agent 1: Admin AI — LINE OA Auto-reply
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Agent Service (Port 3006)                 │
-│                    Strands Agents SDK + NestJS               │
-│                                                             │
-│  ┌───────────────┐  ┌───────────────┐  ┌────────────────┐  │
-│  │ Admin AI      │  │ น้องขายไว      │  │ น้องวิ          │  │
-│  │ Agent         │  │ 42 tools      │  │ Analytics      │  │
-│  │               │  │               │  │ 7 tools        │  │
-│  │ 4 tools:      │  │ CRM + Scoring │  │                │  │
-│  │ • search_kb   │  │ + Activity    │  │ • KPI          │  │
-│  │ • create_lead │  │ + Deal Health │  │ • Forecast     │  │
-│  │ • products    │  │ + Follow-up   │  │ • Churn Risk   │  │
-│  │ • accounts    │  │ + Notification│  │ • Win Rate     │  │
-│  └───────┬───────┘  └───────┬───────┘  └───────┬────────┘  │
-│          │                  │                   │           │
-│          ▼                  ▼                   ▼           │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │              Orchestrator (auto-routing)              │  │
-│  └──────────────────────────────────────────────────────┘  │
-│          │                  │                   │           │
-│  ┌───────┴──────┐  ┌───────┴───────┐  ┌────────┴───────┐  │
-│  │ Event        │  │ Scheduler     │  │ Chat           │  │
-│  │ Listener     │  │ (Cron Jobs)   │  │ Controller     │  │
-│  │ (SQS)        │  │               │  │ (HTTP + SSE)   │  │
-│  └──────────────┘  └───────────────┘  └────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-         │                    │                   │
-         ▼                    ▼                   ▼
-   Same APIs as UI:  CRM / Sales / Quotation / Notification
-         │
-         ▼
-   Same Database (PostgreSQL with RLS)
-```
-
-### Agent 1: Admin AI — ตอบลูกค้า LINE OA
-
-| รายการ | รายละเอียด |
+| Item | Detail |
 |---|---|
-| ที่ไหน | LINE OA webhook → Agent Service |
-| Model | Claude 3.5 Haiku (เร็ว, ถูก) |
+| Where | LINE OA webhook → Agent Service |
+| Model | Claude 3.5 Haiku |
 | Tools | search_knowledge_base, create_lead, search_products, search_accounts |
 
-**Workflow:**
 ```
-ลูกค้าทัก LINE: "สนใจระบบ ERP"
-  │
-  ▼ Admin AI
-  ├── search_knowledge_base → หาข้อมูล ERP จาก KB
-  ├── ตอบ: "ERP ราคา ฿250,000 รวมติดตั้ง+อบรมครับ"
-  ├── ถาม: "สะดวกให้ชื่อ-เบอร์ไหมครับ ทีมจะติดต่อกลับ"
-  │
-  ▼ ลูกค้าให้ข้อมูล
-  ├── create_lead → สร้าง Lead ใน DB จริง
-  ├── create_note → สรุป conversation เป็น handoff note
-  └── event: lead.created → น้องขายไว รับต่อ
+ลูกค้าทัก LINE → Admin AI ค้น Knowledge Base → ตอบสินค้า/ราคา
+→ เก็บข้อมูล → create_lead ลง DB → event: lead.created → น้องขายไว รับต่อ
 ```
 
-### Agent 2: น้องขายไว — Sales Personal Assistant (42 Tools)
+### Agent 2: น้องขายไว — Sales Assistant (42 Tools)
 
-| รายการ | รายละเอียด |
+| Item | Detail |
 |---|---|
-| ที่ไหน | ทุกหน้า CRM (floating widget) + Event-driven + Scheduled |
+| Where | Every CRM page (floating widget) + Event-driven + Scheduled |
 | Model | Claude 3.5 Haiku |
-| Tools | 42 tools ครอบคลุม CRM, Scoring, Activity, Deal Health, Follow-up, Notification |
+| Tools | 42 tools across CRM, Scoring, Activity, Deal Health, Follow-up, Notification |
 
 **10 Agentic Features:**
 
-| # | Feature | ทำอะไร | เขียนลง DB |
+| # | Feature | What it does | Writes to DB |
 |---|---|---|---|
-| 1 | Smart Lead Scoring | ให้คะแนน Lead 0-100 (BANT) + แนะนำ assign ให้ใคร | `leads.ai_score`, `leads.metadata` |
-| 2 | Auto Activity Log | บันทึกทุก action ลง Timeline อัตโนมัติ | `activities` |
-| 3 | Smart Follow-up | สร้าง Task follow-up อัตโนมัติหลัง assign/ส่ง QT/meeting | `tasks` |
-| 4 | Conversation Summary | สรุป LINE conversation เป็น handoff note ให้ Sales | `notes` |
-| 5 | Deal Health Monitor | ตรวจ stale deals ทุก 6 ชม. ให้คะแนน green/yellow/red | `opportunities.metadata` |
-| 6 | Meeting Prep | ดึงข้อมูลลูกค้าทั้งหมดสรุปก่อน meeting + บันทึกหลัง meeting | `activities`, `notes` |
-| 7 | Smart Email/LINE | เขียน email/LINE ให้ Sales ส่งลูกค้า | `notifications` |
-| 8 | Auto-tagging | Tag industry/interest/urgency ให้ Account อัตโนมัติ | `account_tags`, `accounts` |
-| 9 | Daily Digest | สรุปทุกเช้า 8:30 ส่งให้แต่ละคนตาม Role | `notifications` |
-| 10 | Win/Loss Analysis | วิเคราะห์เมื่อ Deal ปิด + coaching recommendation | `opportunities`, `tasks` |
+| 1 | Smart Lead Scoring | Score 0-100 (BANT) + recommend who to assign | `leads.ai_score` |
+| 2 | Auto Activity Log | Log every action to Timeline | `activities` |
+| 3 | Smart Follow-up | Auto-create Tasks after assign/QT/meeting | `tasks` |
+| 4 | Conversation Summary | Summarize LINE chat as handoff note | `notes` |
+| 5 | Deal Health Monitor | Check stale deals every 6h, score green/yellow/red | `opportunities.metadata` |
+| 6 | Meeting Prep | Pull all Account data before meeting, log after | `activities`, `notes` |
+| 7 | Smart Email/LINE | Compose email/LINE message for Sales | `notifications` |
+| 8 | Auto-tagging | Tag industry/interest/urgency automatically | `account_tags` |
+| 9 | Daily Digest | Morning summary at 8:30 per user per role | `notifications` |
+| 10 | Win/Loss Analysis | Analyze when Deal closes + coaching tips | `opportunities`, `tasks` |
 
-**Workflow — Lead เข้ามาใหม่:**
+**Key Workflows:**
+
 ```
-event: lead.created
-  │
-  ▼ น้องขายไว
-  ├── get_lead_conversation_history → ดูประวัติ LINE
-  ├── update_lead_score → Score 85/100 (Hot)
-  ├── add_account_tag → tag: "ERP-interest", "retail"
-  ├── get_sales_rep_workload → อรุณ มี capacity
-  ├── send_notification → แจ้ง Manager:
-  │     "Lead ใหม่ Score 85 แนะนำ assign ให้ อรุณ"
-  └── log_activity → บันทึก
-  │
-  ▼ Manager: "assign ให้ อรุณ"
-  ├── assign_lead → อัปเดต DB
-  ├── create_follow_up_task → "ติดต่อลูกค้าภายใน 24 ชม."
-  ├── send_notification → แจ้ง อรุณ (in-app + LINE)
-  └── log_activity → บันทึก
+Lead Created → Score → Tag → Notify Manager → Manager assigns → Notify Rep → Create Task
+
+QT Request → Search Account → Search Products → Confirm → Create QT → Notify Manager
+→ Manager approves → Notify Rep → Send LINE to customer → Create follow-up Task
+
+Deal Won → Notify team → Analyze cycle → Upgrade Account tier → Create delivery Task
+Deal Lost → Record reason → Analyze → Create re-engage Task (3 months)
 ```
 
-**Workflow — ออก Quotation:**
-```
-Sales Rep: "ออก QT ให้สมใจเทค ERP 2 ชุด"
-  │
-  ▼ น้องขายไว
-  ├── search_accounts → หา สมใจเทค
-  ├── search_products → หา ERP
-  ├── สรุป: "ERP ฿600K x 2 = ฿1.2M + VAT = ฿1.284M ยืนยัน?"
-  │
-  ▼ Rep: "ยืนยัน"
-  ├── create_quotation → สร้าง QT-2569-0005 (draft)
-  ├── send_notification → แจ้ง Manager ให้ approve
-  ├── log_activity → บันทึก
-  │
-  ▼ Manager: "approve"
-  ├── approve_quotation → อนุมัติ
-  ├── send_notification → แจ้ง Rep
-  ├── create_follow_up_task → "follow-up QT 3 วัน"
-  └── log_activity → บันทึก
-```
+**Event-driven (SQS):**
 
-**Workflow — Deal ปิด (Won):**
-```
-event: opportunity.closed (won)
-  │
-  ▼ น้องขายไว
-  ├── send_notification → แจ้งทั้งทีม "🎉 Deal Won!"
-  ├── get_opportunity_history → วิเคราะห์ sales cycle
-  ├── update_account_tier → พิจารณาอัปเกรด tier
-  ├── create_follow_up_task → "ส่งมอบ + onboarding"
-  └── log_activity → บันทึก
-```
-
-**Event-driven (Proactive):**
-
-| Event | น้องขายไวทำอะไร |
+| Event | Action |
 |---|---|
-| `lead.created` | Score + Tag + แจ้ง Manager |
-| `lead.assigned` | แจ้ง Rep + สร้าง Task + LINE |
-| `task.overdue` | เตือน Rep + แจ้ง Manager |
-| `quotation.finalized` | แจ้ง Manager ให้ approve |
-| `quotation.status_changed` | แจ้ง Rep + แนะนำ next step |
-| `opportunity.stage_changed` | แจ้ง + แนะนำ action + สร้าง Task |
-| `opportunity.closed` | Win/Loss analysis + Task ส่งมอบ |
+| `lead.created` | Score + Tag + Notify Manager |
+| `lead.assigned` | Notify Rep + Create Task + LINE |
+| `task.overdue` | Remind Rep + Notify Manager |
+| `quotation.finalized` | Notify Manager to approve |
+| `quotation.status_changed` | Notify Rep + recommend next step |
+| `opportunity.stage_changed` | Notify + recommend action + Create Task |
+| `opportunity.closed` | Win/Loss analysis + delivery/re-engage Task |
 
 **Scheduled (Cron):**
 
-| Job | ความถี่ | ทำอะไร |
+| Job | Frequency | What |
 |---|---|---|
-| Daily Digest | ทุกเช้า 8:30 | สรุป KPI, Tasks, Leads, QTs ส่งให้แต่ละคน |
-| Deal Health | ทุก 6 ชม. | ตรวจ stale deals + churn risk |
-| Task Reminders | ทุก 1 ชม. | เตือน Task ใกล้ครบกำหนด |
+| Daily Digest | 8:30 AM | KPI, Tasks, Leads, QTs per user |
+| Deal Health | Every 6h | Stale deals + churn risk |
+| Task Reminders | Every 1h | Upcoming + overdue tasks |
 
-**Role-based Permissions:**
+**Role-based:**
 
 | Feature | Sales Rep | Sales Manager | Admin |
 |---|---|---|---|
-| ดู Lead ของตัวเอง | ✅ | ✅ ดูทั้งทีม | ✅ ทั้งหมด |
-| Assign Lead | ❌ แจ้ง Manager | ✅ | ✅ |
-| สร้าง QT (draft) | ✅ | ✅ | ✅ |
-| อนุมัติ QT | ❌ | ✅ | ✅ |
-| ดูผลงานทีม | ❌ เฉพาะตัวเอง | ✅ | ✅ |
-| อธิบายสินค้าแทน | ✅ | ✅ | ✅ |
+| View own Leads | ✅ | ✅ all team | ✅ all |
+| Assign Lead | ❌ notify Manager | ✅ | ✅ |
+| Create QT (draft) | ✅ | ✅ | ✅ |
+| Approve QT | ❌ | ✅ | ✅ |
+| Team performance | ❌ own only | ✅ | ✅ |
 
 ### Agent 3: น้องวิ — Analytics (7 Tools)
 
-| รายการ | รายละเอียด |
+| Item | Detail |
 |---|---|
-| ที่ไหน | Dashboard (floating widget) |
-| Model | Claude 3.5 Haiku (temperature 0.2 — แม่นยำ) |
+| Where | Dashboard (floating widget) |
+| Model | Claude 3.5 Haiku (temperature 0.2) |
 | Tools | get_kpi_summary, get_pipeline_analysis, get_revenue_data, get_sales_rep_performance, get_churn_risk_accounts, get_sales_cycle_analysis, get_forecast |
 
-**ตัวอย่างคำถาม:**
-- "Forecast เดือนหน้า" → ดึง pipeline จริง + คำนวณ best/expected/worst
-- "ลูกค้าเสี่ยงหาย" → ดึง accounts ที่ไม่มี activity นาน
-- "เปรียบเทียบทีม" → ดึง performance แต่ละ rep จาก DB จริง
-- "Win rate แต่ละ stage" → วิเคราะห์ conversion จาก opportunity history
+All data comes from real DB queries — no hardcoded responses.
 
-### Agent Service — Tech Stack
+### Agent Service Structure
 
 ```
-services/agent-service/
-├── package.json              @strands-agents/sdk + NestJS
-├── src/
-│   ├── agents/
-│   │   ├── admin-ai.agent.ts       4 tools
-│   │   ├── sales-assistant.agent.ts 42 tools
-│   │   ├── analytics.agent.ts      7 tools
-│   │   └── orchestrator.ts         auto-routing + streaming
-│   ├── tools/
-│   │   ├── crm.tools.ts            Lead, Account, QT, Task, Email
-│   │   ├── activity.tools.ts       log_activity, create_note, notifications
-│   │   ├── scoring.tools.ts        lead_score, account_tier, tags
-│   │   ├── deal-health.tools.ts    health_score, stage_change, close
-│   │   ├── followup.tools.ts       follow_up_task, meeting_context
-│   │   ├── analytics.tools.ts      KPI, pipeline, revenue, forecast
-│   │   └── knowledge-base.tools.ts Bedrock KB search
-│   └── modules/
-│       ├── chat/                    HTTP + SSE streaming endpoints
-│       ├── events/                  SQS event listener (8 handlers)
-│       └── scheduler/              Cron jobs (3 scheduled tasks)
-│
-│ ENV VARS:
-│   BEDROCK_REGION, BEDROCK_MODEL_ID, KNOWLEDGE_BASE_ID,
-│   JWT_SECRET, CRM_API_URL, SALES_API_URL, QUOTATION_API_URL,
-│   NOTIFICATION_API_URL, SQS_AGENT_QUEUE_URL
-```
-
-### Agentic vs Manual — ทำงานคู่กัน
-
-```
-┌──────────────────────────────────────────────────┐
-│              SalesFAST 7 CRM                      │
-│                                                   │
-│  ┌──────────────┐     ┌───────────────────────┐  │
-│  │  Manual UI   │     │  AI Agents             │  │
-│  │  • Click ปุ่ม │     │  • พิมพ์สั่งงาน         │  │
-│  │  • กรอก form │     │  • Event-driven        │  │
-│  │  • ลาก Kanban│     │  • Scheduled           │  │
-│  └──────┬───────┘     └──────────┬────────────┘  │
-│         │                        │                │
-│         ▼                        ▼                │
-│  ┌───────────────────────────────────────────┐   │
-│  │       Same API / Same Database             │   │
-│  │  leads, accounts, quotations, tasks,       │   │
-│  │  activities, notifications, opportunities  │   │
-│  └───────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────┘
+services/agent-service/src/
+├── agents/
+│   ├── admin-ai.agent.ts          4 tools
+│   ├── sales-assistant.agent.ts   42 tools
+│   ├── analytics.agent.ts         7 tools
+│   └── orchestrator.ts            auto-routing + SSE streaming
+├── tools/
+│   ├── crm.tools.ts               Lead, Account, QT, Task, Email (12)
+│   ├── activity.tools.ts          log, note, notification, LINE (4)
+│   ├── scoring.tools.ts           lead score, tier, tags, workload (5)
+│   ├── deal-health.tools.ts       health, stage, close, stale (6)
+│   ├── followup.tools.ts          follow-up, overdue, meeting (7)
+│   ├── analytics.tools.ts         KPI, pipeline, revenue, forecast (7)
+│   └── knowledge-base.tools.ts    Bedrock KB search (1)
+└── modules/
+    ├── chat/                      POST /agents/chat, /agents/stream (SSE)
+    ├── events/                    SQS listener (8 event handlers)
+    └── scheduler/                 3 cron jobs
 ```
 
 ---
 
 ## Knowledge Base
 
-Knowledge Base คือข้อมูลที่ AI Agent ใช้ตอบลูกค้าและวิเคราะห์ เก็บใน S3 → Bedrock Knowledge Base
-
-### โครงสร้างไฟล์
+Stored in S3 → Bedrock Knowledge Base. Admin AI uses it to answer customer questions.
 
 ```
 S3: sf7-prod-knowledge-base/
-│
-├── products/
-│     └── product-catalog.json     ← sync จาก DB อัตโนมัติ (ทุกวัน)
-│
-├── company/
-│     ├── company-profile.md       ← Admin อัปโหลดใน Settings
-│     └── sales-playbook.md        ← วิธีตอบลูกค้า, objection handling
-│
-└── faq/
-      └── faq.md                   ← คำถามที่ถามบ่อย
+├── products/product-catalog.json    ← auto-sync from DB daily
+├── company/company-profile.md       ← upload in Settings
+└── faq/faq.md                       ← upload in Settings
 ```
 
-### วิธีเพิ่ม/อัปเดต Knowledge Base
-
-#### วิธีที่ 1: ผ่าน Settings (แนะนำ)
-
-```
-1. ไปที่ Settings > Add-ons > AI Agent
-2. หา section "Knowledge Base"
-3. กด "Upload Document"
-4. เลือกไฟล์ (.md, .txt, .json, .pdf)
-5. ระบบจะ upload ไป S3 และ re-index อัตโนมัติ
-```
-
-#### วิธีที่ 2: ผ่าน AWS Console (สำหรับ Admin)
-
-```bash
-# Upload ไฟล์ไป S3
-aws s3 cp company-profile.md s3://sf7-prod-knowledge-base/company/
-
-# Upload product catalog
-aws s3 cp product-catalog.json s3://sf7-prod-knowledge-base/products/
-
-# Upload FAQ
-aws s3 cp faq.md s3://sf7-prod-knowledge-base/faq/
-```
-
-#### วิธีที่ 3: Auto-sync Product Catalog
-
-Product catalog จะ sync จาก database อัตโนมัติทุกวัน ไม่ต้องทำเอง
-
-### ตัวอย่างไฟล์ Knowledge Base
-
-**company-profile.md:**
-```markdown
-# ข้อมูลบริษัท
-ชื่อ: บริษัท XYZ จำกัด
-ที่อยู่: 123 ถนนสุขุมวิท กรุงเทพฯ 10110
-โทร: 02-xxx-xxxx
-เวลาทำการ: จันทร์-ศุกร์ 9:00-18:00
-อีเมล: info@xyz.co.th
-
-# บริการหลัก
-- ระบบ ERP สำหรับ SME
-- ระบบ CRM
-- ที่ปรึกษาด้าน IT
-```
-
-**faq.md:**
-```markdown
-# คำถามที่ถามบ่อย
-
-Q: ติดตั้งนานแค่ไหน?
-A: 2-4 สัปดาห์ ขึ้นอยู่กับขนาดธุรกิจ
-
-Q: มีบริการหลังการขายไหม?
-A: มีครับ รวม support 1 ปี ในราคาแพ็กเกจ
-
-Q: รองรับกี่ users?
-A: ไม่จำกัดจำนวน users
-
-Q: ชำระเงินอย่างไร?
-A: โอนเงิน, เช็ค, หรือบัตรเครดิต
-```
-
-**product-catalog.json** (auto-generated จาก DB):
-```json
-[
-  {
-    "name": "ระบบ ERP มาตรฐาน",
-    "sku": "ERP-STD-001",
-    "price": 250000,
-    "unit": "ชุด",
-    "description": "ระบบ ERP ครบวงจร สต็อก+บัญชี+รายงาน",
-    "features": ["จัดการสต็อก", "ระบบบัญชี", "รายงาน real-time"]
-  }
-]
-```
-
-### AI ใช้ Knowledge Base อย่างไร
-
-```
-ลูกค้าถาม: "ระบบ ERP ราคาเท่าไหร่"
-        │
-        ▼
-Admin AI Agent ค้นหา Knowledge Base
-        │
-        ├── พบ: product-catalog.json → ERP ฿250,000
-        ├── พบ: faq.md → ติดตั้ง 2-4 สัปดาห์
-        └── พบ: company-profile.md → เวลาทำการ จ-ศ
-        │
-        ▼
-ตอบลูกค้า: "ระบบ ERP ราคา ฿250,000 ครับ
-            รวมติดตั้ง+อบรม+support 1 ปี
-            ติดตั้งประมาณ 2-4 สัปดาห์ครับ"
-```
+Upload via: Settings > Add-ons > AI > Knowledge Base > Upload
 
 ---
 
 ## LINE OA Integration
 
-LINE OA Integration is an **optional add-on** available in Settings > Add-ons. It connects SalesFAST 7 with LINE Official Account to automatically receive leads, send product recommendations, and deliver quotations through LINE — the primary communication channel for Thai SMB customers.
+Optional add-on. Connects SalesFAST 7 with LINE Official Account.
 
-### Prerequisites
-
-1. **LINE Official Account** — สมัครที่ [LINE for Business](https://lineforbusiness.com/th/)
-2. **LINE Messaging API** — เปิดใช้งานใน [LINE Developers Console](https://developers.line.biz)
-3. **Channel Access Token** + **Channel Secret** จาก LINE Developers
-
-### Setup Guide — ทำครั้งเดียว (10 นาที)
-
-#### Step 1: สร้าง LINE Official Account (ถ้ายังไม่มี)
-
-```
-1. ไปที่ https://entry.line.biz/
-2. Login ด้วย LINE account ส่วนตัว
-3. กด "สร้างบัญชี LINE Official Account"
-4. กรอกข้อมูล:
-   - ชื่อบัญชี: ชื่อบริษัทของคุณ
-   - ประเภทธุรกิจ: เลือกตามจริง
-   - อีเมล: อีเมลบริษัท
-5. กด "สร้างบัญชี"
-6. ได้ LINE OA พร้อมใช้งาน
-```
-
-#### Step 2: เปิด Messaging API
-
-```
-1. ไปที่ https://developers.line.biz/console/
-2. กด "Create a new provider" (ถ้ายังไม่มี)
-   - ตั้งชื่อ: ชื่อบริษัท
-3. กด "Create a Messaging API channel"
-   - เลือก Provider ที่สร้าง
-   - Channel name: ชื่อ LINE OA
-   - Channel description: อธิบายสั้นๆ
-   - Category: เลือกตามจริง
-   - Subcategory: เลือกตามจริง
-4. กด "Create"
-```
-
-#### Step 3: Copy Channel Access Token + Secret
-
-```
-ใน LINE Developers Console:
-
-1. เลือก Channel ที่สร้าง
-2. ไปที่ tab "Messaging API"
-3. เลื่อนลงหา "Channel access token"
-   → กด "Issue" ถ้ายังไม่มี
-   → Copy token เก็บไว้
-
-4. ไปที่ tab "Basic settings"
-5. หา "Channel secret"
-   → Copy secret เก็บไว้
-
-⚠️ เก็บ token และ secret เป็นความลับ อย่าแชร์ให้ใคร
-```
-
-#### Step 4: ตั้งค่าใน SalesFAST 7
-
-```
-1. เปิด SalesFAST 7 CRM
-2. ไปที่ Settings > Add-ons
-3. หา "LINE OA Integration"
-4. กรอก:
-   - Channel Access Token: (วางที่ copy มา)
-   - Channel Secret: (วางที่ copy มา)
-   - Channel Name: @ชื่อ LINE OA ของคุณ
-5. กด "Save Configuration"
-6. กด "Test Connection" → ต้องขึ้น "Connected ✅"
-7. Copy "Webhook URL" ที่แสดง
-```
-
-#### Step 5: ตั้ง Webhook URL ใน LINE Developers
-
-```
-1. กลับไปที่ LINE Developers Console
-2. เลือก Channel > tab "Messaging API"
-3. หา "Webhook settings"
-4. กด "Edit"
-5. วาง Webhook URL ที่ copy จาก SalesFAST 7:
-   https://your-cloudfront.net/line/webhook
-6. กด "Update"
-7. กด "Verify" → ต้องขึ้น "Success"
-8. เปิด "Use webhook" → ON
-
-⚠️ สำคัญ: ปิด "Auto-reply messages" ใน LINE OA Manager
-   เพราะ AI Agent จะตอบแทน
-   ไปที่: LINE OA Manager > Settings > Response settings
-   → Auto-reply: OFF
-   → Webhook: ON
-```
-
-#### Step 6: ทดสอบ
-
-```
-1. เปิด LINE บนมือถือ
-2. Add Friend LINE OA ของคุณ (ถ้ายังไม่ได้ add)
-3. ส่งข้อความ: "สนใจสินค้า"
-4. AI Agent ควรตอบกลับภายใน 3-5 วินาที
-5. ตรวจสอบใน CRM:
-   - Lead ใหม่ปรากฏใน Pipeline
-   - น้องขายไว แจ้ง Sales Manager
-```
-
-#### สรุป Checklist
-
-```
-□ สร้าง LINE Official Account
-□ เปิด Messaging API ใน LINE Developers
-□ Copy Channel Access Token
-□ Copy Channel Secret
-□ กรอกใน SalesFAST 7 Settings > Add-ons
-□ Copy Webhook URL จาก SalesFAST 7
-□ วาง Webhook URL ใน LINE Developers
-□ Verify webhook → Success
-□ เปิด Use webhook → ON
-□ ปิด Auto-reply ใน LINE OA Manager
-□ ทดสอบส่งข้อความ → AI ตอบกลับ ✅
-```
-
----
-
-### Full Customer Journey — LINE to Quotation
-
-```mermaid
-sequenceDiagram
-    actor C as ลูกค้า (Customer)
-    participant L as LINE OA
-    participant W as Webhook<br/>(Notification Lambda)
-    participant CRM as SalesFAST 7 CRM
-    actor S as Sales Rep
-    actor M as Sales Manager
-
-    rect rgb(6, 199, 85, 0.08)
-        Note over C,L: STEP 1 — ลูกค้า Add LINE OA
-        C->>L: Add Friend / Scan QR Code
-        C->>L: ส่งข้อความ "สนใจสินค้า / ขอใบเสนอราคา"
-    end
-
-    rect rgb(1, 118, 211, 0.08)
-        Note over L,CRM: STEP 2 — ระบบสร้าง Lead อัตโนมัติ
-        L->>W: Webhook Event (message)
-        W->>W: Verify HMAC-SHA256 Signature
-        W->>CRM: สร้าง Lead ใหม่ (stage: New, source: LINE OA)
-        W->>CRM: บันทึก Activity ใน Timeline
-        W->>S: แจ้งเตือน Sales Rep มี Lead ใหม่
-        W->>L: Auto-reply → ลูกค้า
-        L->>C: "ขอบคุณที่ติดต่อ ทีมงานจะติดต่อกลับเร็วๆ นี้ 🙏"
-    end
-
-    rect rgb(221, 122, 1, 0.08)
-        Note over S,CRM: STEP 3 — Sales Follow-up
-        S->>CRM: เปิด Pipeline → เห็น Lead ใหม่จาก LINE
-        S->>CRM: Link Lead กับ Account (ลูกค้าเดิม/ใหม่)
-        S->>CRM: ย้าย Lead: New → Contacted (drag & drop)
-        S->>C: ติดต่อลูกค้ากลับ (โทร / LINE / อีเมล)
-    end
-
-    rect rgb(11, 130, 124, 0.08)
-        Note over S,C: STEP 4 — แนะนำสินค้าผ่าน LINE
-        S->>CRM: เปิดหน้า Products → เลือกสินค้า
-        S->>CRM: กดปุ่ม "LINE" → กรอก LINE User ID
-        CRM->>W: POST /line/send/product
-        W->>L: Push Message (ชื่อสินค้า + ราคา + SKU)
-        L->>C: 📦 สินค้าแนะนำ<br/>ชื่อ / ราคา / รายละเอียด
-        S->>CRM: ย้าย Lead: Contacted → Qualified
-    end
-
-    rect rgb(127, 86, 217, 0.08)
-        Note over S,M: STEP 5 — สร้างและอนุมัติใบเสนอราคา
-        S->>CRM: สร้าง Quotation (เลือกสินค้า + คำนวณ VAT/WHT)
-        S->>CRM: กด "Submit for Approval"
-        CRM->>M: แจ้งเตือน Sales Manager รออนุมัติ
-        M->>CRM: Review Quotation → กด "Approve"
-        CRM->>CRM: Status → Approved, ปุ่ม LINE ปรากฏ
-    end
-
-    rect rgb(46, 132, 74, 0.08)
-        Note over S,C: STEP 6 — ส่ง Quotation ผ่าน LINE
-        S->>CRM: กดปุ่ม "LINE" ใน Quotation
-        CRM->>W: POST /line/send/quotation
-        W->>L: Push Message (เลขที่ QT + มูลค่า + link PDF)
-        L->>C: 📄 ใบเสนอราคา QT-XXXX<br/>มูลค่า ฿XXX,XXX (รวม VAT)<br/>ดาวน์โหลด PDF: [link]
-        C->>S: ยืนยันการสั่งซื้อ
-        S->>CRM: ย้าย Lead → Won
-        CRM->>CRM: บันทึก Revenue ใน Account
-    end
-```
-
----
-
-### State Diagram — Lead Pipeline จาก LINE
-
-```mermaid
-stateDiagram-v2
-    [*] --> New : ลูกค้าส่งข้อความ LINE\n(Auto-created)
-
-    New --> Contacted : Sales ติดต่อกลับ
-    New --> Lost : ไม่ตอบสนอง
-
-    Contacted --> Qualified : ลูกค้าสนใจจริง
-    Contacted --> Lost : ไม่สนใจ
-
-    Qualified --> Proposal : ส่งสินค้าแนะนำผ่าน LINE
-    Qualified --> Lost : งบประมาณไม่พอ
-
-    Proposal --> Negotiation : ลูกค้าต่อรองราคา
-    Proposal --> Lost : ราคาสูงเกิน
-
-    Negotiation --> Won : ลูกค้ายืนยัน\nส่ง Quotation ผ่าน LINE ✅
-    Negotiation --> Lost : ตกลงราคาไม่ได้
-
-    Won --> [*]
-    Lost --> [*]
-
-    note right of New
-        LINE Webhook สร้าง Lead
-        อัตโนมัติ + แจ้ง Sales
-    end note
-
-    note right of Proposal
-        ส่งสินค้าแนะนำ
-        ผ่าน LINE ได้เลย
-    end note
-
-    note right of Won
-        ส่ง Quotation ผ่าน LINE
-        หลัง Sales Manager อนุมัติ
-    end note
-```
-
----
-
-### Flow แบบ Swimlane
-
-```mermaid
-flowchart TD
-    subgraph CUSTOMER["👤 ลูกค้า (Customer)"]
-        A1[Add LINE OA] --> A2[ส่งข้อความ\nสอบถามสินค้า]
-        A6[รับสินค้าแนะนำ\nผ่าน LINE]
-        A8[รับใบเสนอราคา\nผ่าน LINE]
-        A9[ยืนยันสั่งซื้อ]
-    end
-
-    subgraph LINE["💬 LINE Platform"]
-        B1[Webhook Event]
-        B2[Auto-reply\nขอบคุณที่ติดต่อ 🙏]
-        B3[Push Message\nสินค้าแนะนำ]
-        B4[Push Message\nใบเสนอราคา]
-    end
-
-    subgraph SYSTEM["⚙️ SalesFAST 7 System"]
-        C1[Verify Signature\nHMAC-SHA256]
-        C2[สร้าง Lead อัตโนมัติ\nstage: New]
-        C3[บันทึก Activity\nTimeline]
-        C4[แจ้ง Sales Rep]
-    end
-
-    subgraph SALES["👔 Sales Rep"]
-        D1[รับ Notification\nLead ใหม่]
-        D2[เปิด Pipeline\nดู Lead]
-        D3[Link กับ Account]
-        D4[ย้าย Stage\nDrag & Drop]
-        D5[เลือกสินค้า\nกดปุ่ม LINE]
-        D7[สร้าง Quotation\nSubmit for Approval]
-        D10[ย้าย Lead → Won]
-    end
-
-    subgraph MANAGER["🏆 Sales Manager"]
-        E1[รับ Notification\nรออนุมัติ]
-        E2[Review & Approve\nQuotation]
-    end
-
-    A2 --> B1
-    B1 --> C1
-    C1 --> C2
-    C2 --> C3
-    C3 --> C4
-    C1 --> B2
-    B2 --> A2
-    C4 --> D1
-    D1 --> D2
-    D2 --> D3
-    D3 --> D4
-    D4 --> D5
-    D5 --> B3
-    B3 --> A6
-    A6 --> D7
-    D7 --> E1
-    E1 --> E2
-    E2 --> B4
-    B4 --> A8
-    A8 --> A9
-    A9 --> D10
-
-    style CUSTOMER fill:#e8f5e9,stroke:#2E844A
-    style LINE fill:#e8f5ff,stroke:#06C755
-    style SYSTEM fill:#e3f2fd,stroke:#0176D3
-    style SALES fill:#fff3e0,stroke:#DD7A01
-    style MANAGER fill:#f3e5f5,stroke:#7F56D9
-```
-
----
-
-### API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/line/configure` | บันทึก Channel Token + Secret |
-| GET | `/line/status` | ตรวจสอบสถานะการเชื่อมต่อ |
-| POST | `/line/webhook` | รับ events จาก LINE Platform |
-| POST | `/line/send/product` | ส่งสินค้าแนะนำผ่าน LINE |
-| POST | `/line/send/quotation` | ส่งใบเสนอราคาผ่าน LINE |
-| POST | `/line/broadcast` | Broadcast ข้อความหลายคน |
-
-### Feature Toggles (Settings > Add-ons)
-
-| Feature | Default | Description |
-|---------|---------|-------------|
-| Auto-create Lead | ON | สร้าง Lead อัตโนมัติเมื่อมีข้อความใหม่ |
-| แจ้งเตือน Sales Rep | ON | Push notification เมื่อมีข้อความ |
-| บันทึก Timeline | ON | บันทึก LINE messages ใน Account |
-| Auto-reply | OFF | ตอบอัตโนมัตินอกเวลาทำการ |
+**Setup (10 min, one-time):**
+1. Create LINE Official Account at [LINE for Business](https://lineforbusiness.com/th/)
+2. Enable Messaging API at [LINE Developers](https://developers.line.biz)
+3. Copy Channel Access Token + Channel Secret
+4. Paste in CRM: Settings > Add-ons > LINE OA
+5. Copy Webhook URL from CRM → paste in LINE Developers
+6. Turn off Auto-reply in LINE OA Manager (AI Agent replies instead)
 
 ---
 
 ## Database Schema
 
-**30+ tables** organized in 8 sections:
+**30+ tables** with Row Level Security (RLS) on all tables.
 
-| Section | Tables | Description |
-|---------|--------|-------------|
-| Tenants & Auth | `tenants`, `users`, `roles`, `role_permissions`, `user_roles`, `api_keys`, `ip_allowlist_entries` | Multi-tenant auth, bcrypt+JWT, force_password_change, lockout |
-| Accounts | `accounts` (45+ columns), `contacts`, `account_shareholders`, `account_documents`, `tags`, `account_tags` | Customer 360 with Thai business data |
-| Activities | `activities`, `notes`, `attachments`, `tasks` | Timeline, notes, file attachments |
-| Sales | `pipeline_stages`, `leads`, `lead_scores`, `opportunities`, `opportunity_histories`, `sales_targets` | Pipeline management |
-| Quotations | `products`, `quotations`, `quotation_line_items`, `quotation_sequences` | Quotation with VAT 7% / WHT |
-| Notifications | `notifications`, `webhook_configs`, `webhook_deliveries` | Multi-channel notifications |
-| Compliance | `audit_logs`, `consent_records` | PDPA compliance, audit trail |
-| Integrations | `email_syncs`, `calendar_syncs` | Email & calendar sync |
-
-**Key Design Decisions:**
-- `accounts` has 45+ columns for Thai business specifics (tax ID 13 digits, branch code, registered capital, Thai address)
-- Row Level Security (RLS) on all tables — tenant isolation via `set_config('app.current_tenant', $1, true)` (parameterized, SQL injection safe)
-- Soft delete (`deleted_at`) on accounts
-- `force_password_change: true` on all new users
-- `failed_login_count` + `locked_until` for brute-force protection
+| Section | Tables |
+|---------|--------|
+| Auth | tenants, users, roles, role_permissions, user_roles, api_keys, ip_allowlist_entries |
+| Accounts | accounts (45+ columns), contacts, account_shareholders, account_documents, tags, account_tags |
+| Activities | activities, notes, attachments, tasks |
+| Sales | pipeline_stages, leads (with ai_score), lead_scores, opportunities, opportunity_histories, sales_targets |
+| Quotations | products, quotations, quotation_line_items, quotation_sequences |
+| Notifications | notifications, webhook_configs, webhook_deliveries |
+| Compliance | audit_logs, consent_records |
+| Integrations | email_syncs, calendar_syncs |
+| AI | ai_config, kb_documents, kb_chunks (pgvector) |
 
 ---
 
@@ -1299,405 +447,50 @@ flowchart TD
 
 | Permission | Admin | Sales Manager | Sales Rep | Viewer |
 |-----------|:-----:|:------------:|:---------:|:------:|
-| Accounts — CRUD | C R U D | C R U | C R | R |
-| Contacts — CRUD | C R U D | C R U | C R | R |
-| Leads — CRUD | C R U D | C R U D | C R U | R |
-| Opportunities — CRUD | C R U D | C R U D | C R U | R |
-| Quotations — CRUD | C R U D | C R U | C R | R |
-| Tasks — CRUD | C R U D | C R U D | C R U | R |
+| Accounts | CRUD | CRU | CR | R |
+| Contacts | CRUD | CRU | CR | R |
+| Leads | CRUD | CRUD | CRU | R |
+| Opportunities | CRUD | CRUD | CRU | R |
+| Quotations | CRUD | CRU | CR | R |
+| Tasks | CRUD | CRUD | CRU | R |
 | Reports | R | R | R | R |
-| Users — CRUD | C R U D | — | — | — |
-| Settings | R U | — | — | — |
-
-Additional roles available: Accounting, Support, Marketing.
+| Users | CRUD | — | — | — |
+| Settings | RU | — | — | — |
 
 ---
 
 ## Security
 
-All 18 security issues from the audit have been fixed.
-
 | Layer | Protection |
 |-------|-----------|
-| Edge | WAF v2 (SQLi, XSS, rate limit 1000/5min per IP, bad bots), TLS 1.2+, HSTS, CSP, X-Frame-Options |
-| API Gateway | Throttling (50 req/s, 100 burst), CORS restricted to CloudFront domain only |
-| Application | Helmet on all 5 services, JWT 15min expiry, bcrypt cost-12, lockout after 5 attempts/15min |
-| Database | RLS on all tables, parameterized `set_config()`, SSL enforced (`rds.force_ssl=1`), encrypted at rest |
-| Network | VPC private subnets, restricted Lambda egress (VPC CIDR only), VPC Flow Logs |
-| Storage | S3 AES-256 encryption, BlockPublicAccess, OAC-only access, CORS restricted to CloudFront |
-| Secrets | AWS Secrets Manager, no hardcoded fallbacks (fail-fast if env var missing) |
-| Monitoring | CloudWatch alarms: auth errors (>50/5min), 4xx rate (>500/5min), RDS connections (>80) |
-| Backup | AWS Backup daily snapshots, 7-day retention, encrypted vault |
+| Edge | WAF v2 (SQLi, XSS, rate limit), TLS 1.2+, HSTS, CSP |
+| API | Throttling 50 req/s, CORS restricted to CloudFront |
+| App | Helmet, JWT 15min, bcrypt cost-12, lockout after 5 attempts |
+| DB | RLS all tables, parameterized queries, SSL enforced, encrypted at rest |
+| Network | VPC private subnets, VPC endpoints, Flow Logs |
+| Storage | S3 AES-256, BlockPublicAccess, OAC-only |
+| Secrets | AWS Secrets Manager, no hardcoded fallbacks (fail-fast) |
+| Monitoring | CloudWatch alarms: auth errors, 4xx rate, RDS connections |
+| Backup | AWS Backup daily, 7-day retention |
 
 ---
 
-## User Flow Diagram (Swimlane)
+## i18n
 
-```
-+============+==============+================+===============+==============+
-|   Admin    | Sales Manager|   Sales Rep    |   System      |   Customer   |
-+============+==============+================+===============+==============+
-|            |              |                |               |              |
-| Create     |              |                |               |              |
-| Users &    |              |                |               |              |
-| Assign     |              |                |               |              |
-| Roles      |              |                |               |              |
-|   |        |              |                |               |              |
-|   +--------+-> Login      |                |               |              |
-|            |   |          |                |               |              |
-|            |   v          |                |               |              |
-|            | View         | Login          |               |              |
-|            | Dashboard    |   |            |               |              |
-|            |              |   v            |               |              |
-|            |              | Add Account ---+-> Validate    |              |
-|            |              | (Customer)     |   Tax ID      |              |
-|            |              |   |            |   Store in DB |              |
-|            |              |   v            |               |              |
-|            |              | Upload Docs    |               |              |
-|            |              | to Account     |               |              |
-|            |              |   |            |               |              |
-|            |              |   v            |               |              |
-|            |              | Create Lead ---+-> Pipeline    |              |
-|            |              | (from Account) |   Kanban      |              |
-|            |              |   |            |               |              |
-|            |              |   v            |               |              |
-|            |              | Drag Lead      |               |              |
-|            |              | through stages |               |              |
-|            |              | (drag & drop)  |               |              |
-|            |              |   |            |               |              |
-|            |              |   v            |               |              |
-|            |              | Create         |               |              |
-|            |              | Quotation -----|-> Calculate   |              |
-|            |              | (from Account) |   VAT 7%      |              |
-|            |              |   |            |   WHT         |              |
-|            |              |   v            |               |              |
-|            |              | Submit for     |               |              |
-|            |              | Approval       |               |              |
-|            |   +----------+---+            |               |              |
-|            |   v                           |               |              |
-|            | Review &                      |               |              |
-|            | Approve QT                    |               |              |
-|            |   |                           |               |              |
-|            |   v                           |               |              |
-|            | Download PDF --+-> Generate   |               |              |
-|            |                |   A4 PDF     |               |              |
-|            |                |   |          |               |              |
-|            |                |   v          |               |              |
-|            |                | Send to -----+-------------->| Receive QT   |
-|            |                | Customer     |               |              |
-+============+==============+================+===============+==============+
-```
-
----
-
-## Data Flow Diagram
-
-```
-+------------------+    HTTPS/TLS 1.2+    +----------------------+
-|   Web Browser    | ──────────────────>  │  CloudFront + WAF v2 │
-|   (Frontend)     | <──────────────────  │  (Edge, Thailand)    │
-+------------------+   HTML/CSS/JS/JSON   +──────┬───────┬───────+
-                                                 │       │
-                                       Static    │       │ API
-                                       Files     │       │ Routes
-                                        ┌────────▼──┐ ┌──▼──────────────┐
-                                        │ S3 Bucket │ │  API Gateway    │
-                                        │ (OAC)     │ │  HTTP API       │
-                                        └───────────┘ └──────┬──────────┘
-                                                             │
-                         ┌──────────┬──────────┬────────────┴──┬──────────┐
-                    ┌────▼───┐ ┌────▼───┐ ┌───▼────┐ ┌────────▼─┐ ┌─────▼──┐
-                    │  Auth  │ │  CRM   │ │ Sales  │ │ Quotation│ │ Notif. │
-                    │ 1024MB │ │ 1024MB │ │ 1024MB │ │  1024MB  │ │ 1024MB │
-                    └────┬───┘ └────┬───┘ └───┬────┘ └────┬─────┘ └──┬─────┘
-                         │          │         │            │          │
-                         └──────────┴────┬────┴────────────┘     ┌───▼───┐
-                                         │                        │  SQS  │
-                               ┌─────────▼──────────┐            └───────┘
-                               │    RDS Proxy        │
-                               │  (Connection Pool)  │
-                               └─────────┬───────────┘
-                                         │
-                               ┌─────────▼──────────┐
-                               │  RDS PostgreSQL 16  │
-                               │  30+ tables, RLS    │
-                               └─────────────────────┘
-
-                    All Lambdas ──> Secrets Manager (VPC endpoint)
-                    CRM/Quotation ─> S3 Files (VPC endpoint)
-                    AWS Backup ───> Daily snapshot (7-day retention)
-```
-
----
-
-## i18n — Thai / English
-
-- 150+ translation keys in `frontend/js/i18n.js`
-- Uses `data-i18n` attributes on HTML elements
-- Language toggle in navigation bar (TH/EN)
-- Stored in `localStorage` — persists across sessions
-- Thai Buddhist calendar year (พ.ศ.)
-- Thai currency format (฿)
-- Thai address format (ตำบล/แขวง, อำเภอ/เขต, จังหวัด)
+- 150+ translation keys (Thai / English)
+- `data-i18n` attributes on HTML elements
+- Language toggle in nav bar, stored in localStorage
+- Thai Buddhist calendar (พ.ศ.), Thai currency (฿), Thai address format
 
 ---
 
 ## Default Credentials
 
-Configured during deployment via `deploy.sh`:
-
-| Field | Value |
-|-------|-------|
-| Email | (your `--email` flag) |
-| Password | (your `--password` flag) |
-| Role | Admin (full access) |
-
-> ไม่มี default password — ต้องตั้งเองตอน deploy ทุกครั้ง
-> ระบบบังคับเปลี่ยนรหัสผ่านครั้งแรก (`force_password_change: true`)
-
-```bash
-bash deploy.sh \
-  --email yourname@company.com \
-  --password "YourSecurePassword!" \
-  ...
-```
+No default password — set during deployment via `--email` and `--password` flags.
+System forces password change on first login.
 
 ---
 
 ## License
 
 Proprietary. All rights reserved.
-
----
-
-## Operations — Destroy / Redeploy / Update
-
-### Destroy Stack (ลบทุกอย่าง)
-
-```bash
-# ⚠️ ลบ database, files, Lambda, CloudFront ทั้งหมด — กู้คืนไม่ได้
-cd ~/CRM/infra
-bash destroy.sh
-```
-
-Script จะถาม confirm พิมพ์ `destroy` เพื่อยืนยัน
-
-```bash
-# ระบุ region (ถ้าไม่ใช่ default Singapore)
-bash destroy.sh --region ap-southeast-7
-
-# Skip confirmation (สำหรับ CI/CD)
-bash destroy.sh --yes
-```
-
-**Destroy ทำอะไรบ้าง (6 steps):**
-```
-[1/6] Disable RDS deletion protection
-[2/6] Empty S3 buckets (frontend, files, KB)
-[3/6] Remind to cancel CloudFront Pro Plan (manual — Console only)
-[4/6] Delete AI stack (S3 KB + IAM roles)
-[5/6] Delete CRM stack (VPC, RDS, Lambda, API GW, CloudFront, DynamoDB)
-[6/6] Cleanup leftover S3 buckets
-```
-
-> ถ้า subscribe CloudFront Pro Plan อยู่ ต้อง cancel ใน Console ก่อน delete distribution
-> Console > CloudFront > Distribution > Cancel pricing plan > แล้วค่อย run destroy.sh
->
-> ถ้า destroy ไม่สมบูรณ์ (เช่น timeout) ไม่ต้องกังวล — deploy.sh ครั้งถัดไปจะ auto-cleanup ให้
-
-### Clean Redeploy (ลบแล้ว deploy ใหม่ทั้งหมด)
-
-```bash
-# One-liner: destroy + redeploy ใน command เดียว
-cd CRM/infra
-
-# Step 1: Destroy
-bash destroy.sh --yes
-
-# Step 2: Redeploy
-bash deploy.sh \
-  --email    admin@mycompany.com \
-  --name     "Somchai Jaidee" \
-  --password "MyPass@123" \
-  --db-pass  auto \
-  --tenant   "My Company Ltd"
-```
-
-> Clean redeploy ใช้เวลา ~25-30 นาที (destroy ~15 min + deploy ~15 min)
-> Database จะถูกสร้างใหม่ทั้งหมด — ข้อมูลเก่าหายหมด
-
-### Update Code (อัปเดต version ใหม่ — ไม่ลบ database)
-
-```bash
-# ดึง code ใหม่จาก git แล้ว deploy ทับ (ไม่กระทบ database)
-cd CRM
-git pull origin main
-cd infra
-
-# Deploy ทับ — CloudFormation จะ update เฉพาะส่วนที่เปลี่ยน
-bash deploy.sh \
-  --email    admin@mycompany.com \
-  --name     "Somchai Jaidee" \
-  --password "MyPass@123" \
-  --db-pass  "<SAME_DB_PASSWORD>" \
-  --tenant   "My Company Ltd"
-```
-
-> ใช้ `--db-pass` เดิม (ที่ใช้ตอน deploy ครั้งแรก) ไม่งั้น RDS password จะเปลี่ยน
-> CloudFormation จะ update เฉพาะ resources ที่เปลี่ยน (no-fail-on-empty-changeset)
-> Frontend จะ upload ใหม่ + invalidate CloudFront cache อัตโนมัติ
-> Database ไม่ถูกลบ — ข้อมูลเดิมยังอยู่ครบ
-
-**สิ่งที่ update ได้โดยไม่กระทบ data:**
-- Frontend (HTML/CSS/JS) — upload ทับ S3
-- Lambda code — update function code
-- CloudFormation resources — add/modify/remove
-- CloudFront config — cache behaviors, headers
-- API Gateway routes — add/modify
-
-**สิ่งที่ต้องระวัง:**
-- `--db-pass` ต้องใช้ค่าเดิม (ถ้าเปลี่ยน RDS password จะ update ด้วย)
-- ถ้าแก้ schema.sql → ต้อง run migration เอง (Lambda DB Init จะ skip ถ้า tables มีอยู่แล้ว)
-- ถ้าแก้ seed.sql → ไม่มีผล (seed run แค่ครั้งแรก)
-
-### Quick Reference — CloudShell Commands
-
-```bash
-# ══════════════════════════════════════════════════
-# First Deploy (ครั้งแรก)
-# ══════════════════════════════════════════════════
-git clone https://github.com/konsudtai/CRM.git
-cd CRM/infra
-bash deploy.sh \
-  --email admin@mycompany.com \
-  --name "Somchai Jaidee" \
-  --password "MyPass@123" \
-  --db-pass auto \
-  --tenant "My Company Ltd"
-
-# ══════════════════════════════════════════════════
-# Update Code (อัปเดต version ใหม่ — ไม่ลบ database)
-# ══════════════════════════════════════════════════
-cd ~/CRM
-git pull origin main
-cd infra
-bash deploy.sh \
-  --email admin@mycompany.com \
-  --name "Somchai Jaidee" \
-  --password "MyPass@123" \
-  --db-pass "<SAME_PASSWORD_AS_FIRST_DEPLOY>" \
-  --tenant "My Company Ltd"
-
-# ══════════════════════════════════════════════════
-# Destroy (ลบทุกอย่าง)
-# ══════════════════════════════════════════════════
-cd ~/CRM/infra
-bash destroy.sh
-
-# หรือ skip confirmation:
-bash destroy.sh --yes
-
-# หรือระบุ region:
-bash destroy.sh --region ap-southeast-7
-
-# ══════════════════════════════════════════════════
-# Clean Redeploy (ลบแล้ว deploy ใหม่ทั้งหมด)
-# ══════════════════════════════════════════════════
-cd ~/CRM/infra
-bash destroy.sh --yes
-bash deploy.sh \
-  --email admin@mycompany.com \
-  --name "Somchai Jaidee" \
-  --password "MyPass@123" \
-  --db-pass auto \
-  --tenant "My Company Ltd"
-```
-
-> **หมายเหตุ:** ใน CloudShell ถ้า clone ไว้แล้ว repo จะอยู่ที่ `~/CRM`
-> ถ้าเปิด CloudShell session ใหม่ ให้ `cd ~/CRM/infra` ก่อน run command
-
----
-
-## Deploy Readiness Checklist
-
-> Last verified: 2 May 2026
-
-### Pre-Deploy Requirements
-
-```
-[ ] AWS Account with sufficient permissions
-    (CloudFormation, Lambda, RDS, S3, DynamoDB, SQS, SNS, API Gateway,
-     CloudFront, IAM, Secrets Manager, CloudWatch, Backup, Bedrock)
-[ ] AWS CLI configured (aws configure)
-[ ] Git installed
-[ ] Node.js 20+ installed
-[ ] Region selected:
-    - CRM: ap-southeast-1 (Singapore, recommended)
-    - AI:  ap-southeast-1 (Singapore — has Bedrock)
-```
-
-### Deploy Command
-
-```bash
-# Clone and deploy
-git clone https://github.com/nicekonsudtai/2PCRM.git
-cd 2PCRM/infra
-bash deploy.sh \
-  --email    admin@mycompany.com \
-  --name     "Somchai Jaidee" \
-  --password "MyPass@123" \
-  --db-pass  auto \
-  --tenant   "My Company Ltd"
-
-# db-pass auto จะถามให้กรอก password เอง (interactive)
-# หรือระบุตรง: --db-pass "MyDbP@ss99"
-```
-
-### Post-Deploy Steps
-
-```
-[ ] 1. Subscribe CloudFront Pro Plan ($15/mo) — Console only
-       Console > CloudFront > Distributions > select > Pricing plan > Pro
-
-[ ] 2. Test Login
-       Open CloudFront URL > Login with admin credentials
-
-[ ] 3. Change Admin Password (first login)
-       System will prompt for password change
-
-[ ] 4. Setup Bedrock Knowledge Base (optional)
-       Console > Bedrock > Knowledge Base > Create
-       S3 source: sf7-prod-knowledge-base-{account-id}
-
-[ ] 5. Setup LINE OA (optional)
-       CRM > Settings > Add-ons > LINE OA > Enter token/secret
-```
-
-> Database init ทำอัตโนมัติแล้ว ไม่ต้องทำเอง
-
-### Project Verification Summary
-
-| Component | Files | Status |
-|-----------|------:|:------:|
-| Frontend Pages | 13 pages + admin portal + manual | OK |
-| Backend Services | 6 NestJS microservices (incl. Agent Service) | OK |
-| Agent Service | Strands SDK, 42 tools, 3 agents, event listener, scheduler | OK |
-| Database Schema | 30+ tables with RLS + ai_score column | OK |
-| Seed Data | 5 placeholders, 4 default roles | OK |
-| CloudFormation (CRM) | SNS fan-out + Agent SQS queue | OK |
-| CloudFormation (AI) | S3 + IAM roles, 6 outputs | OK |
-| Deploy Script | Pre-check + 9 steps, interactive DB password | OK |
-| i18n | 150+ keys TH/EN | OK |
-| Mock Data | Removed — all data from API/DB | OK |
-| AI Agents | 3 agents (Admin AI, น้องขายไว 42 tools, น้องวิ 7 tools) | OK |
-| LINE OA | Webhook + auto-lead + send product/QT | OK |
-| Security | JWT throw on missing secret, no dev fallbacks | OK |
-
-### Monthly Cost Summary
-
-```
-CRM Infrastructure:  ~$118/mo  (RDS + VPC + CloudFront Pro + Lambda + ...)
-AI / Bedrock:        ~$5-15/mo (Nova Lite or Haiku, on-demand)
-─────────────────────────────────
-Total:               ~$123-133/mo (recommended setup)
-```
