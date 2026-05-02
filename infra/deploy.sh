@@ -126,7 +126,7 @@ echo ""
 # PRE-CHECK: Clean up leftover resources from failed deploys
 # ══════════════════════════════════════════════
 
-echo "[0/9] Pre-deploy check..."
+echo "[0/11] Pre-deploy check..."
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null || echo "")
 
 # Check if stack exists and is in a failed/rollback state
@@ -272,7 +272,7 @@ echo ""
 # STEP 1: Deploy CloudFormation
 # ══════════════════════════════════════════════
 
-echo "[1/9] Deploying CloudFormation stack..."
+echo "[1/11] Deploying CloudFormation stack..."
 echo "  (first deploy takes ~15 min)"
 aws cloudformation deploy \
   --template-file cloudformation.yaml \
@@ -290,7 +290,7 @@ echo "  Stack deployed."
 # STEP 2: Get outputs
 # ══════════════════════════════════════════════
 
-echo "[2/9] Getting stack outputs..."
+echo "[2/11] Getting stack outputs..."
 _get() {
   aws cloudformation describe-stacks \
     --stack-name "$STACK_NAME" --region "$REGION" \
@@ -303,7 +303,6 @@ FILES_BUCKET=$(_get FilesBucket)
 CLOUDFRONT_URL=$(_get CloudFrontUrl)
 CLOUDFRONT_ID=$(_get CloudFrontDistributionId)
 DB_ENDPOINT=$(_get DatabaseEndpoint)
-PROXY_ENDPOINT=$(_get RDSProxyEndpoint)
 DB_INIT_FN=$(_get DBInitFunction)
 echo "  URL: $CLOUDFRONT_URL"
 echo "  DB:  $DB_ENDPOINT"
@@ -312,7 +311,7 @@ echo "  DB:  $DB_ENDPOINT"
 # STEP 3: Build pg layer + update DB Init Lambda
 # ══════════════════════════════════════════════
 
-echo "[3/9] Building DB Init Lambda with pg..."
+echo "[3/11] Building DB Init Lambda with pg..."
 
 # Build pg layer zip
 PG_DIR=$(mktemp -d)
@@ -390,7 +389,7 @@ echo "  DB Init Lambda ready."
 # STEP 4: Generate seed SQL
 # ══════════════════════════════════════════════
 
-echo "[4/9] Generating seed data..."
+echo "[4/11] Generating seed data..."
 ADMIN_HASH=""
 if command -v node &>/dev/null; then
   ADMIN_HASH=$(node -e "try{const b=require('bcrypt');b.hash(process.argv[1],12).then(h=>{process.stdout.write(h);process.exit(0)})}catch(e){process.exit(1)}" "$ADMIN_PASSWORD" 2>/dev/null) || true
@@ -422,7 +421,7 @@ echo "  Seed: $ADMIN_EMAIL"
 # STEP 5: Initialize database via Lambda
 # ══════════════════════════════════════════════
 
-echo "[5/9] Initializing database..."
+echo "[5/11] Initializing database..."
 echo "  Waiting for RDS..."
 aws rds wait db-instance-available \
   --db-instance-identifier "sf7-${ENV}" \
@@ -525,7 +524,7 @@ fi
 # STEP 6: Upload frontend
 # ══════════════════════════════════════════════
 
-echo "[6/9] Uploading frontend..."
+echo "[6/11] Uploading frontend..."
 if [ -d "$FRONTEND_DIR" ]; then
   aws s3 sync "$FRONTEND_DIR" "s3://$FRONTEND_BUCKET" \
     --region "$REGION" --delete --cache-control "max-age=3600" \
@@ -548,7 +547,7 @@ fi
 # STEP 7: Invalidate CloudFront
 # ══════════════════════════════════════════════
 
-echo "[7/9] Invalidating CloudFront cache..."
+echo "[7/11] Invalidating CloudFront cache..."
 if [ -n "$CLOUDFRONT_ID" ] && [ "$CLOUDFRONT_ID" != "None" ]; then
   aws cloudfront create-invalidation \
     --distribution-id "$CLOUDFRONT_ID" --paths "/*" > /dev/null 2>&1 || true
@@ -556,11 +555,52 @@ if [ -n "$CLOUDFRONT_ID" ] && [ "$CLOUDFRONT_ID" != "None" ]; then
 fi
 
 # ══════════════════════════════════════════════
-# STEP 8: Deploy AI Stack
+# STEP 8: Deploy RDS Proxy Stack
 # ══════════════════════════════════════════════
 
 echo ""
-echo "[8/9] Deploying AI stack to $AI_REGION..."
+echo "[8/11] Deploying RDS Proxy stack..."
+echo "  (connection pooling for Lambda — takes ~5-10 min)"
+PROXY_STACK_NAME="${STACK_NAME}-proxy"
+aws cloudformation deploy \
+  --template-file cloudformation-proxy.yaml \
+  --stack-name "$PROXY_STACK_NAME" \
+  --region "$REGION" \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --parameter-overrides \
+    Environment="$ENV" \
+    CRMStackName="$STACK_NAME" \
+  --no-fail-on-empty-changeset 2>&1 || {
+    echo "  ⚠️ RDS Proxy deploy failed (non-critical). Lambda will use direct RDS connection."
+    echo "  You can retry later: aws cloudformation deploy --template-file cloudformation-proxy.yaml --stack-name $PROXY_STACK_NAME --region $REGION --capabilities CAPABILITY_NAMED_IAM --parameter-overrides Environment=$ENV CRMStackName=$STACK_NAME"
+  }
+
+# If proxy deployed, update Lambda DB_HOST to use proxy endpoint
+PROXY_ENDPOINT=$(aws cloudformation describe-stacks \
+  --stack-name "$PROXY_STACK_NAME" --region "$REGION" \
+  --query "Stacks[0].Outputs[?OutputKey=='RDSProxyEndpoint'].OutputValue" \
+  --output text 2>/dev/null || echo "")
+
+if [ -n "$PROXY_ENDPOINT" ] && [ "$PROXY_ENDPOINT" != "None" ]; then
+  echo "  Proxy endpoint: $PROXY_ENDPOINT"
+  echo "  Updating Lambda functions to use RDS Proxy..."
+  for FN in "sf7-${ENV}-auth" "sf7-${ENV}-crm" "sf7-${ENV}-sales" "sf7-${ENV}-quotation" "sf7-${ENV}-notification"; do
+    aws lambda update-function-configuration \
+      --function-name "$FN" \
+      --environment "Variables={DB_HOST=$PROXY_ENDPOINT,$(aws lambda get-function-configuration --function-name "$FN" --region "$REGION" --query "Environment.Variables" --output json 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); d.pop('DB_HOST',None); print(','.join(f'{k}={v}' for k,v in d.items()))" 2>/dev/null)}" \
+      --region "$REGION" > /dev/null 2>&1 || true
+  done
+  echo "  Lambda functions updated to use RDS Proxy."
+else
+  echo "  Using direct RDS connection (proxy not available)."
+fi
+
+# ══════════════════════════════════════════════
+# STEP 9: Deploy AI Stack
+# ══════════════════════════════════════════════
+
+echo ""
+echo "[9/11] Deploying AI stack to $AI_REGION..."
 aws cloudformation deploy \
   --template-file cloudformation-ai.yaml \
   --stack-name "$AI_STACK_NAME" \
@@ -577,7 +617,7 @@ echo "  AI stack deployed."
 # STEP 9: Upload sample KB docs
 # ══════════════════════════════════════════════
 
-echo "[9/9] Uploading sample KB documents..."
+echo "[10/11] Uploading sample KB documents..."
 _getai() {
   aws cloudformation describe-stacks \
     --stack-name "$AI_STACK_NAME" --region "$AI_REGION" \

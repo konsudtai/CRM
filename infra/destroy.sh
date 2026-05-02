@@ -126,10 +126,24 @@ echo "  cancel it manually in Console BEFORE deleting distribution."
 echo "  Console > CloudFront > Distribution > Cancel pricing plan"
 
 # ══════════════════════════════════════════════════════════
-# Step 4: Delete AI Stack
+# Step 4: Delete RDS Proxy Stack
 # ══════════════════════════════════════════════════════════
 
-echo "[4/6] Deleting AI stack ($AI_STACK_NAME)..."
+PROXY_STACK_NAME="${STACK_NAME}-proxy"
+echo "[4/7] Deleting RDS Proxy stack ($PROXY_STACK_NAME)..."
+aws cloudformation delete-stack \
+  --stack-name "$PROXY_STACK_NAME" \
+  --region "$REGION" 2>/dev/null || echo "  (Proxy stack not found)"
+aws cloudformation wait stack-delete-complete \
+  --stack-name "$PROXY_STACK_NAME" \
+  --region "$REGION" 2>/dev/null || true
+echo "  Proxy stack deleted."
+
+# ══════════════════════════════════════════════════════════
+# Step 5: Delete AI Stack
+# ══════════════════════════════════════════════════════════
+
+echo "[5/7] Deleting AI stack ($AI_STACK_NAME)..."
 aws cloudformation delete-stack \
   --stack-name "$AI_STACK_NAME" \
   --region "$AI_REGION" 2>/dev/null || echo "  (AI stack not found)"
@@ -140,10 +154,10 @@ aws cloudformation wait stack-delete-complete \
 echo "  AI stack deleted."
 
 # ══════════════════════════════════════════════════════════
-# Step 5: Delete CRM Stack
+# Step 6: Delete CRM Stack
 # ══════════════════════════════════════════════════════════
 
-echo "[5/6] Deleting CRM stack ($STACK_NAME)..."
+echo "[6/7] Deleting CRM stack ($STACK_NAME)..."
 echo "  (this takes 10-15 minutes — RDS deletion is slow)"
 aws cloudformation delete-stack \
   --stack-name "$STACK_NAME" \

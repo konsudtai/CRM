@@ -267,7 +267,7 @@ Resources:
     Properties:
       DBInstanceIdentifier: !Sub 'sf7-${Environment}'
       Engine: postgres
-      EngineVersion: '16.4'
+      EngineVersion: '16.6'
       DBInstanceClass: db.t4g.medium
       AllocatedStorage: 100
       StorageType: gp3
@@ -789,7 +789,7 @@ Resources:
           S3_BUCKET: !Ref FilesBucket
           NODE_ENV: production
           CORS_ORIGIN: !Sub 'https://${CloudFrontDistribution.DomainName}'
-          DB_PROXY_HOST: !GetAtt RDSProxy.Endpoint
+          DB_HOST: !GetAtt Database.Endpoint.Address
           CHAT_TABLE: !Ref ChatHistoryTable
           AI_STATE_TABLE: !Ref AIStateTable
 
@@ -819,7 +819,7 @@ Resources:
           S3_BUCKET: !Ref FilesBucket
           NODE_ENV: production
           CORS_ORIGIN: !Sub 'https://${CloudFrontDistribution.DomainName}'
-          DB_PROXY_HOST: !GetAtt RDSProxy.Endpoint
+          DB_HOST: !GetAtt Database.Endpoint.Address
           CHAT_TABLE: !Ref ChatHistoryTable
           AI_STATE_TABLE: !Ref AIStateTable
 
@@ -847,7 +847,7 @@ Resources:
           SQS_QUEUE_URL: !Ref EventsQueue
           NODE_ENV: production
           CORS_ORIGIN: !Sub 'https://${CloudFrontDistribution.DomainName}'
-          DB_PROXY_HOST: !GetAtt RDSProxy.Endpoint
+          DB_HOST: !GetAtt Database.Endpoint.Address
           CHAT_TABLE: !Ref ChatHistoryTable
           AI_STATE_TABLE: !Ref AIStateTable
 
@@ -876,7 +876,7 @@ Resources:
           SQS_QUEUE_URL: !Ref EventsQueue
           NODE_ENV: production
           CORS_ORIGIN: !Sub 'https://${CloudFrontDistribution.DomainName}'
-          DB_PROXY_HOST: !GetAtt RDSProxy.Endpoint
+          DB_HOST: !GetAtt Database.Endpoint.Address
           CHAT_TABLE: !Ref ChatHistoryTable
           AI_STATE_TABLE: !Ref AIStateTable
 
@@ -904,7 +904,7 @@ Resources:
           SQS_QUEUE_URL: !Ref EventsQueue
           NODE_ENV: production
           CORS_ORIGIN: !Sub 'https://${CloudFrontDistribution.DomainName}'
-          DB_PROXY_HOST: !GetAtt RDSProxy.Endpoint
+          DB_HOST: !GetAtt Database.Endpoint.Address
           LINE_SECRET_ARN: !Ref LineSecret
           CHAT_TABLE: !Ref ChatHistoryTable
           AI_STATE_TABLE: !Ref AIStateTable
@@ -1159,85 +1159,11 @@ Resources:
       TreatMissingData: notBreaching
 
   # ============================================================
-  # RDS Proxy — Connection pooling for Lambda
-  # Reduces RDS connections from 10/Lambda to shared pool
-  # Cost: ~$15/mo (0.015 per vCPU-hour × 2 vCPU × 730h)
+  # RDS Proxy — deployed as separate stack (cloudformation-proxy.yaml)
+  # after main stack is complete. This avoids CloudFormation timeout.
+  # Lambda uses DB_HOST from main stack initially (direct RDS),
+  # then update to Proxy endpoint after proxy stack deploys.
   # ============================================================
-  RDSProxySG:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: RDS Proxy security group
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 5432
-          ToPort: 5432
-          SourceSecurityGroupId: !Ref LambdaSG
-          Description: Lambda to RDS Proxy
-      SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: 5432
-          ToPort: 5432
-          CidrIp: 10.0.0.0/16
-          Description: RDS Proxy to RDS
-
-  RDSProxyRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Sub 'sf7-${Environment}-rds-proxy-role-${AWS::StackName}'
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: rds.amazonaws.com
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: rds-proxy-secrets-policy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                  - secretsmanager:DescribeSecret
-                Resource: !Ref DBSecret
-
-  RDSProxy:
-    Type: AWS::RDS::DBProxy
-    DependsOn: Database
-    Properties:
-      DBProxyName: !Sub 'sf7-${Environment}-proxy'
-      EngineFamily: POSTGRESQL
-      RoleArn: !GetAtt RDSProxyRole.Arn
-      Auth:
-        - AuthScheme: SECRETS
-          SecretArn: !Ref DBSecret
-          IAMAuth: DISABLED
-      VpcSubnetIds:
-        - !Ref PrivateSubnetA
-        - !Ref PrivateSubnetB
-      VpcSecurityGroupIds:
-        - !Ref RDSProxySG
-      RequireTLS: true
-      IdleClientTimeout: 1800
-      DebugLogging: false
-      Tags:
-        - Key: Name
-          Value: !Sub 'sf7-${Environment}-proxy'
-
-  RDSProxyTargetGroup:
-    Type: AWS::RDS::DBProxyTargetGroup
-    DependsOn: RDSProxy
-    Properties:
-      DBProxyName: !Ref RDSProxy
-      TargetGroupName: default
-      DBInstanceIdentifiers:
-        - !Ref Database
-      ConnectionPoolConfigurationInfo:
-        MaxConnectionsPercent: 90
-        MaxIdleConnectionsPercent: 50
-        ConnectionBorrowTimeout: 120
 
 # ============================================================
 # AWS Backup — 7-day retention for RDS + S3
@@ -1345,11 +1271,7 @@ Outputs:
 
   DatabaseEndpoint:
     Value: !GetAtt Database.Endpoint.Address
-    Description: RDS PostgreSQL endpoint (direct - use Proxy endpoint for Lambda)
-
-  RDSProxyEndpoint:
-    Value: !GetAtt RDSProxy.Endpoint
-    Description: RDS Proxy endpoint (use this in Lambda DB_HOST)
+    Description: RDS PostgreSQL endpoint (direct)
 
   FilesBucket:
     Value: !Ref FilesBucket
@@ -1382,3 +1304,34 @@ Outputs:
   EventsTopicArn:
     Value: !Ref EventsTopic
     Description: SNS topic ARN - services publish events here
+
+  # Exports for RDS Proxy stack (cloudformation-proxy.yaml)
+  VpcId:
+    Value: !Ref VPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VpcId'
+
+  LambdaSGId:
+    Value: !Ref LambdaSG
+    Export:
+      Name: !Sub '${AWS::StackName}-LambdaSGId'
+
+  PrivateSubnetAId:
+    Value: !Ref PrivateSubnetA
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivateSubnetA'
+
+  PrivateSubnetBId:
+    Value: !Ref PrivateSubnetB
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivateSubnetB'
+
+  DBSecretArn:
+    Value: !Ref DBSecret
+    Export:
+      Name: !Sub '${AWS::StackName}-DBSecretArn'
+
+  DBInstanceId:
+    Value: !Ref Database
+    Export:
+      Name: !Sub '${AWS::StackName}-DBInstanceId'

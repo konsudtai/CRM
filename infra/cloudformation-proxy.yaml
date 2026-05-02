@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SalesFAST 7 — RDS Proxy (deploy after main stack)'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+  CRMStackName:
+    Type: String
+    Default: salesfast7-prod
+    Description: 'Name of the main CRM CloudFormation stack'
+
+Resources:
+
+  RDSProxySG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS Proxy security group
+      VpcId: !ImportValue
+        Fn::Sub: '${CRMStackName}-VpcId'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !ImportValue
+            Fn::Sub: '${CRMStackName}-LambdaSGId'
+          Description: Lambda to RDS Proxy
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 10.0.0.0/16
+          Description: RDS Proxy to RDS
+
+  RDSProxyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'sf7-${Environment}-rds-proxy-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: rds.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: rds-proxy-secrets-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:DescribeSecret
+                Resource: !ImportValue
+                  Fn::Sub: '${CRMStackName}-DBSecretArn'
+
+  RDSProxy:
+    Type: AWS::RDS::DBProxy
+    Properties:
+      DBProxyName: !Sub 'sf7-${Environment}-proxy'
+      EngineFamily: POSTGRESQL
+      RoleArn: !GetAtt RDSProxyRole.Arn
+      Auth:
+        - AuthScheme: SECRETS
+          SecretArn: !ImportValue
+            Fn::Sub: '${CRMStackName}-DBSecretArn'
+          IAMAuth: DISABLED
+      VpcSubnetIds:
+        - !ImportValue
+            Fn::Sub: '${CRMStackName}-PrivateSubnetA'
+        - !ImportValue
+            Fn::Sub: '${CRMStackName}-PrivateSubnetB'
+      VpcSecurityGroupIds:
+        - !Ref RDSProxySG
+      RequireTLS: true
+      IdleClientTimeout: 1800
+      DebugLogging: false
+
+  RDSProxyTargetGroup:
+    Type: AWS::RDS::DBProxyTargetGroup
+    Properties:
+      DBProxyName: !Ref RDSProxy
+      TargetGroupName: default
+      DBInstanceIdentifiers:
+        - !ImportValue
+            Fn::Sub: '${CRMStackName}-DBInstanceId'
+      ConnectionPoolConfigurationInfo:
+        MaxConnectionsPercent: 90
+        MaxIdleConnectionsPercent: 50
+        ConnectionBorrowTimeout: 120
+
+Outputs:
+  RDSProxyEndpoint:
+    Value: !GetAtt RDSProxy.Endpoint
+    Description: RDS Proxy endpoint
+    Export:
+      Name: !Sub '${CRMStackName}-RDSProxyEndpoint'
