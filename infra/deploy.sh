@@ -159,6 +159,18 @@ if echo "$STACK_STATUS" | grep -qiE "ROLLBACK_COMPLETE|ROLLBACK_FAILED|DELETE_FA
     done
   fi
 
+  # Delete Backup Vault recovery points (blocks vault deletion)
+  for RP in $(aws backup list-recovery-points-by-backup-vault --backup-vault-name "sf7-${ENV}-vault" --region "$REGION" --query "RecoveryPoints[].RecoveryPointArn" --output text 2>/dev/null || echo ""); do
+    aws backup delete-recovery-point --backup-vault-name "sf7-${ENV}-vault" --recovery-point-arn "$RP" --region "$REGION" 2>/dev/null || true
+  done
+
+  # Delete orphaned CloudWatch Log Groups
+  aws logs delete-log-group --log-group-name "/sf7/${ENV}/vpc-flow-logs" --region "$REGION" 2>/dev/null || true
+
+  # Delete Proxy stack first (depends on main stack)
+  aws cloudformation delete-stack --stack-name "${STACK_NAME}-proxy" --region "$REGION" 2>/dev/null || true
+  aws cloudformation wait stack-delete-complete --stack-name "${STACK_NAME}-proxy" --region "$REGION" 2>/dev/null || true
+
   # Delete the failed stack
   aws cloudformation delete-stack --stack-name "$STACK_NAME" --region "$REGION" 2>/dev/null || true
   echo "  Waiting for cleanup (~5 min)..."
@@ -258,6 +270,34 @@ elif [ "$STACK_STATUS" = "DOES_NOT_EXIST" ]; then
     ORPHAN_FOUND=true
   fi
 
+  # Check orphaned Proxy stack
+  PROXY_STATUS=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}-proxy" --region "$REGION" --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "NONE")
+  if [ "$PROXY_STATUS" != "NONE" ] && [ "$PROXY_STATUS" != "DOES_NOT_EXIST" ]; then
+    echo "  Found orphaned Proxy stack ($PROXY_STATUS) — deleting..."
+    aws cloudformation delete-stack --stack-name "${STACK_NAME}-proxy" --region "$REGION" 2>/dev/null || true
+    aws cloudformation wait stack-delete-complete --stack-name "${STACK_NAME}-proxy" --region "$REGION" 2>/dev/null || true
+    ORPHAN_FOUND=true
+  fi
+
+  # Check orphaned CloudWatch Log Groups
+  for LG in "/sf7/${ENV}/vpc-flow-logs"; do
+    if aws logs describe-log-groups --log-group-name-prefix "$LG" --region "$REGION" --query "logGroups[0].logGroupName" --output text 2>/dev/null | grep -q "$LG"; then
+      echo "  Found orphaned log group: $LG — removing..."
+      aws logs delete-log-group --log-group-name "$LG" --region "$REGION" 2>/dev/null || true
+      ORPHAN_FOUND=true
+    fi
+  done
+
+  # Check orphaned Backup Vault
+  if aws backup describe-backup-vault --backup-vault-name "sf7-${ENV}-vault" --region "$REGION" 2>/dev/null | grep -q "BackupVaultName"; then
+    echo "  Found orphaned Backup Vault — removing recovery points + vault..."
+    for RP in $(aws backup list-recovery-points-by-backup-vault --backup-vault-name "sf7-${ENV}-vault" --region "$REGION" --query "RecoveryPoints[].RecoveryPointArn" --output text 2>/dev/null || echo ""); do
+      aws backup delete-recovery-point --backup-vault-name "sf7-${ENV}-vault" --recovery-point-arn "$RP" --region "$REGION" 2>/dev/null || true
+    done
+    aws backup delete-backup-vault --backup-vault-name "sf7-${ENV}-vault" --region "$REGION" 2>/dev/null || true
+    ORPHAN_FOUND=true
+  fi
+
   if [ "$ORPHAN_FOUND" = true ]; then
     echo "  Waiting 60s for cleanup to propagate..."
     sleep 60
@@ -316,12 +356,8 @@ echo "[3/11] Building DB Init Lambda with pg..."
 # Build pg layer zip
 PG_DIR=$(mktemp -d)
 mkdir -p "$PG_DIR/nodejs"
-cd "$PG_DIR/nodejs"
-npm init -y > /dev/null 2>&1
-npm install pg --silent > /dev/null 2>&1
-cd "$PG_DIR"
-zip -qr /tmp/sf7-pg-layer.zip nodejs
-cd - > /dev/null
+(cd "$PG_DIR/nodejs" && npm init -y > /dev/null 2>&1 && npm install pg --silent > /dev/null 2>&1)
+(cd "$PG_DIR" && zip -qr /tmp/sf7-pg-layer.zip nodejs)
 rm -rf "$PG_DIR"
 
 # Publish as Lambda Layer
@@ -333,39 +369,14 @@ LAYER_ARN=$(aws lambda publish-layer-version \
   --query 'LayerVersionArn' --output text)
 echo "  Layer: $LAYER_ARN"
 
-# Build DB Init function code
-cat > /tmp/sf7-db-init.js << 'DBEOF'
-const { Client } = require('pg');
-exports.handler = async (event) => {
-  const client = new Client({
-    host: process.env.DB_HOST,
-    port: 5432,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    ssl: { rejectUnauthorized: false },
-    statement_timeout: 90000,
-  });
-  try {
-    await client.connect();
-    const sql = event.sql || '';
-    if (!sql.trim()) return { statusCode: 400, body: 'No SQL' };
-    const statements = sql.split(/;\s*\n/).filter(s => s.trim());
-    for (const stmt of statements) {
-      if (stmt.trim()) await client.query(stmt);
-    }
-    await client.end();
-    return { statusCode: 200, body: 'OK' };
-  } catch (err) {
-    try { await client.end(); } catch(_) {}
-    return { statusCode: 500, body: err.message };
-  }
-};
-DBEOF
-
-cd /tmp
-zip -qj sf7-db-init.zip sf7-db-init.js
-cd - > /dev/null
+# Use db-init-lambda.js from infra/ directory (no heredoc — works on bash + zsh)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DB_INIT_JS="$SCRIPT_DIR/db-init-lambda.js"
+if [ ! -f "$DB_INIT_JS" ]; then
+  DB_INIT_JS="$(pwd)/db-init-lambda.js"
+fi
+cp "$DB_INIT_JS" /tmp/sf7-db-init.js
+(cd /tmp && zip -qj sf7-db-init.zip sf7-db-init.js)
 
 # Update Lambda function code + layer
 aws lambda update-function-code \
@@ -373,7 +384,6 @@ aws lambda update-function-code \
   --zip-file fileb:///tmp/sf7-db-init.zip \
   --region "$REGION" > /dev/null
 
-# Wait for update to complete
 aws lambda wait function-updated --function-name "$DB_INIT_FN" --region "$REGION" 2>/dev/null || sleep 5
 
 aws lambda update-function-configuration \
@@ -429,49 +439,21 @@ aws rds wait db-instance-available \
 
 DB_INIT_OK=false
 
-# Helper: invoke DB Init Lambda with SQL file
+# Helper: invoke DB Init Lambda with SQL file (base64 encoded)
 run_sql() {
   local DESC="$1"
   local SQL_FILE="$2"
   echo "  Running $DESC..."
 
-  # Encode SQL as base64 to avoid JSON escaping issues
   local SQL_B64=$(base64 < "$SQL_FILE" | tr -d '\n')
+  printf '{"sql_base64":"%s"}' "$SQL_B64" > /tmp/sf7-payload.json
 
-  cat > /tmp/sf7-payload.json << PEOF
-{"sql_base64":"$SQL_B64"}
-PEOF
-
-  # Update handler to support base64
-  cat > /tmp/sf7-db-init.js << 'HANDLER'
-const { Client } = require('pg');
-exports.handler = async (event) => {
-  let sql = event.sql || '';
-  if (event.sql_base64) {
-    sql = Buffer.from(event.sql_base64, 'base64').toString('utf-8');
-  }
-  if (!sql.trim()) return { statusCode: 400, body: 'No SQL' };
-  const client = new Client({
-    host: process.env.DB_HOST, port: 5432,
-    user: process.env.DB_USER, password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    ssl: { rejectUnauthorized: false }, statement_timeout: 90000,
-  });
-  try {
-    await client.connect();
-    await client.query(sql);
-    await client.end();
-    return { statusCode: 200, body: 'OK' };
-  } catch (err) {
-    try { await client.end(); } catch(_) {}
-    return { statusCode: 500, body: err.message };
-  }
-};
-HANDLER
-
-  cd /tmp
-  zip -qj sf7-db-init.zip sf7-db-init.js
-  cd - > /dev/null
+  # Ensure Lambda has base64 support (use db-init-lambda.js)
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  DB_INIT_JS="$SCRIPT_DIR/db-init-lambda.js"
+  if [ ! -f "$DB_INIT_JS" ]; then DB_INIT_JS="$(pwd)/db-init-lambda.js"; fi
+  cp "$DB_INIT_JS" /tmp/sf7-db-init.js
+  (cd /tmp && zip -qj sf7-db-init.zip sf7-db-init.js)
 
   aws lambda update-function-code \
     --function-name "$DB_INIT_FN" \
@@ -585,14 +567,20 @@ if [ -n "$PROXY_ENDPOINT" ] && [ "$PROXY_ENDPOINT" != "None" ]; then
   echo "  Proxy endpoint: $PROXY_ENDPOINT"
   echo "  Updating Lambda functions to use RDS Proxy..."
   for FN in "sf7-${ENV}-auth" "sf7-${ENV}-crm" "sf7-${ENV}-sales" "sf7-${ENV}-quotation" "sf7-${ENV}-notification"; do
-    aws lambda update-function-configuration \
-      --function-name "$FN" \
-      --environment "Variables={DB_HOST=$PROXY_ENDPOINT,$(aws lambda get-function-configuration --function-name "$FN" --region "$REGION" --query "Environment.Variables" --output json 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); d.pop('DB_HOST',None); print(','.join(f'{k}={v}' for k,v in d.items()))" 2>/dev/null)}" \
-      --region "$REGION" > /dev/null 2>&1 || true
+    # Get current env vars, replace DB_HOST with proxy endpoint
+    CURRENT_ENV=$(aws lambda get-function-configuration --function-name "$FN" --region "$REGION" --query "Environment.Variables" --output json 2>/dev/null || echo "{}")
+    NEW_ENV=$(echo "$CURRENT_ENV" | python3 -c "import json,sys; d=json.load(sys.stdin); d['DB_HOST']='$PROXY_ENDPOINT'; print(json.dumps(d))" 2>/dev/null || echo "")
+    if [ -n "$NEW_ENV" ] && [ "$NEW_ENV" != "" ]; then
+      aws lambda update-function-configuration \
+        --function-name "$FN" \
+        --environment "{\"Variables\":$NEW_ENV}" \
+        --region "$REGION" > /dev/null 2>&1 || true
+    fi
   done
   echo "  Lambda functions updated to use RDS Proxy."
 else
-  echo "  Using direct RDS connection (proxy not available)."
+  echo "  Using direct RDS connection (proxy not available yet)."
+  echo "  Proxy will be available in ~10 min. Lambda works fine with direct RDS."
 fi
 
 # ══════════════════════════════════════════════
