@@ -9,70 +9,6 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "vector";  -- pgvector for AI embeddings
 
 -- ============================================================
--- 0. AI KNOWLEDGE BASE (pgvector)
--- ============================================================
-
-CREATE TABLE kb_documents (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),
-  file_name       VARCHAR(255) NOT NULL,
-  file_type       VARCHAR(50) NOT NULL,           -- pdf, md, txt, json, docx
-  file_size       BIGINT,
-  file_url        VARCHAR(1024),                  -- S3 URL
-  category        VARCHAR(50) DEFAULT 'general',  -- product, company, faq, playbook
-  status          VARCHAR(30) DEFAULT 'processing', -- processing, ready, error
-  chunk_count     INTEGER DEFAULT 0,
-  uploaded_by     UUID REFERENCES users(id),
-  created_at      TIMESTAMPTZ DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE kb_chunks (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  document_id     UUID NOT NULL REFERENCES kb_documents(id) ON DELETE CASCADE,
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),
-  chunk_index     INTEGER NOT NULL,
-  content         TEXT NOT NULL,
-  token_count     INTEGER,
-  embedding       vector(1536),                   -- Amazon Titan embedding dimension
-  metadata        JSONB DEFAULT '{}',
-  created_at      TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Index for similarity search
-CREATE INDEX idx_kb_chunks_embedding ON kb_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
-CREATE INDEX idx_kb_chunks_tenant ON kb_chunks(tenant_id);
-CREATE INDEX idx_kb_chunks_doc ON kb_chunks(document_id);
-CREATE INDEX idx_kb_documents_tenant ON kb_documents(tenant_id);
-
--- AI config per tenant
-CREATE TABLE ai_config (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),
-  enabled         BOOLEAN DEFAULT false,
-  bedrock_region  VARCHAR(30) DEFAULT 'us-east-1',
-  model_id        VARCHAR(100) DEFAULT 'anthropic.claude-3-haiku-20240307-v1:0',
-  embedding_model VARCHAR(100) DEFAULT 'amazon.titan-embed-text-v2:0',
-  temperature     DECIMAL(3,2) DEFAULT 0.3,
-  max_tokens      INTEGER DEFAULT 2048,
-  system_prompt   TEXT,
-  ai_name         VARCHAR(100) DEFAULT 'น้องขายไว',
-  line_ai_enabled BOOLEAN DEFAULT false,
-  line_ai_name    VARCHAR(100) DEFAULT 'Admin AI',
-  kb_last_synced  TIMESTAMPTZ,
-  created_at      TIMESTAMPTZ DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(tenant_id)
-);
-
-ALTER TABLE kb_documents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE kb_chunks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ai_config ENABLE ROW LEVEL SECURITY;
-CREATE POLICY rls_kb_documents ON kb_documents USING (tenant_id = current_setting('app.current_tenant')::uuid);
-CREATE POLICY rls_kb_chunks ON kb_chunks USING (tenant_id = current_setting('app.current_tenant')::uuid);
-CREATE POLICY rls_ai_config ON ai_config USING (tenant_id = current_setting('app.current_tenant')::uuid);
-
--- ============================================================
 -- 1. TENANTS & AUTH (Cognito-integrated)
 -- ============================================================
 
@@ -614,7 +550,62 @@ CREATE TABLE calendar_syncs (
 );
 
 -- ============================================================
--- 8. ROW-LEVEL SECURITY (RLS)
+-- 8. AI KNOWLEDGE BASE (pgvector)
+-- ============================================================
+
+CREATE TABLE kb_documents (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id       UUID NOT NULL REFERENCES tenants(id),
+  file_name       VARCHAR(255) NOT NULL,
+  file_type       VARCHAR(50) NOT NULL,
+  file_size       BIGINT,
+  file_url        VARCHAR(1024),
+  category        VARCHAR(50) DEFAULT 'general',
+  status          VARCHAR(30) DEFAULT 'processing',
+  chunk_count     INTEGER DEFAULT 0,
+  uploaded_by     UUID REFERENCES users(id),
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE kb_chunks (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  document_id     UUID NOT NULL REFERENCES kb_documents(id) ON DELETE CASCADE,
+  tenant_id       UUID NOT NULL REFERENCES tenants(id),
+  chunk_index     INTEGER NOT NULL,
+  content         TEXT NOT NULL,
+  token_count     INTEGER,
+  embedding       vector(1536),
+  metadata        JSONB DEFAULT '{}',
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_kb_chunks_embedding ON kb_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+CREATE INDEX idx_kb_chunks_tenant ON kb_chunks(tenant_id);
+CREATE INDEX idx_kb_chunks_doc ON kb_chunks(document_id);
+CREATE INDEX idx_kb_documents_tenant ON kb_documents(tenant_id);
+
+CREATE TABLE ai_config (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id       UUID NOT NULL REFERENCES tenants(id),
+  enabled         BOOLEAN DEFAULT false,
+  bedrock_region  VARCHAR(30) DEFAULT 'us-east-1',
+  model_id        VARCHAR(100) DEFAULT 'anthropic.claude-3-haiku-20240307-v1:0',
+  embedding_model VARCHAR(100) DEFAULT 'amazon.titan-embed-text-v2:0',
+  temperature     DECIMAL(3,2) DEFAULT 0.3,
+  max_tokens      INTEGER DEFAULT 2048,
+  system_prompt   TEXT,
+  ai_name         VARCHAR(100) DEFAULT 'น้องขายไว',
+  line_ai_enabled BOOLEAN DEFAULT false,
+  line_ai_name    VARCHAR(100) DEFAULT 'Admin AI',
+  kb_last_synced  TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(tenant_id)
+);
+
+-- ============================================================
+-- 9. ROW-LEVEL SECURITY (RLS)
 -- ============================================================
 
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -678,6 +669,12 @@ CREATE POLICY rls_audit_logs ON audit_logs USING (tenant_id = current_setting('a
 CREATE POLICY rls_consent_records ON consent_records USING (tenant_id = current_setting('app.current_tenant')::uuid);
 CREATE POLICY rls_email_syncs ON email_syncs USING (tenant_id = current_setting('app.current_tenant')::uuid);
 CREATE POLICY rls_calendar_syncs ON calendar_syncs USING (tenant_id = current_setting('app.current_tenant')::uuid);
+ALTER TABLE kb_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE kb_chunks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_config ENABLE ROW LEVEL SECURITY;
+CREATE POLICY rls_kb_documents ON kb_documents USING (tenant_id = current_setting('app.current_tenant')::uuid);
+CREATE POLICY rls_kb_chunks ON kb_chunks USING (tenant_id = current_setting('app.current_tenant')::uuid);
+CREATE POLICY rls_ai_config ON ai_config USING (tenant_id = current_setting('app.current_tenant')::uuid);
 
 -- Join tables: RLS via parent
 CREATE POLICY rls_role_permissions ON role_permissions USING (
