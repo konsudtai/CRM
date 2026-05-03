@@ -27,7 +27,7 @@
 
   <!-- List View -->
   <div class="card" id="list-view">
-    <input class="search-input" id="search" data-i18n-placeholder="acc_search" placeholder="Search company name, tax ID, industry..." style="margin-bottom:16px" oninput="renderTable()"/>
+    <input class="search-input" id="search" data-i18n-placeholder="acc_search" placeholder="Search company name, tax ID, industry..." style="margin-bottom:16px" oninput="clearTimeout(window._searchTimer);window._searchTimer=setTimeout(renderTable,300)"/>
     <div class="table-wrap">
       <table>
         <thead><tr>
@@ -135,21 +135,24 @@
 <script>
 document.getElementById('nav').innerHTML = renderNav('accounts');
 
-function renderTable() {
+async function renderTable() {
   var q = (document.getElementById('search').value || '').toLowerCase();
-  var f = ACCOUNTS.filter(function(a) { return a.name.toLowerCase().indexOf(q) >= 0 || a.industry.toLowerCase().indexOf(q) >= 0 || (a.taxId || '').indexOf(q) >= 0; });
+  try {
+    var res = await apiFetch('/accounts?search=' + encodeURIComponent(q) + '&limit=100');
+    var f = res.data || res || [];
+  } catch(e) { var f = []; }
   document.getElementById('count').textContent = f.length;
   document.getElementById('tbody').innerHTML = f.map(function(a) {
     return '<tr>' +
-      '<td><a href="account-detail.html?id=' + a.id + '" class="table-link">' + a.name + '</a></td>' +
-      '<td style="color:var(--text2);font-size:12px;font-family:monospace">' + (a.taxId || '-') + '</td>' +
-      '<td style="color:var(--text2)">' + a.industry + '</td>' +
-      '<td style="color:var(--text2);font-size:12px">' + a.phone + '</td>' +
-      '<td><span class="status-badge" style="background:rgba(46,132,74,.1);color:#2E844A">' + (a.status || 'Active') + '</span></td>' +
-      '<td><span class="tag">' + (a.tier || 'Standard') + '</span></td>' +
-      '<td style="font-weight:600;color:var(--sf-blue)">' + fmt(a.revenue) + '</td>' +
+      '<td><a href="account-detail.html?id=' + a.id + '" class="table-link">' + esc(a.company_name || a.name || '') + '</a></td>' +
+      '<td style="color:var(--text2);font-size:12px;font-family:monospace">' + esc(a.tax_id || '-') + '</td>' +
+      '<td style="color:var(--text2)">' + esc(a.industry || '-') + '</td>' +
+      '<td style="color:var(--text2);font-size:12px">' + esc(a.phone || '-') + '</td>' +
+      '<td><span class="status-badge" style="background:rgba(46,132,74,.1);color:#2E844A">' + esc(a.account_status || 'active') + '</span></td>' +
+      '<td><span class="tag">' + esc(a.account_tier || 'standard') + '</span></td>' +
+      '<td style="font-weight:600;color:var(--sf-blue)">' + fmt(a.total_revenue || 0) + '</td>' +
       '</tr>';
-  }).join('') || '<tr><td colspan="7" class="empty-state">No accounts found</td></tr>';
+  }).join('') || '<tr><td colspan="7" class="empty-state">No accounts found — click "+ New Account" to add one</td></tr>';
 }
 
 function openCreate() {
@@ -170,22 +173,36 @@ function closeForm() {
   document.getElementById('list-view').style.display = 'block';
 }
 
-function saveAccount(e) {
+async function saveAccount(e) {
   e.preventDefault();
-  ACCOUNTS.unshift({
-    id: ACCOUNTS.length + 1,
-    name: document.getElementById('f-name').value,
-    industry: document.getElementById('f-industry').value || 'Other',
-    taxId: document.getElementById('f-tax').value,
-    phone: document.getElementById('f-phone').value || '-',
-    email: document.getElementById('f-email').value,
-    status: 'Active',
-    tier: document.getElementById('f-tier').value,
-    revenue: 0,
-    tags: [document.getElementById('f-tier').value || 'Standard'],
-  });
-  closeForm();
-  renderTable();
+  var data = {
+    companyName: document.getElementById('f-name').value,
+    industry: document.getElementById('f-industry').value || null,
+    taxId: document.getElementById('f-tax').value || null,
+    phone: document.getElementById('f-phone').value || null,
+    email: document.getElementById('f-email').value || null,
+    accountTier: document.getElementById('f-tier').value || 'standard',
+  };
+  // Get optional fields if they exist
+  var fields = {
+    'f-name-en': 'companyNameEn', 'f-type': 'companyType', 'f-branch': 'branchCode',
+    'f-branch-name': 'branchName', 'f-fax': 'fax', 'f-website': 'website',
+    'f-address': 'address', 'f-subdistrict': 'subDistrict', 'f-district': 'district',
+    'f-province': 'province', 'f-postal': 'postalCode', 'f-credit': 'creditTerm',
+    'f-notes': 'internalNotes',
+  };
+  for (var fid in fields) {
+    var el = document.getElementById(fid);
+    if (el && el.value) data[fields[fid]] = el.value;
+  }
+
+  try {
+    await apiFetch('/accounts', { method: 'POST', body: JSON.stringify(data) });
+    closeForm();
+    renderTable();
+  } catch(err) {
+    alert('Error saving account: ' + err.message);
+  }
 }
 
 renderTable();
