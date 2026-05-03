@@ -96,4 +96,27 @@ users.post('/:id/reset-password', async (c) => {
   return c.json({ message: 'Password reset' });
 });
 
+// ── PATCH /users/:id/profile ──
+users.patch('/:id/profile', async (c) => {
+  const tenantId = c.get('tenantId');
+  const id = c.req.param('id');
+  const body = await c.req.json().catch(() => ({}));
+
+  const sets: string[] = [];
+  const vals: any[] = [];
+  let i = 1;
+
+  if (body.firstName !== undefined) { sets.push(`first_name = $${i}`); vals.push(body.firstName); i++; }
+  if (body.lastName !== undefined) { sets.push(`last_name = $${i}`); vals.push(body.lastName); i++; }
+  if (body.phone !== undefined) { sets.push(`phone = $${i}`); vals.push(body.phone); i++; }
+  if (body.lineId !== undefined) { sets.push(`line_id = $${i}`); vals.push(body.lineId); i++; }
+  if (body.preferredLanguage !== undefined) { sets.push(`preferred_language = $${i}`); vals.push(body.preferredLanguage); i++; }
+
+  if (sets.length === 0) return c.json({ message: 'No fields to update' }, 400);
+  vals.push(id);
+
+  await query(tenantId, `UPDATE users SET ${sets.join(', ')} WHERE id = $${i} AND tenant_id = '${tenantId}'`, vals);
+  return c.json({ message: 'Profile updated' });
+});
+
 export default users;

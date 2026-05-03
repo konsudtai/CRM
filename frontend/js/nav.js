@@ -1,10 +1,49 @@
 /* SalesFAST 7 — Unified Navigation (i18n) */
 
 function getUserProfile() {
-  const def = { username:'admin', email:'admin@salesfast7.com', role:'Admin', firstName:'System', lastName:'Admin', phone:'', birthday:'', address:'' };
+  const def = { username:'', email:'', role:'Viewer', firstName:'', lastName:'', phone:'', birthday:'', address:'' };
   try { return JSON.parse(localStorage.getItem('sf7-user') || 'null') || def; } catch { return def; }
 }
 function saveUserProfile(p) { localStorage.setItem('sf7-user', JSON.stringify(p)); }
+
+// Load user profile from API on page load (updates localStorage with real DB data)
+async function loadUserProfile() {
+  try {
+    var token = localStorage.getItem('sf7_token');
+    if (!token) return;
+    var res = await fetch((window.__SF7_API_BASE__ || '') + '/auth/me', {
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) { if (res.status === 401) { localStorage.removeItem('sf7_token'); window.location.href = '../login.html'; } return; }
+    var data = await res.json();
+    var profile = {
+      id: data.id,
+      tenantId: data.tenant_id,
+      email: data.email,
+      firstName: data.first_name || '',
+      lastName: data.last_name || '',
+      phone: data.phone || '',
+      role: (data.roles && data.roles[0]) || 'Viewer',
+      roles: data.roles || [],
+      permissions: data.permissions || {},
+      lineId: data.line_id || '',
+      mfaEnabled: data.mfa_enabled || false,
+      preferredLanguage: data.preferred_language || 'th',
+    };
+    saveUserProfile(profile);
+    // Update nav display
+    var avatarEl = document.querySelector('.sf7-nav-avatar');
+    if (avatarEl) avatarEl.textContent = (profile.firstName[0]||'') + (profile.lastName[0]||'');
+    var nameEl = document.querySelector('.sf7-um-name');
+    if (nameEl) nameEl.textContent = profile.firstName + ' ' + profile.lastName;
+    var emailEl = document.querySelector('.sf7-um-email');
+    if (emailEl) emailEl.textContent = profile.email;
+    var roleEl = document.querySelector('.sf7-um-role');
+    if (roleEl) roleEl.textContent = profile.role;
+  } catch(e) { console.error('loadUserProfile:', e); }
+}
+// Auto-load on every page
+setTimeout(loadUserProfile, 100);
 
 function getNavMenus() {
   return [
@@ -117,7 +156,11 @@ function toggleUserMenu(){document.getElementById('sf7-user-menu').classList.tog
 document.addEventListener('click',e=>{const m=document.getElementById('sf7-user-menu');if(m&&!e.target.closest('.sf7-user-wrap'))m.classList.remove('open')});
 function openProfileModal(){document.getElementById('sf7-user-menu').classList.remove('open');const p=getUserProfile();document.getElementById('pf-first').value=p.firstName||'';document.getElementById('pf-last').value=p.lastName||'';document.getElementById('pf-username').value=p.username||'';document.getElementById('pf-email').value=p.email||'';document.getElementById('pf-role').value=p.role||'';document.getElementById('pf-phone').value=p.phone||'';document.getElementById('pf-birthday').value=p.birthday||'';document.getElementById('pf-address').value=p.address||'';if(p.avatarUrl){document.getElementById('pf-avatar-preview').innerHTML='<img src="'+p.avatarUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';}document.getElementById('profile-modal').classList.add('open')}
 function closeProfileModal(){document.getElementById('profile-modal').classList.remove('open')}
-function saveProfile(e){e.preventDefault();const p=getUserProfile();p.firstName=document.getElementById('pf-first').value;p.lastName=document.getElementById('pf-last').value;p.username=document.getElementById('pf-username').value;p.email=document.getElementById('pf-email').value;p.phone=document.getElementById('pf-phone').value;p.birthday=document.getElementById('pf-birthday').value;p.address=document.getElementById('pf-address').value;saveUserProfile(p);closeProfileModal();location.reload()}
+function saveProfile(e){e.preventDefault();const p=getUserProfile();p.firstName=document.getElementById('pf-first').value;p.lastName=document.getElementById('pf-last').value;p.username=document.getElementById('pf-username').value;p.email=document.getElementById('pf-email').value;p.phone=document.getElementById('pf-phone').value;p.birthday=document.getElementById('pf-birthday').value;p.address=document.getElementById('pf-address').value;saveUserProfile(p);
+  // Save to DB via API
+  var token=localStorage.getItem('sf7_token');
+  if(token){fetch((window.__SF7_API_BASE__||'')+'/users/'+p.id+'/profile',{method:'PATCH',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({firstName:p.firstName,lastName:p.lastName,phone:p.phone})}).catch(function(e){console.error('saveProfile API:',e)})}
+  closeProfileModal();location.reload()}
 function handleAvatarUpload(files){
   if(!files||!files.length)return;
   var f=files[0];
@@ -136,8 +179,10 @@ function handleAvatarUpload(files){
 }
 function openPasswordModal(){document.getElementById('sf7-user-menu').classList.remove('open');document.getElementById('pw-current').value='';document.getElementById('pw-new').value='';document.getElementById('pw-confirm').value='';document.getElementById('password-modal').classList.add('open')}
 function closePasswordModal(){document.getElementById('password-modal').classList.remove('open')}
-function savePassword(e){e.preventDefault();if(document.getElementById('pw-new').value!==document.getElementById('pw-confirm').value){alert('Passwords do not match');return}alert('Password updated');closePasswordModal()}
-function doLogout(){localStorage.removeItem('sf7-user');window.location.href='../login.html'}
+function savePassword(e){e.preventDefault();if(document.getElementById('pw-new').value!==document.getElementById('pw-confirm').value){alert('Passwords do not match');return}
+  var token=localStorage.getItem('sf7_token');
+  fetch((window.__SF7_API_BASE__||'')+'/auth/change-password',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({currentPassword:document.getElementById('pw-current').value,newPassword:document.getElementById('pw-new').value})}).then(function(r){return r.json()}).then(function(d){if(d.message==='Password changed successfully'){alert('Password updated successfully');closePasswordModal()}else{alert(d.message||'Error')}}).catch(function(e){alert('Error: '+e.message)})}
+function doLogout(){localStorage.removeItem('sf7-user');localStorage.removeItem('sf7_token');localStorage.removeItem('sf7_refresh');window.location.href='../login.html'}
 document.addEventListener('DOMContentLoaded',()=>{initTheme();initCoAgent()});
 
 /* ══════════════════════════════════════════════════════════
