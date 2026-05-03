@@ -43,6 +43,7 @@ CREATE TABLE users (
   locked_until        TIMESTAMPTZ,
   last_login_at       TIMESTAMPTZ,
   last_login_ip       VARCHAR(45),
+  sns_topic_arn       VARCHAR(512),                 -- SNS topic ARN for notifications
   created_at          TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(tenant_id, email)
 );
