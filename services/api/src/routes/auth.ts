@@ -66,10 +66,11 @@ auth.post('/login', async (c) => {
   }
 
   // Clear lockout on success
+  const clientIp = (c.req.header('x-forwarded-for') || 'unknown').split(',')[0].trim().slice(0, 45);
   await queryNoRLS(
     `UPDATE users SET failed_login_count = 0, locked_until = NULL,
      last_login_at = NOW(), last_login_ip = $1 WHERE id = $2`,
-    [c.req.header('x-forwarded-for') || 'unknown', user.id]
+    [clientIp, user.id]
   );
 
   // Get user roles
