@@ -134,13 +134,15 @@ function renderQA(){
 
 function renderKPIs(){
   const k=KPI_DATA[P]||DEFAULT_KPI[P],pct=Math.min((k.closed/(k.target||1))*100,100);
-  const totalPipe=Object.values(OPPS_K).flat().reduce((s,o)=>s+o.a,0);
+  const totalPipe=Object.values(OPPS_K).flat().reduce((s,o)=>s+(o.a||0),0);
+  const activeCust = KPI_DATA.activeCustomers || 0;
+  const openTix = KPI_DATA.openTickets || 0;
   const items=[
-    {l:'Pipeline Value',v:fmt(totalPipe),c:'#0176D3',bg:'rgba(1,118,211,.06)',i:'target',tr:'+18%',d:'up',sub:'All stages',bar:72},
-    {l:'Closed Won',v:fmt(k.closed),c:'#2E844A',bg:'rgba(46,132,74,.06)',i:'dollar',tr:'+24%',d:'up',sub:'vs last period',bar:pct},
-    {l:'Active Customers',v:'6',c:'#0B827C',bg:'rgba(11,130,124,.06)',i:'users',tr:'+3',d:'up',sub:'of 8 accounts',bar:75},
-    {l:'Open Tickets',v:'3',c:'#C23934',bg:'rgba(194,57,52,.06)',i:'ticket',tr:'1 breach',d:'down',sub:'Needs attention',bar:30},
-    {l:'Conversion',v:k.conv+'%',c:'#DD7A01',bg:'rgba(221,122,1,.06)',i:'chart',tr:'+2.4pt',d:'up',sub:'Benchmark 22%',bar:k.conv},
+    {l:'Pipeline Value',v:fmt(totalPipe),c:'#0176D3',bg:'rgba(1,118,211,.06)',i:'target',tr:'',d:'up',sub:'All stages',bar:Math.min(72,100)},
+    {l:'Closed Won',v:fmt(k.closed),c:'#2E844A',bg:'rgba(46,132,74,.06)',i:'dollar',tr:'',d:'up',sub:'vs target '+fmt(k.target),bar:pct},
+    {l:'Active Customers',v:String(activeCust),c:'#0B827C',bg:'rgba(11,130,124,.06)',i:'users',tr:'',d:'up',sub:'from DB',bar:Math.min(activeCust*10,100)},
+    {l:'Open Tickets',v:String(openTix),c:'#C23934',bg:'rgba(194,57,52,.06)',i:'ticket',tr:openTix>0?openTix+' pending':'All clear',d:openTix>0?'down':'up',sub:'Tasks not completed',bar:Math.min(openTix*10,100)},
+    {l:'Conversion',v:k.conv+'%',c:'#DD7A01',bg:'rgba(221,122,1,.06)',i:'chart',tr:'',d:'up',sub:'Lead → Won',bar:Math.min(k.conv,100)},
   ];
   document.getElementById('kpis').innerHTML=items.map(i=>`<div class="kc"><div class="kc-stripe" style="background:${i.c}"></div><div class="kc-icon" style="background:${i.bg};color:${i.c}">${SV(i.i)}</div><div class="kc-label">${i.l}</div><div class="kc-value">${i.v}</div><div class="kc-foot"><span class="kc-trend ${i.d}">${i.d==='up'?'&#9650;':'&#9660;'} ${i.tr}</span><span class="kc-sub">${i.sub}</span></div><div class="kc-bar"><div class="kc-fill" style="width:${i.bar}%;background:${i.c}"></div></div></div>`).join('');
 }

@@ -4,7 +4,9 @@
  */
 
 // ── API Base URL ──
-const API_BASE = window.__SF7_API_BASE__ || '/api';
+// CloudFront routes /auth/*, /accounts/*, etc. to API Gateway
+// So API_BASE should be empty string (same origin) when served from CloudFront
+const API_BASE = window.__SF7_API_BASE__ || '';
 
 // ── API helper ──
 async function apiFetch(path, options = {}) {
@@ -43,14 +45,97 @@ const STATUS_COLORS = {
 const PRI_COLORS  = { High: 'var(--red)', Medium: 'var(--orange)', Low: 'var(--text3)' };
 const TASK_COLORS = { Open: 'var(--text2)', 'In Progress': 'var(--sf-blue)', Completed: 'var(--green)', Overdue: 'var(--red)' };
 
-// ── Empty datasets (populated from API in production) ──
-const STAGES       = [];
-const REPS         = [];
-const LEADS_DATA   = { New: [], Contacted: [], Qualified: [], Proposal: [], Negotiation: [], Won: [], Lost: [] };
-const ACCOUNTS     = [];
-const CONTACTS     = [];
-const OPPS         = [];
-const TASKS        = [];
-const QUOTATIONS   = [];
-const PRODUCTS     = [];
-const NOTIFICATIONS = [];
+// ── Empty datasets (populated from API) ──
+let STAGES       = [];
+let REPS         = [];
+let LEADS_DATA   = { New: [], Contacted: [], Qualified: [], Proposal: [], Negotiation: [], Won: [], Lost: [] };
+let ACCOUNTS     = [];
+let CONTACTS     = [];
+let OPPS         = [];
+let TASKS        = [];
+let QUOTATIONS   = [];
+let PRODUCTS     = [];
+let NOTIFICATIONS = [];
+
+// ── Data loaders — call from each page ──
+async function loadAccounts(search) {
+  try {
+    const params = search ? '?search=' + encodeURIComponent(search) : '';
+    const res = await apiFetch('/accounts' + params);
+    ACCOUNTS = res?.data || res || [];
+    return ACCOUNTS;
+  } catch(e) { console.error('loadAccounts:', e); return []; }
+}
+
+async function loadLeads(status, search) {
+  try {
+    let params = '?limit=100';
+    if (status) params += '&status=' + status;
+    if (search) params += '&search=' + encodeURIComponent(search);
+    const res = await apiFetch('/leads' + params);
+    const leads = res?.data || res || [];
+    // Group by status for Kanban
+    LEADS_DATA = { New: [], Contacted: [], Qualified: [], Proposal: [], Negotiation: [], Won: [], Lost: [] };
+    leads.forEach(function(l) {
+      var s = l.status || 'New';
+      if (LEADS_DATA[s]) LEADS_DATA[s].push({
+        id: l.id, name: l.name, company: l.company_name, email: l.email, phone: l.phone,
+        source: l.source, value: 0, assignedTo: l.assigned_to, aiScore: l.ai_score
+      });
+    });
+    return leads;
+  } catch(e) { console.error('loadLeads:', e); return []; }
+}
+
+async function loadTasks(status) {
+  try {
+    let params = '?limit=100';
+    if (status) params += '&status=' + status;
+    const res = await apiFetch('/tasks' + params);
+    TASKS = res || [];
+    return TASKS;
+  } catch(e) { console.error('loadTasks:', e); return []; }
+}
+
+async function loadProducts(search) {
+  try {
+    const params = search ? '?search=' + encodeURIComponent(search) : '';
+    const res = await apiFetch('/products' + params);
+    PRODUCTS = res || [];
+    return PRODUCTS;
+  } catch(e) { console.error('loadProducts:', e); return []; }
+}
+
+async function loadQuotations(status) {
+  try {
+    let params = '?limit=100';
+    if (status) params += '&status=' + status;
+    const res = await apiFetch('/quotations' + params);
+    QUOTATIONS = res || [];
+    return QUOTATIONS;
+  } catch(e) { console.error('loadQuotations:', e); return []; }
+}
+
+async function loadOpportunities() {
+  try {
+    const res = await apiFetch('/opportunities');
+    OPPS = res || [];
+    return OPPS;
+  } catch(e) { console.error('loadOpportunities:', e); return []; }
+}
+
+async function loadNotifications() {
+  try {
+    const res = await apiFetch('/notifications');
+    NOTIFICATIONS = res || [];
+    return NOTIFICATIONS;
+  } catch(e) { console.error('loadNotifications:', e); return []; }
+}
+
+async function loadPipelineStages() {
+  try {
+    const res = await apiFetch('/leads/pipeline/stages');
+    STAGES = res || [];
+    return STAGES;
+  } catch(e) { console.error('loadPipelineStages:', e); return []; }
+}
