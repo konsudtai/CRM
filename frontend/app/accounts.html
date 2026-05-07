@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>SalesFAST 7 — Accounts</title>
+<title>SalesFAST 7 — Customers</title>
 <link rel="stylesheet" href="../css/app.css"/>
 <style>
 .form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
@@ -19,10 +19,10 @@
 <div class="page anim">
   <div class="page-header">
     <div>
-      <div class="page-title" data-i18n="acc_title">Accounts</div>
-      <div class="page-subtitle"><span data-i18n="acc_sub">Manage all customer accounts</span> — <span id="count">0</span> <span data-i18n="acc_records">records</span></div>
+      <div class="page-title" data-i18n="acc_title">Customers</div>
+      <div class="page-subtitle"><span data-i18n="acc_sub">Manage all customers</span> — <span id="count">0</span> <span data-i18n="acc_records">records</span></div>
     </div>
-    <button class="btn btn-primary" onclick="openCreate()" data-i18n="acc_new">+ New Account</button>
+    <button class="btn btn-primary" onclick="openCreate()" data-i18n="acc_new">+ New Customer</button>
   </div>
 
   <!-- List View -->
@@ -31,6 +31,7 @@
     <div class="table-wrap">
       <table>
         <thead><tr>
+          <th>Code</th>
           <th data-i18n="acc_company">Company</th>
           <th data-i18n="acc_taxid">Tax ID</th>
           <th data-i18n="acc_industry">Industry</th>
@@ -38,6 +39,7 @@
           <th data-i18n="acc_status">Status</th>
           <th data-i18n="acc_tier">Tier</th>
           <th data-i18n="acc_revenue">Revenue</th>
+          <th>Actions</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -51,7 +53,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         <span data-i18n="btn_back">Back</span>
       </button>
-      <div class="page-title" data-i18n="acc_form_title">New Account</div>
+      <div class="page-title" data-i18n="acc_form_title">New Customer</div>
     </div>
     <form onsubmit="saveAccount(event)">
       <div class="card" style="margin-bottom:16px">
@@ -81,15 +83,16 @@
       </div>
       <div class="card" style="margin-bottom:16px">
         <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="acc_form_contact">Contact Information</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.3px">Primary Contact Person</div>
         <div class="form-grid">
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_phone">Phone</label><input class="sf7-form-input" id="f-phone"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_phone2">Phone 2</label><input class="sf7-form-input" id="f-phone2"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_fax">Fax</label><input class="sf7-form-input" id="f-fax"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Contact First Name *</label><input class="sf7-form-input" id="f-contact-first" placeholder="ชื่อผู้ติดต่อหลัก"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Contact Last Name</label><input class="sf7-form-input" id="f-contact-last" placeholder="นามสกุล"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Contact Title / Position</label><input class="sf7-form-input" id="f-contact-title" placeholder="ตำแหน่ง เช่น ผู้จัดการ"/></div>
         </div>
         <div class="form-grid" style="margin-top:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_email">Email</label><input class="sf7-form-input" id="f-email" type="email"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_website">Website</label><input class="sf7-form-input" id="f-website"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_line">LINE OA ID</label><input class="sf7-form-input" id="f-line"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Contact Phone</label><input class="sf7-form-input" id="f-contact-phone" placeholder="เบอร์มือถือผู้ติดต่อ"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Contact Email</label><input class="sf7-form-input" id="f-contact-email" type="email" placeholder="อีเมลผู้ติดต่อ"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Contact LINE ID</label><input class="sf7-form-input" id="f-contact-line" placeholder="LINE ID"/></div>
         </div>
       </div>
       <div class="card" style="margin-bottom:16px">
@@ -107,8 +110,8 @@
       <div class="card" style="margin-bottom:16px">
         <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="acc_form_sales">Sales Information</div>
         <div class="form-grid">
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_source">Account Source</label><select class="sf7-form-input" id="f-source"><option value="">--</option><option>Website</option><option>Referral</option><option>Event</option><option>Cold Call</option><option>LINE</option><option>Facebook</option></select></div>
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_tier">Account Tier</label><select class="sf7-form-input" id="f-tier"><option value="standard">Standard</option><option value="silver">Silver</option><option value="gold">Gold</option><option value="platinum">Platinum</option></select></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_source">Customer Source</label><select class="sf7-form-input" id="f-source"><option value="">--</option><option>Website</option><option>Referral</option><option>Event</option><option>Cold Call</option><option>LINE</option><option>Facebook</option></select></div>
+          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_tier">Customer Tier</label><select class="sf7-form-input" id="f-tier"><option value="standard">Standard</option><option value="silver">Silver</option><option value="gold">Gold</option><option value="platinum">Platinum</option></select></div>
           <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="acc_credit_term">Credit Term (days)</label><input class="sf7-form-input" id="f-credit" type="number" value="30"/></div>
         </div>
         <div class="form-grid-2" style="margin-top:12px">
@@ -134,6 +137,7 @@
 <script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML = renderNav('accounts');
+if(!requireAuth()) throw 'auth';
 
 async function renderTable() {
   var q = (document.getElementById('search').value || '').toLowerCase();
@@ -144,15 +148,20 @@ async function renderTable() {
   document.getElementById('count').textContent = f.length;
   document.getElementById('tbody').innerHTML = f.map(function(a) {
     return '<tr>' +
-      '<td><a href="account-detail.html?id=' + a.id + '" class="table-link">' + esc(a.company_name || a.name || '') + '</a></td>' +
+      '<td style="font-family:monospace;font-size:12px;color:var(--sf-blue);font-weight:600">' + esc(a.customer_code || '-') + '</td>' +
+      '<td><a href="account-detail.html?id=' + a.id + '" class="table-link">' + esc(a.company_name || '') + '</a></td>' +
       '<td style="color:var(--text2);font-size:12px;font-family:monospace">' + esc(a.tax_id || '-') + '</td>' +
       '<td style="color:var(--text2)">' + esc(a.industry || '-') + '</td>' +
       '<td style="color:var(--text2);font-size:12px">' + esc(a.phone || '-') + '</td>' +
       '<td><span class="status-badge" style="background:rgba(46,132,74,.1);color:#2E844A">' + esc(a.account_status || 'active') + '</span></td>' +
       '<td><span class="tag">' + esc(a.account_tier || 'standard') + '</span></td>' +
       '<td style="font-weight:600;color:var(--sf-blue)">' + fmt(a.total_revenue || 0) + '</td>' +
+      '<td style="white-space:nowrap">' +
+        '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;margin-right:4px" onclick="editAccount(\'' + a.id + '\')">Edit</button>' +
+        '<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;color:var(--red);border-color:var(--red)" onclick="deleteAccount(\'' + a.id + '\',\'' + esc(a.company_name||'') + '\')">Delete</button>' +
+      '</td>' +
       '</tr>';
-  }).join('') || '<tr><td colspan="7" class="empty-state">No accounts found — click "+ New Account" to add one</td></tr>';
+  }).join('') || '<tr><td colspan="9" class="empty-state">No customers found — click "+ New Customer" to add one</td></tr>';
 }
 
 function openCreate() {
@@ -179,16 +188,15 @@ async function saveAccount(e) {
     companyName: document.getElementById('f-name').value,
     industry: document.getElementById('f-industry').value || null,
     taxId: document.getElementById('f-tax').value || null,
-    phone: document.getElementById('f-phone').value || null,
-    email: document.getElementById('f-email').value || null,
+    phone: (document.getElementById('f-contact-phone') || {}).value || null,
+    email: (document.getElementById('f-contact-email') || {}).value || null,
     accountTier: document.getElementById('f-tier').value || 'standard',
   };
-  // Get optional fields if they exist
   var fields = {
     'f-name-en': 'companyNameEn', 'f-type': 'companyType', 'f-branch': 'branchCode',
     'f-branch-name': 'branchName', 'f-fax': 'fax', 'f-website': 'website',
-    'f-address': 'address', 'f-subdistrict': 'subDistrict', 'f-district': 'district',
-    'f-province': 'province', 'f-postal': 'postalCode', 'f-credit': 'creditTerm',
+    'f-addr': 'address', 'f-sub': 'subDistrict', 'f-dist': 'district',
+    'f-prov': 'province', 'f-zip': 'postalCode', 'f-credit': 'creditTerm',
     'f-notes': 'internalNotes',
   };
   for (var fid in fields) {
@@ -197,7 +205,27 @@ async function saveAccount(e) {
   }
 
   try {
-    await apiFetch('/accounts', { method: 'POST', body: JSON.stringify(data) });
+    var account = await apiFetch('/accounts', { method: 'POST', body: JSON.stringify(data) });
+
+    // Auto-create primary contact if contact name was provided
+    var contactFirst = (document.getElementById('f-contact-first') || {}).value || '';
+    var contactLast = (document.getElementById('f-contact-last') || {}).value || '';
+    if (contactFirst && account && account.id) {
+      try {
+        await apiFetch('/accounts/' + account.id + '/contacts', {
+          method: 'POST',
+          body: JSON.stringify({
+            firstName: contactFirst,
+            lastName: contactLast,
+            title: (document.getElementById('f-contact-title') || {}).value || null,
+            phone: (document.getElementById('f-contact-phone') || {}).value || null,
+            email: (document.getElementById('f-contact-email') || {}).value || null,
+            lineId: (document.getElementById('f-contact-line') || {}).value || null,
+          })
+        });
+      } catch(ce) { console.error('Contact creation error:', ce); }
+    }
+
     closeForm();
     renderTable();
   } catch(err) {
@@ -206,6 +234,20 @@ async function saveAccount(e) {
 }
 
 renderTable();
+
+async function editAccount(id) {
+  window.location.href = 'account-detail.html?id=' + id;
+}
+
+async function deleteAccount(id, name) {
+  if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+  try {
+    await apiFetch('/accounts/' + id, { method: 'DELETE' });
+    renderTable();
+  } catch(e) {
+    alert('Error deleting: ' + e.message);
+  }
+}
 </script>
 </body>
 </html>

@@ -1,306 +1,348 @@
-<!DOCTYPE html>
-<html lang="th" data-theme="light">
-<head>
-<meta charset="UTF-8"/>
-<link rel="icon" type="image/svg+xml" href="../favicon.svg"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>SalesFAST 7 — Dashboard</title>
-<link rel="stylesheet" href="../css/app.css"/>
+<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SalesFAST 7 — Dashboard</title><link rel="stylesheet" href="../css/app.css"/>
 <style>
-/* Quick Actions */
-.qa-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:18px}
-.qa-btn{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s;font-family:inherit;font-size:12px;font-weight:600;color:var(--text2)}
-.qa-btn:hover{border-color:var(--sf-blue);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.06)}
-.qa-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.qa-icon svg{width:14px;height:14px}
-/* KPI */
-.kpi5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
-.kc{background:var(--surface);border-radius:12px;padding:16px 18px;border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s}
-.kc:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.07)}
-.kc-stripe{position:absolute;top:0;left:0;right:0;height:3px}
-.kc-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;margin-top:4px}
-.kc-icon svg{width:15px;height:15px}
-.kc-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
-.kc-value{font-size:22px;font-weight:800;letter-spacing:-.7px;margin-top:2px;line-height:1}
-.kc-foot{display:flex;align-items:center;gap:5px;margin-top:6px;flex-wrap:wrap}
-.kc-trend{font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px}
-.kc-trend.up{color:#2E844A;background:rgba(46,132,74,.08)}.kc-trend.down{color:#C23934;background:rgba(194,57,52,.08)}
-.kc-sub{font-size:10px;color:var(--text3)}
-.kc-bar{height:2px;background:var(--surface3);border-radius:1px;overflow:hidden;margin-top:7px}
-.kc-fill{height:100%;border-radius:1px;transition:width 1.3s ease}
-/* Grid */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.g32{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
-.cd{background:var(--surface);border-radius:12px;padding:16px 18px;border:1px solid var(--border)}
-.cd-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.cd-title{font-size:13px;font-weight:700;color:var(--text)}
-.cd-more{font-size:11px;font-weight:500;color:var(--sf-blue);cursor:pointer;background:none;border:none;font-family:inherit}
-.cd-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(1,118,211,.06);color:var(--sf-blue)}
-/* Pipeline bars */
-.pb-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
-.pb-label{width:90px;font-size:11px;font-weight:500;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pb-track{flex:1;height:20px;background:var(--surface3);border-radius:5px;overflow:hidden}
-.pb-fill{height:100%;border-radius:5px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:700;color:#fff;transition:width 1.2s ease;min-width:40px}
-.pb-cnt{width:18px;font-size:10px;color:var(--text3);text-align:right}
-/* Revenue chart */
-.rev-chart{width:100%;height:100px}
-/* Kanban mini */
+/* ── KPI Summary ── */
+.dk-kpi{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
+.dk-k{background:var(--surface);border-radius:12px;padding:14px 16px;border:1px solid var(--border);position:relative;overflow:hidden}
+.dk-k:hover{box-shadow:0 4px 16px rgba(0,0,0,.06)}
+.dk-k-stripe{position:absolute;top:0;left:0;right:0;height:3px}
+.dk-k-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.3px}
+.dk-k-value{font-size:24px;font-weight:800;letter-spacing:-.5px;margin-top:4px;line-height:1}
+.dk-k-sub{font-size:10px;color:var(--text3);margin-top:4px}
+/* ── Grid ── */
+.dk-g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.dk-g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.dk-g32{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
+.dk-card{background:var(--surface);border-radius:12px;padding:16px 18px;border:1px solid var(--border)}
+.dk-card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.dk-card-title{font-size:13px;font-weight:700;color:var(--text)}
+.dk-card-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(1,118,211,.06);color:var(--sf-blue)}
+/* ── Pipeline bars ── */
+.dk-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.dk-bar-label{width:100px;font-size:11px;font-weight:500;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dk-bar-track{flex:1;height:22px;background:var(--surface3);border-radius:5px;overflow:hidden}
+.dk-bar-fill{height:100%;border-radius:5px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:700;color:#fff;min-width:20px;transition:width .8s ease}
+.dk-bar-val{width:70px;font-size:11px;font-weight:600;color:var(--text);text-align:right}
+/* ── Donut chart ── */
+.dk-donut-wrap{display:flex;align-items:center;gap:20px}
+.dk-donut-legend{flex:1}
+.dk-legend-row{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px}
+.dk-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dk-legend-name{flex:1;color:var(--text2)}
+.dk-legend-val{font-weight:700;color:var(--text)}
+/* ── Table ── */
+.dk-tbl{width:100%;border-collapse:separate;border-spacing:0}
+.dk-tbl th{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;padding:8px 10px;text-align:left;border-bottom:2px solid var(--border)}
+.dk-tbl td{padding:10px;border-bottom:1px solid var(--border);font-size:12px}
+.dk-tbl tr:hover td{background:rgba(1,118,211,.02)}
+.dk-tbl-name{font-weight:600}
+.dk-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+/* ── Agent bars ── */
+.dk-agent-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.dk-agent-row:last-child{border-bottom:none}
+.dk-agent-name{width:120px;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dk-agent-bar{flex:1;height:16px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.dk-agent-fill{height:100%;border-radius:4px;transition:width .8s ease}
+.dk-agent-val{width:80px;font-size:11px;font-weight:700;text-align:right;color:var(--sf-blue)}
+/* ── Empty ── */
+.dk-empty{text-align:center;padding:24px;color:var(--text3);font-size:12px}
+/* ── Kanban ── */
 .kk-wrap{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px}
 .kk-col{min-width:180px;flex-shrink:0;background:var(--surface2);border-radius:10px;padding:10px}
-.kk-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.kk-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .kk-title{font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px}
 .kk-cnt{font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;background:var(--surface3);color:var(--text3)}
-.kk-total{font-size:10px;color:var(--text3);margin-bottom:8px}
-.kk-card{background:var(--surface);border-radius:8px;padding:10px;margin-bottom:6px;border:1px solid var(--border);cursor:grab;transition:transform .15s,box-shadow .15s}
-.kk-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.kk-total{font-size:11px;font-weight:700;color:var(--sf-blue);margin-bottom:8px}
+.kk-card{background:var(--surface);border-radius:8px;padding:10px;margin-bottom:6px;border:1px solid var(--border)}
+.kk-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.06)}
 .kk-name{font-size:12px;font-weight:600}.kk-company{font-size:10px;color:var(--text3);margin-top:1px}
 .kk-foot{display:flex;justify-content:space-between;margin-top:8px;font-size:11px}
 .kk-amt{font-weight:700;color:var(--sf-blue)}.kk-date{color:var(--text3)}
-/* Customer table */
-.ct-name{font-size:13px;font-weight:600}.ct-contact{font-size:11px;color:var(--text2)}
-/* Activity timeline */
-.tl-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}.tl-item:last-child{border-bottom:none}
-.tl-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;font-weight:800}
-.tl-body{flex:1}.tl-title{font-size:12px;font-weight:500}.tl-meta{font-size:10px;color:var(--text3);margin-top:1px}
-@media(max-width:1024px){.qa-grid{grid-template-columns:repeat(3,1fr)}.kpi5{grid-template-columns:repeat(3,1fr)}.g2,.g32{grid-template-columns:1fr}}
-@media(max-width:640px){.qa-grid{grid-template-columns:1fr 1fr}.kpi5{grid-template-columns:1fr 1fr}.kk-col{min-width:160px}}
+/* ── Quick Actions ── */
+.qa-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:18px}
+.qa-btn{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s;font-family:inherit;font-size:12px;font-weight:600;color:var(--text2);text-decoration:none}
+.qa-btn:hover{border-color:var(--sf-blue);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.qa-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.qa-icon svg{width:14px;height:14px}
+@media(max-width:1024px){.dk-kpi{grid-template-columns:repeat(3,1fr)}.dk-g2,.dk-g3,.dk-g32{grid-template-columns:1fr}.qa-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.dk-kpi{grid-template-columns:repeat(2,1fr)}.qa-grid{grid-template-columns:1fr 1fr}}
 </style>
-</head>
-<body>
-<div class="bg-pattern"></div>
-<div id="nav"></div>
+</head><body>
+<div class="bg-pattern"></div><div id="nav"></div>
 <div class="page anim">
-  <div class="page-header">
-    <div><div class="page-title" data-i18n="dash_title">Dashboard</div><div class="page-subtitle" data-i18n="dash_sub">Sales overview — Updated today</div></div>
-    <div style="display:flex;gap:8px"><div class="filter-bar" id="pb"><button class="filter-btn active" onclick="setP('month',this)" data-i18n="dash_month">Month</button><button class="filter-btn" onclick="setP('quarter',this)" data-i18n="dash_quarter">Quarter</button><button class="filter-btn" onclick="setP('year',this)" data-i18n="dash_year">Year</button></div></div>
-  </div>
-  <div class="qa-grid" id="qa"></div>
-  <div class="kpi5" id="kpis"></div>
-  <div class="g2"><div class="cd"><div class="cd-hd"><span class="cd-title" data-i18n="pipe_by_stage">Pipeline by Stage</span><span class="cd-badge" id="pipe-total"></span></div><div id="pipeline"></div></div><div class="cd"><div class="cd-hd"><span class="cd-title">Monthly Revenue</span><span class="cd-badge">2026</span></div><svg class="rev-chart" id="rev-chart" viewBox="0 0 420 100"></svg><div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:10px;color:var(--text3)">Jan</span><span style="font-size:10px;font-weight:700;color:var(--sf-blue)" id="ytd-label"></span><span style="font-size:10px;color:var(--text3)">Dec</span></div></div></div>
-  <div class="cd" style="margin-bottom:14px"><div class="cd-hd"><span class="cd-title">Opportunity Pipeline</span><span class="cd-more">View Kanban</span></div><div class="kk-wrap" id="kanban"></div></div>
-  <div class="g32"><div class="cd"><div class="cd-hd"><span class="cd-title">Customers & Revenue</span><span class="cd-more">View All</span></div><div class="table-wrap"><table><thead><tr><th>Company</th><th>Status</th><th>Revenue</th><th>Last Contact</th></tr></thead><tbody id="cust-table"></tbody></table></div></div><div class="cd"><div class="cd-hd"><span class="cd-title">Recent Activity</span></div><div id="timeline"></div></div></div>
+  <div class="page-header"><div><div class="page-title" data-i18n="dash_title">Dashboard</div><div class="page-subtitle">Sales CRM Overview — Real-time data</div></div></div>
 
+  <div class="qa-grid" id="qa"></div>
+  <!-- KPI Summary -->
+  <div class="dk-kpi" id="kpis"></div>
+
+  <!-- Row 1: Pipeline by Stage + Deal Amount by Source -->
+  <div class="dk-g2">
+    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Sales Pipeline by Stage</span><span class="dk-card-badge" id="pipe-badge"></span></div><div id="pipeline"></div></div>
+    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Deal Amount by Source</span></div><div id="by-source"></div></div>
+  </div>
+
+  <!-- Row 2: Opportunity Pipeline Kanban -->
+  <div class="dk-card" style="margin-bottom:14px"><div class="dk-card-hd"><span class="dk-card-title">Opportunity Pipeline</span><a href="leads.html" style="font-size:11px;color:var(--sf-blue);text-decoration:none">View Kanban</a></div><div class="kk-wrap" id="kanban"></div></div>
+
+  <!-- Row 3: Top Open Deals + Deal Stages Breakdown -->
+  <div class="dk-g2">
+    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Top Open Deals</span></div><div id="top-open"></div></div>
+    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Deal Stages Breakdown</span></div><div id="stage-breakdown"></div></div>
+  </div>
+
+  <!-- Row 3: Agents Comparison + Pipeline by Agents -->
+  <div class="dk-g2">
+    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Sales Rep Comparison</span></div><div id="agents-compare"></div></div>
+    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Pipeline by Sales Rep</span></div><div id="pipe-agents"></div></div>
+  </div>
+
+  <!-- Row 4: Customers & Revenue + Tasks Overview -->
+  <div class="dk-g32">
+    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Customers & Revenue</span><a href="accounts.html" style="font-size:11px;color:var(--sf-blue)">View All</a></div><div id="customers"></div></div>
+    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Tasks Overview</span><a href="tasks.html" style="font-size:11px;color:var(--sf-blue)">View All</a></div><div id="tasks-ov"></div></div>
+  </div>
 </div>
 <script src="../js/helpers.js"></script><script src="../js/i18n.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('dashboard');
-let P='month';
-let KPI_DATA = { ...DEFAULT_KPI };
-let MD=Array(12).fill(0);
-const ML=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const OC={'New':'#1B96FF','Contacted':'#7F56D9','Qualified':'#0B827C','Proposal':'#DD7A01','Negotiation':'#C23934','Won':'#2E844A','Lost':'#939393'};
-let OPPS_K={New:[],Contacted:[],Qualified:[],Proposal:[],Negotiation:[],Won:[],Lost:[]};
-let CUSTS=[];
-let ACTS=[];
+if(!requireAuth()) throw 'auth';
 
-// ── Load dashboard data from API ──
-async function loadDashboardData(){
-  try {
-    const [kpi, opps, customers, activities, revenue] = await Promise.all([
-      apiFetch('/dashboard/kpi?period=' + P).catch(()=>null),
-      apiFetch('/dashboard/opportunities').catch(()=>null),
-      apiFetch('/dashboard/customers').catch(()=>null),
-      apiFetch('/dashboard/activities').catch(()=>null),
-      apiFetch('/dashboard/revenue').catch(()=>null),
-    ]);
-    if (kpi) KPI_DATA = kpi;
-    if (opps) OPPS_K = opps;
-    if (customers) CUSTS = customers;
-    if (activities) ACTS = activities;
-    if (revenue && revenue.monthly) MD = revenue.monthly;
-  } catch(e) { console.error('Dashboard data load error:', e); }
-  renderAll();
-}
-loadDashboardData();
-const SV=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${{
+var SV=function(k){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+({
   target:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
   dollar:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
-  users:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
+  users:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/>',
   ticket:'<path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 002 2 2 2 0 010 4 2 2 0 00-2 2v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 00-2-2 2 2 0 010-4 2 2 0 002-2V7a2 2 0 00-2-2H5z"/>',
-  chart:'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
   lead:'<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>',
-  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
   doc:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>',
   phone:'<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.11 2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>',
   note:'<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>',
-}[k]}</svg>`;
+}[k]||'')+'</svg>'};
 
-function setP(p,b){P=p;document.querySelectorAll('#pb .filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');loadDashboardData()}
+var allLeadsRaw=[];
+var userMap={}; // userId -> display name
+var stageColors={New:'#64748B',Contacted:'#0176D3',Qualified:'#0B827C',Proposal:'#D97706',Negotiation:'#DC2626',Won:'#2E844A',Lost:'#9CA3AF'};
+
+async function loadDashboard(){
+  // Load users first for name mapping
+  try{
+    var users=await apiFetch('/users');
+    if(users&&users.length){users.forEach(function(u){userMap[u.id]=((u.first_name||'')+' '+(u.last_name||'')).trim()||u.email||u.id.substring(0,8)})}
+  }catch(e){}
+  await Promise.all([loadLeads(),loadAccounts(),loadPipelineStages(),loadTasks(),loadQuotations(),loadProducts()]);
+  // Also load raw leads for detailed analysis
+  var res=await apiFetch('/leads?limit=500').catch(function(){return null});
+  allLeadsRaw=(res&&res.data)||res||[];
+  allLeadsRaw=allLeadsRaw.map(function(l){
+    var m=(typeof l.metadata==='string'?JSON.parse(l.metadata):l.metadata)||{};
+    return {id:l.id,name:l.name,company:l.company_name||'',status:l.status||'New',source:l.source||'Unknown',
+      value:m.estimatedValue||0,project:m.projectName||'',priority:m.priority||'Medium',
+      assignedTo:l.assigned_to||'',createdAt:l.created_at||''};
+  });
+  renderAll();
+}
+loadDashboard();
+setInterval(loadDashboard,30000);
 
 function renderQA(){
-  const items=[{l:'New Lead',c:'#0176D3',bg:'rgba(1,118,211,.06)',i:'lead',href:'leads.html'},{l:'Add Customer',c:'#2E844A',bg:'rgba(46,132,74,.06)',i:'users',href:'accounts.html'},{l:'Quotation',c:'#DD7A01',bg:'rgba(221,122,1,.06)',i:'doc',href:'quotations.html'},{l:'Log Call',c:'#7F56D9',bg:'rgba(127,86,217,.06)',i:'phone',href:'tasks.html'},{l:'Calendar',c:'#0B827C',bg:'rgba(11,130,124,.06)',i:'target',href:'calendar.html'},{l:'Products',c:'#C23934',bg:'rgba(194,57,52,.06)',i:'note',href:'products.html'}];
-  document.getElementById('qa').innerHTML=items.map(q=>`<a href="${q.href}" class="qa-btn" style="text-decoration:none"><div class="qa-icon" style="background:${q.bg};color:${q.c}">${SV(q.i)}</div><span style="color:${q.c}">${q.l}</span></a>`).join('');
+  var items=[{l:'New Lead',c:'#0176D3',bg:'rgba(1,118,211,.06)',i:'lead',href:'leads.html'},{l:'Add Customer',c:'#2E844A',bg:'rgba(46,132,74,.06)',i:'users',href:'accounts.html'},{l:'Quotation',c:'#D97706',bg:'rgba(221,122,1,.06)',i:'doc',href:'quotations.html'},{l:'Log Call',c:'#7F56D9',bg:'rgba(127,86,217,.06)',i:'phone',href:'tasks.html'},{l:'Calendar',c:'#0B827C',bg:'rgba(11,130,124,.06)',i:'target',href:'calendar.html'},{l:'Products',c:'#C23934',bg:'rgba(194,57,52,.06)',i:'note',href:'products.html'}];
+  document.getElementById('qa').innerHTML=items.map(function(q){return '<a href="'+q.href+'" class="qa-btn"><div class="qa-icon" style="background:'+q.bg+';color:'+q.c+'">'+SV(q.i)+'</div><span style="color:'+q.c+'">'+esc(q.l)+'</span></a>'}).join('');
 }
 
+/* ── KPI Summary (6 cards) ── */
 function renderKPIs(){
-  const k=KPI_DATA[P]||DEFAULT_KPI[P],pct=Math.min((k.closed/(k.target||1))*100,100);
-  const totalPipe=Object.values(OPPS_K).flat().reduce((s,o)=>s+(o.a||0),0);
-  const activeCust = KPI_DATA.activeCustomers || 0;
-  const openTix = KPI_DATA.openTickets || 0;
-  const items=[
-    {l:'Pipeline Value',v:fmt(totalPipe),c:'#0176D3',bg:'rgba(1,118,211,.06)',i:'target',tr:'',d:'up',sub:'All stages',bar:Math.min(72,100)},
-    {l:'Closed Won',v:fmt(k.closed),c:'#2E844A',bg:'rgba(46,132,74,.06)',i:'dollar',tr:'',d:'up',sub:'vs target '+fmt(k.target),bar:pct},
-    {l:'Active Customers',v:String(activeCust),c:'#0B827C',bg:'rgba(11,130,124,.06)',i:'users',tr:'',d:'up',sub:'from DB',bar:Math.min(activeCust*10,100)},
-    {l:'Open Tickets',v:String(openTix),c:'#C23934',bg:'rgba(194,57,52,.06)',i:'ticket',tr:openTix>0?openTix+' pending':'All clear',d:openTix>0?'down':'up',sub:'Tasks not completed',bar:Math.min(openTix*10,100)},
-    {l:'Conversion',v:k.conv+'%',c:'#DD7A01',bg:'rgba(221,122,1,.06)',i:'chart',tr:'',d:'up',sub:'Lead → Won',bar:Math.min(k.conv,100)},
+  var total=allLeadsRaw.length;
+  var open=allLeadsRaw.filter(function(l){return l.status!=='Won'&&l.status!=='Lost'});
+  var won=allLeadsRaw.filter(function(l){return l.status==='Won'});
+  var lost=allLeadsRaw.filter(function(l){return l.status==='Lost'});
+  var totalVal=allLeadsRaw.reduce(function(s,l){return s+l.value},0);
+  var wonVal=won.reduce(function(s,l){return s+l.value},0);
+  var openVal=open.reduce(function(s,l){return s+l.value},0);
+  var winRate=total>0?Math.round(won.length/total*100):0;
+  var items=[
+    {l:'Total Deals',v:String(total),c:'#0176D3',sub:fmt(totalVal)+' total value'},
+    {l:'Open Deals',v:String(open.length),c:'#D97706',sub:fmt(openVal)+' in pipeline'},
+    {l:'Won Deals',v:String(won.length),c:'#2E844A',sub:fmt(wonVal)+' revenue'},
+    {l:'Lost Deals',v:String(lost.length),c:'#DC2626',sub:lost.reduce(function(s,l){return s+l.value},0)>0?fmt(lost.reduce(function(s,l){return s+l.value},0))+' lost':'No lost deals'},
+    {l:'Win Rate',v:winRate+'%',c:'#7F56D9',sub:won.length+' of '+total+' deals'},
+    {l:'Customers',v:String(ACCOUNTS.length),c:'#0B827C',sub:'Active accounts'},
   ];
-  document.getElementById('kpis').innerHTML=items.map(i=>`<div class="kc"><div class="kc-stripe" style="background:${i.c}"></div><div class="kc-icon" style="background:${i.bg};color:${i.c}">${SV(i.i)}</div><div class="kc-label">${i.l}</div><div class="kc-value">${i.v}</div><div class="kc-foot"><span class="kc-trend ${i.d}">${i.d==='up'?'&#9650;':'&#9660;'} ${i.tr}</span><span class="kc-sub">${i.sub}</span></div><div class="kc-bar"><div class="kc-fill" style="width:${i.bar}%;background:${i.c}"></div></div></div>`).join('');
+  document.getElementById('kpis').innerHTML=items.map(function(i){
+    return '<div class="dk-k"><div class="dk-k-stripe" style="background:'+i.c+'"></div><div class="dk-k-label">'+esc(i.l)+'</div><div class="dk-k-value" style="color:'+i.c+'">'+i.v+'</div><div class="dk-k-sub">'+esc(i.sub)+'</div></div>';
+  }).join('');
 }
 
+/* ── Sales Pipeline by Stage ── */
 function renderPipeline(){
-  const stages=Object.entries(OPPS_K).map(([k,v])=>({name:k,total:v.reduce((s,o)=>s+o.a,0),count:v.length,color:OC[k]}));
-  const max=Math.max(...stages.map(s=>s.total));
-  const total=stages.reduce((s,x)=>s+x.total,0);
-  document.getElementById('pipe-total').textContent=fmt(total);
-  document.getElementById('pipeline').innerHTML=stages.map(s=>`<div class="pb-row"><div class="pb-label">${s.name}</div><div class="pb-track">${s.total>0?`<div class="pb-fill" style="width:${(s.total/max)*100}%;background:${s.color}">${fmt(s.total)}</div>`:''}</div><div class="pb-cnt">${s.count}</div></div>`).join('');
+  var stageMap={};
+  var leadToStage={New:'New Lead',Contacted:'Qualification',Qualified:'Needs Analysis',Proposal:'Proposal',Negotiation:'Negotiation',Won:'Closed Won',Lost:'Closed Lost'};
+  STAGES.forEach(function(s){stageMap[s.name]={name:s.name,color:s.color||'#0176D3',count:0,value:0}});
+  for(var st in LEADS_DATA){
+    var sn=leadToStage[st]||st;
+    if(!stageMap[sn])stageMap[sn]={name:sn,color:stageColors[st]||'#0176D3',count:0,value:0};
+    LEADS_DATA[st].forEach(function(l){stageMap[sn].count++;stageMap[sn].value+=l.value||0});
+  }
+  var stages=Object.values(stageMap);
+  var order=['New Lead','Qualification','Needs Analysis','Proposal','Negotiation','Closed Won','Closed Lost'];
+  stages.sort(function(a,b){var ai=order.indexOf(a.name);var bi=order.indexOf(b.name);if(ai<0)ai=99;if(bi<0)bi=99;return ai-bi});
+  var maxVal=Math.max.apply(null,stages.map(function(s){return s.value}).concat([1]));
+  var totalVal=stages.reduce(function(s,st){return s+st.value},0);
+  document.getElementById('pipe-badge').textContent=fmt(totalVal)+' total';
+  document.getElementById('pipeline').innerHTML=stages.map(function(s){
+    var pct=s.value>0?(s.value/maxVal)*100:0;
+    return '<div class="dk-bar-row"><div class="dk-bar-label">'+esc(s.name)+'</div><div class="dk-bar-track">'+(s.count>0?'<div class="dk-bar-fill" style="width:'+Math.max(pct,8)+'%;background:'+s.color+'">'+s.count+'</div>':'')+'</div><div class="dk-bar-val">'+fmt(s.value)+'</div></div>';
+  }).join('')||'<div class="dk-empty">No pipeline data</div>';
 }
 
-function renderRevChart(){
-  const W=420,H=100,P=16,max=Math.max(...MD);
-  const pts=MD.map((v,i)=>[P+(i/(MD.length-1))*(W-P*2),H-P-(v/max)*(H-P*2)]);
-  const line=pts.map((p,i)=>`${i===0?'M':'L'}${p[0]},${p[1]}`).join(' ');
-  const area=`${line} L${pts[pts.length-1][0]},${H-P} L${pts[0][0]},${H-P} Z`;
-  const ytd=MD.slice(0,new Date().getMonth()+1).reduce((s,v)=>+(s+v).toFixed(1),0);
-  document.getElementById('ytd-label').textContent='YTD '+String.fromCharCode(3647)+ytd+'M';
-  document.getElementById('rev-chart').innerHTML=`<defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0176D3" stop-opacity=".18"/><stop offset="100%" stop-color="#0176D3" stop-opacity="0"/></linearGradient><linearGradient id="rs" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0176D3"/><stop offset="100%" stop-color="#2E844A"/></linearGradient></defs><path d="${area}" fill="url(#rg)"/><path d="${line}" fill="none" stroke="url(#rs)" stroke-width="2" stroke-linecap="round"/>${pts.map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="${i===MD.length-1?3.5:2}" fill="${i===MD.length-1?'#2E844A':'#0176D3'}" opacity="${i===MD.length-1?1:.35}"/>`).join('')}${MD.map((_,i)=>{const x=P+(i/(MD.length-1))*(W-P*2);return`<text x="${x}" y="${H-1}" text-anchor="middle" font-size="7" fill="var(--text3)" font-family="Inter">${ML[i]}</text>`}).join('')}`;
+/* ── Deal Amount by Source ── */
+function renderBySource(){
+  var sources={};
+  allLeadsRaw.forEach(function(l){var s=l.source||'Unknown';if(!sources[s])sources[s]={count:0,value:0};sources[s].count++;sources[s].value+=l.value});
+  var arr=Object.entries(sources).map(function(e){return{name:e[0],count:e[1].count,value:e[1].value}}).sort(function(a,b){return b.value-a.value});
+  var maxVal=arr.length>0?arr[0].value:1;
+  var colors=['#0176D3','#2E844A','#D97706','#7F56D9','#DC2626','#0B827C','#64748B'];
+  document.getElementById('by-source').innerHTML=arr.length>0?arr.map(function(s,i){
+    var c=colors[i%colors.length];var pct=maxVal>0?(s.value/maxVal)*100:0;
+    return '<div class="dk-bar-row"><div class="dk-bar-label">'+esc(s.name)+'</div><div class="dk-bar-track"><div class="dk-bar-fill" style="width:'+Math.max(pct,8)+'%;background:'+c+'">'+s.count+'</div></div><div class="dk-bar-val">'+fmt(s.value)+'</div></div>';
+  }).join(''):'<div class="dk-empty">No data</div>';
 }
 
-function renderKanban(){
-  document.getElementById('kanban').innerHTML=Object.entries(OPPS_K).slice(0,6).map(([stage,opps])=>`<div class="kk-col"><div class="kk-head"><div class="kk-title"><span style="width:6px;height:6px;border-radius:50%;background:${OC[stage]}"></span>${stage}</div><span class="kk-cnt">${opps.length}</span></div><div class="kk-total">${fmt(opps.reduce((s,o)=>s+o.a,0))}</div>${opps.map(o=>`<div class="kk-card"><div class="kk-name">${o.n}</div><div class="kk-company">${o.c}</div><div class="kk-foot"><span class="kk-amt">${fmt(o.a)}</span><span class="kk-date">${o.d}</span></div></div>`).join('')}${opps.length===0?'<div style="text-align:center;padding:12px;color:var(--text3);font-size:11px">Empty</div>':''}</div>`).join('');
+/* ── Top Open Deals ── */
+function renderTopOpen(){
+  var open=allLeadsRaw.filter(function(l){return l.status!=='Won'&&l.status!=='Lost'}).sort(function(a,b){return b.value-a.value}).slice(0,8);
+  if(open.length===0){document.getElementById('top-open').innerHTML='<div class="dk-empty">No open deals</div>';return}
+  document.getElementById('top-open').innerHTML='<table class="dk-tbl"><thead><tr><th>Deal / Company</th><th>Stage</th><th>Value</th><th>Priority</th></tr></thead><tbody>'+open.map(function(l){
+    var sc=stageColors[l.status]||'#94A3B8';var pc=l.priority==='High'?'#DC2626':l.priority==='Low'?'#94A3B8':'#D97706';
+    return '<tr><td><div class="dk-tbl-name">'+esc(l.project||l.name)+'</div><div style="font-size:10px;color:var(--text3)">'+esc(l.company)+'</div></td><td><span class="dk-badge" style="background:'+sc+'18;color:'+sc+'">'+esc(l.status)+'</span></td><td style="font-weight:700;color:var(--sf-blue)">'+fmt(l.value)+'</td><td style="font-size:11px;font-weight:600;color:'+pc+'">'+esc(l.priority)+'</td></tr>';
+  }).join('')+'</tbody></table>';
 }
 
+/* ── Deal Stages Breakdown (donut-style list) ── */
+function renderStageBreakdown(){
+  var counts={};var total=allLeadsRaw.length||1;
+  allLeadsRaw.forEach(function(l){counts[l.status]=(counts[l.status]||0)+1});
+  var html='';
+  STAGES_ORDER.forEach(function(s){
+    var c=counts[s]||0;if(c===0)return;
+    var pct=Math.round(c/total*100);
+    html+='<div class="dk-legend-row"><div class="dk-legend-dot" style="background:'+(stageColors[s]||'#94A3B8')+'"></div><div class="dk-legend-name">'+esc(s)+'</div><div class="dk-legend-val">'+c+' ('+pct+'%)</div></div>';
+  });
+  document.getElementById('stage-breakdown').innerHTML=html||'<div class="dk-empty">No data</div>';
+}
+
+/* ── Sales Rep Comparison ── */
+function renderAgentsCompare(){
+  var agents={};
+  allLeadsRaw.forEach(function(l){
+    var a=l.assignedTo||'Unassigned';
+    if(!agents[a])agents[a]={id:a,total:0,won:0,lost:0,open:0,value:0,wonVal:0};
+    agents[a].total++;agents[a].value+=l.value;
+    if(l.status==='Won'){agents[a].won++;agents[a].wonVal+=l.value}
+    else if(l.status==='Lost')agents[a].lost++;
+    else agents[a].open++;
+  });
+  var arr=Object.values(agents).sort(function(a,b){return b.wonVal-a.wonVal});
+  if(arr.length===0){document.getElementById('agents-compare').innerHTML='<div class="dk-empty">No data</div>';return}
+  document.getElementById('agents-compare').innerHTML='<table class="dk-tbl"><thead><tr><th>Sales Rep</th><th>Total</th><th>Won</th><th>Lost</th><th>Open</th><th>Won Amount</th><th>Win Rate</th></tr></thead><tbody>'+arr.map(function(a){
+    var wr=a.total>0?Math.round(a.won/a.total*100):0;
+    return '<tr><td class="dk-tbl-name">'+esc(userMap[a.id]||a.id.substring(0,8))+'</td><td>'+a.total+'</td><td style="color:#2E844A;font-weight:600">'+a.won+'</td><td style="color:#DC2626">'+a.lost+'</td><td>'+a.open+'</td><td style="font-weight:700;color:var(--sf-blue)">'+fmt(a.wonVal)+'</td><td><span class="dk-badge" style="background:'+(wr>=50?'rgba(46,132,74,.1);color:#2E844A':'rgba(194,57,52,.1);color:#DC2626')+'">'+wr+'%</span></td></tr>';
+  }).join('')+'</tbody></table>';
+}
+
+/* ── Pipeline by Sales Rep ── */
+function renderPipeAgents(){
+  var agents={};
+  allLeadsRaw.filter(function(l){return l.status!=='Won'&&l.status!=='Lost'}).forEach(function(l){
+    var a=l.assignedTo||'Unassigned';
+    if(!agents[a])agents[a]={id:a,value:0,count:0};
+    agents[a].value+=l.value;agents[a].count++;
+  });
+  var arr=Object.values(agents).sort(function(a,b){return b.value-a.value});
+  var maxVal=arr.length>0?arr[0].value:1;
+  if(arr.length===0){document.getElementById('pipe-agents').innerHTML='<div class="dk-empty">No open pipeline</div>';return}
+  document.getElementById('pipe-agents').innerHTML=arr.map(function(a){
+    var pct=maxVal>0?(a.value/maxVal)*100:0;
+    return '<div class="dk-agent-row"><div class="dk-agent-name">'+esc(userMap[a.id]||a.id.substring(0,8))+'</div><div class="dk-agent-bar"><div class="dk-agent-fill" style="width:'+Math.max(pct,8)+'%;background:#0176D3"></div></div><div class="dk-agent-val">'+fmt(a.value)+' ('+a.count+')</div></div>';
+  }).join('');
+}
+
+/* ── Customers & Revenue ── */
 function renderCustomers(){
-  const bc={'Active':'rgba(46,132,74,.08);color:#2E844A','Renewal':'rgba(127,86,217,.08);color:#7F56D9','At Risk':'rgba(194,57,52,.08);color:#C23934'};
-  document.getElementById('cust-table').innerHTML=CUSTS.map(c=>`<tr><td><div class="ct-name">${c.n}</div><div class="ct-contact">${c.c}</div></td><td><span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:${bc[c.s]||bc.Active}">${c.s}</span></td><td style="font-weight:700;color:var(--sf-blue)">${fmt(c.r)}</td><td style="font-size:11px;color:var(--text3)">${c.l}</td></tr>`).join('');
+  var bc={active:'rgba(46,132,74,.08);color:#2E844A',Active:'rgba(46,132,74,.08);color:#2E844A',inactive:'rgba(194,57,52,.08);color:#C23934',prospect:'rgba(1,118,211,.08);color:#0176D3',churned:'rgba(194,57,52,.08);color:#C23934'};
+  if(ACCOUNTS.length===0){document.getElementById('customers').innerHTML='<div class="dk-empty">No customers</div>';return}
+  document.getElementById('customers').innerHTML='<table class="dk-tbl"><thead><tr><th>Company</th><th>Status</th><th>Revenue</th><th>Tier</th></tr></thead><tbody>'+ACCOUNTS.slice(0,8).map(function(a){
+    var name=a.company_name||'';var status=a.account_status||'active';var rev=parseFloat(a.total_revenue||0);var tier=a.account_tier||'standard';
+    return '<tr><td><div class="dk-tbl-name">'+esc(name)+'</div><div style="font-size:10px;color:var(--text3)">'+esc(a.phone||a.email||'')+'</div></td><td><span class="dk-badge" style="background:'+(bc[status]||bc.active)+'">'+esc(status)+'</span></td><td style="font-weight:700;color:var(--sf-blue)">'+fmt(rev)+'</td><td style="font-size:11px;color:var(--text3)">'+esc(tier)+'</td></tr>';
+  }).join('')+'</tbody></table>';
 }
 
-function renderTimeline(){
-  document.getElementById('timeline').innerHTML=ACTS.map(a=>`<div class="tl-item"><div class="tl-icon" style="background:${a.bg};color:${a.c}">${a.lbl}</div><div class="tl-body"><div class="tl-title">${a.title}</div><div class="tl-meta">${a.who} / ${a.when}</div></div></div>`).join('');
+/* ── Tasks Overview ── */
+function renderTasks(){
+  if(TASKS.length===0){document.getElementById('tasks-ov').innerHTML='<div class="dk-empty">No tasks</div>';return}
+  var byStatus={};TASKS.forEach(function(t){var s=t.status||'Open';byStatus[s]=(byStatus[s]||0)+1});
+  var colors={Open:'#94A3B8','In Progress':'#0176D3',Completed:'#2E844A',Overdue:'#DC2626'};
+  var total=TASKS.length;
+  var html='';
+  ['Open','In Progress','Completed','Overdue'].forEach(function(s){
+    var c=byStatus[s]||0;if(c===0)return;
+    var pct=Math.round(c/total*100);
+    html+='<div class="dk-legend-row"><div class="dk-legend-dot" style="background:'+(colors[s]||'#94A3B8')+'"></div><div class="dk-legend-name">'+esc(s)+'</div><div class="dk-legend-val">'+c+' ('+pct+'%)</div></div>';
+  });
+  document.getElementById('tasks-ov').innerHTML=html;
 }
 
-function renderAll(){renderQA();renderKPIs();renderPipeline();renderRevChart();renderKanban();renderCustomers();renderTimeline();initAnalyticsAgent()}
-// Initial render handled by loadDashboardData()
+/* ── Opportunity Pipeline Kanban ── */
+function renderKanban(){
+  var stageData=[];
+  var leadToStage={New:'New Lead',Contacted:'Qualification',Qualified:'Needs Analysis',Proposal:'Proposal',Negotiation:'Negotiation',Won:'Closed Won',Lost:'Closed Lost'};
+  STAGES.forEach(function(s){
+    var cards=[];
+    for(var status in leadToStage){
+      if(leadToStage[status]===s.name){
+        (LEADS_DATA[status]||[]).forEach(function(l){
+          cards.push({n:l.name,c:l.company||'',a:l.value||0,d:l.projectName||''});
+        });
+      }
+    }
+    stageData.push({name:s.name,color:s.color||'#0176D3',count:cards.length,value:cards.reduce(function(s,c){return s+c.a},0),cards:cards});
+  });
+  if(stageData.length===0){document.getElementById('kanban').innerHTML='<div class="dk-empty">No pipeline stages</div>';return}
+  document.getElementById('kanban').innerHTML=stageData.filter(function(s){return s.name!=='Closed Lost'}).map(function(s){
+    return '<div class="kk-col"><div class="kk-head"><div class="kk-title"><span style="width:6px;height:6px;border-radius:50%;background:'+s.color+'"></span>'+esc(s.name)+'</div><span class="kk-cnt">'+s.count+'</span></div><div class="kk-total">'+fmt(s.value)+'</div>'+s.cards.map(function(c){return '<div class="kk-card"><div class="kk-name">'+esc(c.n)+'</div><div class="kk-company">'+esc(c.c)+'</div><div class="kk-foot"><span class="kk-amt">'+fmt(c.a)+'</span><span class="kk-date">'+esc(c.d)+'</span></div></div>'}).join('')+(s.cards.length===0?'<div style="text-align:center;padding:12px;color:var(--text3);font-size:11px">Empty</div>':'')+'</div>';
+  }).join('');
+}
 
-// ── Analytics Agent (floating widget — Dashboard only) ──
+function renderAll(){renderQA();renderKPIs();renderPipeline();renderBySource();renderKanban();renderTopOpen();renderStageBreakdown();renderAgentsCompare();renderPipeAgents();renderCustomers();renderTasks();initAnalyticsAgent()}
+</script>
+<script>
+/* ── Analytics Agent (น้องวิ) ── */
 function initAnalyticsAgent(){
+  if(document.querySelector('.aa-fab'))return;
   var s=document.createElement('style');
-  s.textContent=`
-.aa-fab{position:fixed;bottom:96px;right:24px;z-index:900;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#7F56D9,#0B827C);box-shadow:0 4px 20px rgba(127,86,217,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;border:3px solid #fff;padding:0}
-.aa-fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(127,86,217,.5)}
-.aa-fab:active{transform:scale(.95)}
-.aa-fab svg{width:24px;height:24px;color:#fff}
-.aa-badge{position:absolute;top:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:#DD7A01;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
-.aa-panel{position:fixed;bottom:168px;right:24px;z-index:901;width:400px;max-height:520px;background:var(--surface,#fff);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.18);border:1px solid var(--border,#D4DAE3);display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateY(12px) scale(.95);transition:all .2s;overflow:hidden}
-.aa-panel.open{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
-.aa-header{background:linear-gradient(135deg,#7F56D9,#0B827C);padding:14px 16px;display:flex;align-items:center;gap:10px}
-.aa-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid rgba(255,255,255,.2)}
-.aa-avatar svg{width:18px;height:18px;color:#fff}
-.aa-hname{font-size:14px;font-weight:700;color:#fff}
-.aa-hstatus{font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:4px}
-.aa-hstatus span{width:6px;height:6px;border-radius:50%;background:#4BCA81}
-.aa-close{width:26px;height:26px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;margin-left:auto}
-.aa-close:hover{background:rgba(255,255,255,.2);color:#fff}
-.aa-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:180px;max-height:320px}
-.aa-msg{max-width:88%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.55}
-.aa-msg.bot{background:var(--surface2,#F7F9FB);color:var(--text,#16171A);align-self:flex-start;border-bottom-left-radius:4px}
-.aa-msg.usr{background:#7F56D9;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
-.aa-quick{display:flex;gap:5px;flex-wrap:wrap;padding:0 14px 8px}
-.aa-qbtn{padding:4px 10px;border-radius:18px;border:1px solid var(--border,#D4DAE3);background:var(--surface,#fff);font-size:11px;font-weight:500;color:#7F56D9;cursor:pointer;font-family:inherit;transition:all .15s}
-.aa-qbtn:hover{background:rgba(127,86,217,.06);border-color:#7F56D9}
-.aa-input-wrap{padding:10px 14px;border-top:1px solid var(--border,#D4DAE3);display:flex;gap:8px}
-.aa-input{flex:1;padding:9px 14px;border-radius:24px;border:1.5px solid var(--border,#D4DAE3);background:var(--surface2,#F7F9FB);font-size:13px;font-family:inherit;color:var(--text,#16171A);outline:none}
-.aa-input:focus{border-color:#7F56D9}
-.aa-input::placeholder{color:var(--text3,#8E9BAE)}
-.aa-send{width:34px;height:34px;border-radius:50%;border:none;background:#7F56D9;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.aa-send:hover{background:#6842C2}
-@media(max-width:480px){.aa-panel{width:calc(100vw - 24px);left:12px;bottom:156px}.aa-fab{bottom:80px;right:16px;width:48px;height:48px}}`;
+  s.textContent='.aa-fab{position:fixed;bottom:96px;right:24px;z-index:900;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#7F56D9,#0B827C);box-shadow:0 4px 20px rgba(127,86,217,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;border:3px solid #fff;padding:0}.aa-fab:hover{transform:scale(1.08)}.aa-fab:active{transform:scale(.95)}.aa-badge{position:absolute;top:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:#DD7A01;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff}.aa-panel{position:fixed;bottom:168px;right:24px;z-index:901;width:400px;max-height:520px;background:var(--surface,#fff);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.18);border:1px solid var(--border);display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateY(12px) scale(.95);transition:all .2s;overflow:hidden}.aa-panel.open{opacity:1;visibility:visible;transform:translateY(0) scale(1)}.aa-header{background:linear-gradient(135deg,#7F56D9,#0B827C);padding:14px 16px;display:flex;align-items:center;gap:10px}.aa-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid rgba(255,255,255,.2)}.aa-hname{font-size:14px;font-weight:700;color:#fff}.aa-hstatus{font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:4px}.aa-hstatus span{width:6px;height:6px;border-radius:50%;background:#4BCA81}.aa-close{width:26px;height:26px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;margin-left:auto}.aa-close:hover{background:rgba(255,255,255,.2);color:#fff}.aa-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:180px;max-height:320px}.aa-msg{max-width:88%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.55}.aa-msg.bot{background:var(--surface2);align-self:flex-start;border-bottom-left-radius:4px}.aa-msg.usr{background:#7F56D9;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}.aa-quick{display:flex;gap:5px;flex-wrap:wrap;padding:0 14px 8px}.aa-qbtn{padding:4px 10px;border-radius:18px;border:1px solid var(--border);background:var(--surface);font-size:11px;font-weight:500;color:#7F56D9;cursor:pointer;font-family:inherit}.aa-qbtn:hover{background:rgba(127,86,217,.06);border-color:#7F56D9}.aa-input-wrap{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px}.aa-input{flex:1;padding:9px 14px;border-radius:24px;border:1.5px solid var(--border);background:var(--surface2);font-size:13px;font-family:inherit;outline:none}.aa-input:focus{border-color:#7F56D9}.aa-send{width:34px;height:34px;border-radius:50%;border:none;background:#7F56D9;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}.aa-send:hover{background:#6842C2}@media(max-width:480px){.aa-panel{width:calc(100vw - 24px);left:12px;bottom:156px}.aa-fab{bottom:80px;right:16px;width:48px;height:48px}}';
   document.head.appendChild(s);
-
   var h=document.createElement('div');
-  h.innerHTML=`
-<button class="aa-fab" onclick="toggleAA()" style="padding:0;overflow:hidden">
-  <img src="../img/analytics-avatar.svg" style="width:100%;height:100%;border-radius:50%" alt="น้องวิ"/>
-  <span class="aa-badge">AI</span>
-</button>
-<div class="aa-panel" id="aa-panel">
-  <div class="aa-header">
-    <div class="aa-avatar" style="padding:0;overflow:hidden"><img src="../img/analytics-avatar.svg" style="width:100%;height:100%;border-radius:50%" alt="น้องวิ"/></div>
-    <div><div class="aa-hname">น้องวิ — Analytics</div><div class="aa-hstatus"><span></span> Online</div></div>
-    <button class="aa-close" onclick="toggleAA()">&times;</button>
-  </div>
-  <div class="aa-msgs" id="aa-msgs"></div>
-  <div class="aa-quick" id="aa-quick"></div>
-  <div class="aa-input-wrap">
-    <input class="aa-input" id="aa-input" placeholder="ถามข้อมูลการขาย..." onkeydown="if(event.key==='Enter')askAA()"/>
-    <button class="aa-send" onclick="askAA()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
-  </div>
-</div>`;
+  h.innerHTML='<button class="aa-fab" onclick="toggleAA()" style="padding:0;overflow:hidden"><img src="../img/analytics-avatar.svg" style="width:100%;height:100%;border-radius:50%" alt="น้องวิ"/><span class="aa-badge">AI</span></button><div class="aa-panel" id="aa-panel"><div class="aa-header"><div class="aa-avatar" style="padding:0;overflow:hidden"><img src="../img/analytics-avatar.svg" style="width:100%;height:100%;border-radius:50%" alt="น้องวิ"/></div><div><div class="aa-hname">น้องวิ — Analytics</div><div class="aa-hstatus"><span></span> Online</div></div><button class="aa-close" onclick="toggleAA()">&times;</button></div><div class="aa-msgs" id="aa-msgs"></div><div class="aa-quick" id="aa-quick"></div><div class="aa-input-wrap"><input class="aa-input" id="aa-input" placeholder="ถามข้อมูลการขาย..." onkeydown="if(event.key===\'Enter\')askAA()"/><button class="aa-send" onclick="askAA()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div></div>';
   while(h.firstChild)document.body.appendChild(h.firstChild);
-
   addAA('bot','สวัสดีค่ะ! น้องวิพร้อมวิเคราะห์ข้อมูลการขายให้ค่ะ ถามได้เลยนะคะ 📊');
-  document.getElementById('aa-quick').innerHTML=['Forecast เดือนหน้า','Churn Risk','Win Rate','เปรียบเทียบทีม','Avg Deal Size','Sales Cycle'].map(function(t){return '<button class="aa-qbtn" onclick="document.getElementById(\'aa-input\').value=\''+t+'\';askAA()">'+t+'</button>'}).join('');
+  document.getElementById('aa-quick').innerHTML=['Forecast เดือนหน้า','Churn Risk','Win Rate','เปรียบเทียบทีม'].map(function(t){return '<button class="aa-qbtn" onclick="document.getElementById(\'aa-input\').value=\''+t+'\';askAA()">'+t+'</button>'}).join('');
 }
 var aaOpen=false;
 function toggleAA(){aaOpen=!aaOpen;document.getElementById('aa-panel').classList.toggle('open',aaOpen)}
 function addAA(type,text){var m=document.getElementById('aa-msgs'),d=document.createElement('div');d.className='aa-msg '+type;d.innerHTML=text;m.appendChild(d);m.scrollTop=m.scrollHeight}
 function askAA(){
-  var inp=document.getElementById('aa-input'),q=inp.value.trim();if(!q)return;inp.value='';
-  addAA('usr',esc(q));
+  var inp=document.getElementById('aa-input'),q=inp.value.trim();if(!q)return;inp.value='';addAA('usr',esc(q));
   var ty=document.createElement('div');ty.id='aa-ty';ty.style.cssText='padding:8px;align-self:flex-start;display:flex;gap:4px';
   ty.innerHTML='<span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:co-dot .6s ease infinite"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:co-dot .6s ease infinite;animation-delay:.1s"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:co-dot .6s ease infinite;animation-delay:.2s"></span>';
   document.getElementById('aa-msgs').appendChild(ty);
-
-  // Call Agent Service API (streaming)
   var user=getUserProfile();
-  var agentApi=(window.__SF7_API_BASE__||'/api')+'/agents/stream';
-  var body=JSON.stringify({
-    message:q,
-    agentType:'analytics',
-    tenantId:user.tenantId||'default',
-    userId:user.id||'unknown',
-    userRole:user.role||'Sales Rep'
-  });
-
-  fetch(agentApi,{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sf7_token')||'')},
-    body:body
-  }).then(function(res){
-    var e=document.getElementById('aa-ty');if(e)e.remove();
-    if(!res.ok||!res.body){addAA('bot','ขออภัยค่ะ เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ');return}
-
-    var reader=res.body.getReader();
-    var decoder=new TextDecoder();
-    var msgDiv=document.createElement('div');msgDiv.className='aa-msg bot';
-    document.getElementById('aa-msgs').appendChild(msgDiv);
-    var fullText='';
-
-    function readChunk(){
-      reader.read().then(function(result){
-        if(result.done){if(!fullText)msgDiv.innerHTML='ขออภัยค่ะ ไม่มีข้อมูลตอบกลับค่ะ';return}
-        var chunk=decoder.decode(result.value,{stream:true});
-        var lines=chunk.split('\n');
-        lines.forEach(function(line){
-          if(!line.startsWith('data: '))return;
-          var data=line.slice(6).trim();
-          if(data==='[DONE]')return;
-          try{
-            var evt=JSON.parse(data);
-            if(evt.type==='text'&&evt.content){fullText+=evt.content;msgDiv.innerHTML=fullText}
-            if(evt.type==='tool_start'){msgDiv.innerHTML=fullText+'<br><span style="font-size:10px;color:var(--text3)">📊 กำลังวิเคราะห์...</span>'}
-          }catch(ex){}
-        });
-        document.getElementById('aa-msgs').scrollTop=document.getElementById('aa-msgs').scrollHeight;
-        readChunk();
-      });
-    }
-    readChunk();
-  }).catch(function(err){
-    var e=document.getElementById('aa-ty');if(e)e.remove();
-    addAA('bot','ขออภัยค่ะ ไม่สามารถเชื่อมต่อ AI ได้ กรุณาลองใหม่ค่ะ');
-  });
+  fetch('https://ejk5xmi2e8.execute-api.ap-southeast-1.amazonaws.com/agents/stream',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sf7_token')||'')},body:JSON.stringify({message:q,agentType:'analytics',tenantId:user.tenantId||'default',userId:user.id||'unknown',userRole:user.role||'Sales Rep'})}).then(function(res){
+    var e=document.getElementById('aa-ty');if(e)e.remove();if(!res.ok||!res.body){addAA('bot','ขออภัยค่ะ เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ');return}
+    var reader=res.body.getReader(),decoder=new TextDecoder(),msgDiv=document.createElement('div');msgDiv.className='aa-msg bot';document.getElementById('aa-msgs').appendChild(msgDiv);var fullText='';
+    function rc(){reader.read().then(function(r){if(r.done){if(!fullText)msgDiv.innerHTML='ขออภัยค่ะ ไม่มีข้อมูลตอบกลับค่ะ';return}decoder.decode(r.value,{stream:true}).split('\n').forEach(function(line){if(!line.startsWith('data: '))return;var d=line.slice(6).trim();if(d==='[DONE]')return;try{var ev=JSON.parse(d);if(ev.type==='text'&&ev.content){fullText+=ev.content;msgDiv.innerHTML=fullText}}catch(ex){}});document.getElementById('aa-msgs').scrollTop=document.getElementById('aa-msgs').scrollHeight;rc()})}
+    rc();
+  }).catch(function(){var e=document.getElementById('aa-ty');if(e)e.remove();addAA('bot','ขออภัยค่ะ ไม่สามารถเชื่อมต่อ AI ได้ กรุณาลองใหม่ค่ะ')});
 }
-// getAAReply removed — now handled by Agent Service API via askAA()
 </script>
-</body>
-</html>
+</body></html>

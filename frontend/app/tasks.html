@@ -18,29 +18,28 @@
       <div class="page-subtitle" data-i18n="task_sub">Manage tasks, appointments and call logs</div>
     </div>
     <div class="page-actions">
-      <button class="btn btn-secondary" onclick="openCallLog()" data-i18n="task_call">Log Call</button>
       <a href="calendar.html" class="btn btn-secondary" data-i18n="task_calendar">Calendar</a>
       <button class="btn btn-primary" onclick="openCreateTask()" data-i18n="task_new">+ New Task</button>
     </div>
   </div>
 
   <div class="filter-bar" style="margin-bottom:16px" id="task-filter">
-    <button class="filter-btn active" data-v="all" onclick="filterTasks('all',this)" data-i18n="task_all">All</button>
-    <button class="filter-btn" data-v="Open" onclick="filterTasks('Open',this)" data-i18n="task_open">Open</button>
-    <button class="filter-btn" data-v="In Progress" onclick="filterTasks('In Progress',this)" data-i18n="task_progress">In Progress</button>
-    <button class="filter-btn" data-v="Completed" onclick="filterTasks('Completed',this)" data-i18n="task_done">Completed</button>
-    <button class="filter-btn" data-v="Overdue" onclick="filterTasks('Overdue',this)" data-i18n="task_overdue">Overdue</button>
+    <button class="filter-btn active" data-v="all" onclick="filterTasks('all',this)">All</button>
+    <button class="filter-btn" data-v="Open" onclick="filterTasks('Open',this)">Open</button>
+    <button class="filter-btn" data-v="In Progress" onclick="filterTasks('In Progress',this)">In Progress</button>
+    <button class="filter-btn" data-v="Completed" onclick="filterTasks('Completed',this)">Completed</button>
   </div>
 
   <div class="card" id="list-view">
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th data-i18n="task_col_name">Task</th>
-          <th data-i18n="task_col_due">Due Date</th>
-          <th data-i18n="task_col_priority">Priority</th>
-          <th data-i18n="task_col_status">Status</th>
-          <th data-i18n="task_col_account">Account</th>
+          <th>Task</th>
+          <th>Due Date</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Customer</th>
+          <th style="width:120px">Actions</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -54,61 +53,31 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         <span data-i18n="btn_back">Back</span>
       </button>
-      <div class="page-title" data-i18n="task_form_title">New Task</div>
+      <div class="page-title" id="task-form-title">New Task</div>
     </div>
     <form onsubmit="saveTask(event)">
+      <input type="hidden" id="ft-id"/>
       <div class="card" style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="task_form_details">Task Details</div>
-        <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_title">Title</label><input class="sf7-form-input" id="ft-title" required/></div>
-        <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_desc">Description</label><textarea class="sf7-form-input" id="ft-desc" rows="3"></textarea></div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Task Details</div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Title *</label><input class="sf7-form-input" id="ft-title" required/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Description</label><textarea class="sf7-form-input" id="ft-desc" rows="3"></textarea></div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_due">Due Date</label><input class="sf7-form-input" id="ft-due" type="date" required/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_priority">Priority</label>
+          <div class="sf7-form-group"><label class="sf7-form-label">Due Date</label><input class="sf7-form-input" id="ft-due" type="date"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Priority</label>
             <select class="sf7-form-input" id="ft-priority"><option value="High">High</option><option value="Medium" selected>Medium</option><option value="Low">Low</option></select></div>
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_status">Status</label>
-            <select class="sf7-form-input" id="ft-status"><option value="Open">Open</option><option value="In Progress">In Progress</option></select></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Status</label>
+            <select class="sf7-form-input" id="ft-status"><option value="Open">Open</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option></select></div>
         </div>
       </div>
       <div class="card" style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="task_form_link">Link to</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_account">Account</label><select class="sf7-form-input" id="ft-account"></select></div>
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_assigned">Assigned To</label><select class="sf7-form-input" id="ft-assigned"></select></div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Link to</div>
+        <div style="display:grid;grid-template-columns:1fr;gap:12px">
+          <div class="sf7-form-group"><label class="sf7-form-label">Customer</label><select class="sf7-form-input" id="ft-account"><option value="">-- None --</option></select></div>
         </div>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button type="button" class="btn btn-secondary" onclick="closeForm()" data-i18n="btn_cancel">Cancel</button>
-        <button type="submit" class="btn btn-primary" data-i18n="btn_save">Save</button>
-      </div>
-    </form>
-  </div>
-
-  <!-- Call Log Form -->
-  <div id="call-form" style="display:none">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        <span data-i18n="btn_back">Back</span>
-      </button>
-      <div class="page-title" data-i18n="call_form_title">Log Call</div>
-    </div>
-    <form onsubmit="saveCall(event)">
-      <div class="card" style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)" data-i18n="call_form_details">Call Details</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="call_f_duration">Duration (minutes)</label><input class="sf7-form-input" id="fc-duration" type="number" min="1" required/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="call_f_outcome">Outcome</label>
-            <select class="sf7-form-input" id="fc-outcome"><option data-i18n="call_connected">Connected</option><option data-i18n="call_no_answer">No Answer</option><option data-i18n="call_left_msg">Left Message</option><option data-i18n="call_busy">Busy</option><option data-i18n="call_wrong">Wrong Number</option></select></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="task_f_account">Account</label><select class="sf7-form-input" id="fc-account"></select></div>
-          <div class="sf7-form-group"><label class="sf7-form-label" data-i18n="call_f_contact">Contact Person</label><input class="sf7-form-input" id="fc-contact"/></div>
-        </div>
-        <div class="sf7-form-group" style="margin-top:12px"><label class="sf7-form-label" data-i18n="call_f_notes">Notes</label><textarea class="sf7-form-input" id="fc-notes" rows="3"></textarea></div>
-      </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button type="button" class="btn btn-secondary" onclick="closeForm()" data-i18n="btn_cancel">Cancel</button>
-        <button type="submit" class="btn btn-primary" data-i18n="btn_save">Save</button>
+        <button type="button" class="btn btn-secondary" onclick="closeForm()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-save-task">Save</button>
       </div>
     </form>
   </div>
@@ -120,94 +89,139 @@
 <script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML = renderNav('tasks');
-let taskFilter = 'all';
+if(!requireAuth()) throw 'auth';
+
+var taskFilter = 'all';
 
 function filterTasks(f, btn) {
   taskFilter = f;
-  document.querySelectorAll('#task-filter .filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#task-filter .filter-btn').forEach(function(b){b.classList.remove('active')});
   btn.classList.add('active');
   renderTable();
 }
 
 function renderTable() {
-  const f = taskFilter === 'all' ? TASKS : TASKS.filter(t => t.status === taskFilter);
-  document.getElementById('tbody').innerHTML = f.map(t => {
-    const ov = t.status === 'Overdue';
-    // Find account ID for linking
-    var accLink = '—';
-    if (t.account) {
-      var acc = ACCOUNTS.find(function(a){ return a.name === t.account });
-      if (acc) {
-        accLink = '<a href="account-detail.html?id=' + acc.id + '" style="color:var(--sf-blue);text-decoration:none;font-weight:500" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">' + esc(t.account) + '</a>';
-      } else {
-        accLink = esc(t.account);
-      }
-    }
-    return `<tr style="${ov ? 'background:rgba(194,57,52,.04)' : ''}">
-      <td style="font-weight:500;${ov ? 'color:var(--red)' : ''}">${esc(t.title)}</td>
-      <td style="${ov ? 'font-weight:600;color:var(--red)' : 'color:var(--text2)'}">${t.due}</td>
-      <td><span class="status-badge" style="background:${PRI_COLORS[t.priority]}18;color:${PRI_COLORS[t.priority]}">${t.priority}</span></td>
-      <td><span class="status-badge" style="background:${TASK_COLORS[t.status]}18;color:${TASK_COLORS[t.status]}">${t.status}</span></td>
-      <td style="font-size:12px">${accLink}</td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="5" class="empty-state">No tasks found</td></tr>';
+  var f = taskFilter === 'all' ? TASKS : TASKS.filter(function(t){return t.status === taskFilter});
+  document.getElementById('tbody').innerHTML = f.map(function(t) {
+    var dueStr = t.due_date ? new Date(t.due_date).toLocaleDateString('th-TH') : '-';
+    var isOverdue = t.due_date && t.status !== 'Completed' && new Date(t.due_date) < new Date();
+    var accName = t.account_name || '-';
+    var accLink = t.account_id
+      ? '<a href="account-detail.html?id=' + t.account_id + '" style="color:var(--sf-blue);text-decoration:none;font-weight:500">' + esc(accName) + '</a>'
+      : esc(accName);
+
+    return '<tr style="' + (isOverdue ? 'background:rgba(194,57,52,.04)' : '') + '">' +
+      '<td style="font-weight:500;' + (isOverdue ? 'color:var(--red)' : '') + '">' + esc(t.title) + '</td>' +
+      '<td style="' + (isOverdue ? 'font-weight:600;color:var(--red)' : 'color:var(--text2)') + '">' + dueStr + '</td>' +
+      '<td><span class="status-badge" style="background:' + PRI_COLORS[t.priority] + '18;color:' + PRI_COLORS[t.priority] + '">' + t.priority + '</span></td>' +
+      '<td><span class="status-badge" style="background:' + (TASK_COLORS[t.status]||'var(--text2)') + '18;color:' + (TASK_COLORS[t.status]||'var(--text2)') + '">' + t.status + '</span></td>' +
+      '<td style="font-size:12px">' + accLink + '</td>' +
+      '<td style="display:flex;gap:6px">' +
+        '<button class="btn btn-secondary" style="padding:3px 10px;font-size:11px" onclick="editTask(\'' + t.id + '\')">Edit</button>' +
+        (t.status !== 'Completed' ? '<button class="btn btn-secondary" style="padding:3px 10px;font-size:11px;color:var(--green);border-color:var(--green)" onclick="completeTask(\'' + t.id + '\')">✓</button>' : '') +
+        '<button class="btn btn-secondary" style="padding:3px 10px;font-size:11px;color:var(--red);border-color:var(--red)" onclick="deleteTask(\'' + t.id + '\')">✕</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="6" class="empty-state">No tasks found</td></tr>';
 }
 
-function populateDropdowns() {
-  var opts = '<option value="">-- None --</option>' + ACCOUNTS.map(a => '<option value="' + a.name + '">' + a.name + '</option>').join('');
-  ['ft-account','fc-account'].forEach(function(id) { var el = document.getElementById(id); if (el) el.innerHTML = opts; });
-  var rOpts = '<option value="">-- Unassigned --</option>' + REPS.map(r => '<option value="' + r.name + '">' + r.name + '</option>').join('');
-  var el = document.getElementById('ft-assigned'); if (el) el.innerHTML = rOpts;
+async function populateAccountDropdown() {
+  if (ACCOUNTS.length === 0) await loadAccounts();
+  var opts = '<option value="">-- None --</option>' + ACCOUNTS.map(function(a) {
+    return '<option value="' + a.id + '">' + esc(a.customer_code ? a.customer_code + ' — ' : '') + esc(a.company_name) + '</option>';
+  }).join('');
+  document.getElementById('ft-account').innerHTML = opts;
 }
 
 function openCreateTask() {
   document.getElementById('list-view').style.display = 'none';
   document.getElementById('task-filter').style.display = 'none';
   document.getElementById('task-form').style.display = 'block';
-  document.getElementById('call-form').style.display = 'none';
+  document.getElementById('task-form-title').textContent = 'New Task';
+  document.getElementById('ft-id').value = '';
   document.getElementById('ft-title').value = '';
   document.getElementById('ft-desc').value = '';
   document.getElementById('ft-due').value = '';
-  populateDropdowns();
+  document.getElementById('ft-priority').value = 'Medium';
+  document.getElementById('ft-status').value = 'Open';
+  populateAccountDropdown();
   window.scrollTo(0, 0);
 }
 
-function openCallLog() {
+function editTask(id) {
+  var t = TASKS.find(function(x){return x.id === id});
+  if (!t) return;
   document.getElementById('list-view').style.display = 'none';
   document.getElementById('task-filter').style.display = 'none';
-  document.getElementById('task-form').style.display = 'none';
-  document.getElementById('call-form').style.display = 'block';
-  document.getElementById('fc-duration').value = '';
-  document.getElementById('fc-contact').value = '';
-  document.getElementById('fc-notes').value = '';
-  populateDropdowns();
+  document.getElementById('task-form').style.display = 'block';
+  document.getElementById('task-form-title').textContent = 'Edit Task';
+  document.getElementById('ft-id').value = t.id;
+  document.getElementById('ft-title').value = t.title || '';
+  document.getElementById('ft-desc').value = t.description || '';
+  document.getElementById('ft-due').value = t.due_date ? t.due_date.slice(0, 10) : '';
+  document.getElementById('ft-priority').value = t.priority || 'Medium';
+  document.getElementById('ft-status').value = t.status || 'Open';
+  populateAccountDropdown();
+  if (t.account_id) document.getElementById('ft-account').value = t.account_id;
   window.scrollTo(0, 0);
 }
 
 function closeForm() {
   document.getElementById('task-form').style.display = 'none';
-  document.getElementById('call-form').style.display = 'none';
   document.getElementById('list-view').style.display = 'block';
   document.getElementById('task-filter').style.display = 'inline-flex';
 }
 
-function saveTask(e) {
+async function saveTask(e) {
   e.preventDefault();
-  TASKS.unshift({ id: TASKS.length + 1, title: document.getElementById('ft-title').value, due: document.getElementById('ft-due').value, priority: document.getElementById('ft-priority').value, status: document.getElementById('ft-status').value, account: document.getElementById('ft-account').value || '' });
-  closeForm(); renderTable();
+  var btn = document.getElementById('btn-save-task');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    var id = document.getElementById('ft-id').value;
+    var body = {
+      title: document.getElementById('ft-title').value,
+      description: document.getElementById('ft-desc').value,
+      dueDate: document.getElementById('ft-due').value || null,
+      priority: document.getElementById('ft-priority').value,
+      status: document.getElementById('ft-status').value,
+      accountId: document.getElementById('ft-account').value || null,
+    };
+    if (id) {
+      await apiFetch('/tasks/' + id, { method: 'PATCH', body: JSON.stringify(body) });
+    } else {
+      await apiFetch('/tasks', { method: 'POST', body: JSON.stringify(body) });
+    }
+    closeForm();
+    await reloadTasks();
+  } catch(err) {
+    alert('Error saving task: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save';
+  }
 }
 
-function saveCall(e) {
-  e.preventDefault();
-  var contact = document.getElementById('fc-contact').value;
-  var account = document.getElementById('fc-account').value;
-  var duration = document.getElementById('fc-duration').value;
-  var outcome = document.getElementById('fc-outcome').value;
-  TASKS.unshift({ id: TASKS.length + 1, title: 'Call: ' + (contact || account || 'Unknown') + ' (' + duration + 'min, ' + outcome + ')', due: new Date().toISOString().slice(0, 10), priority: 'Medium', status: 'Completed', account: account || '' });
-  closeForm(); renderTable();
+async function completeTask(id) {
+  try {
+    await apiFetch('/tasks/' + id, { method: 'PATCH', body: JSON.stringify({ status: 'Completed' }) });
+    await reloadTasks();
+  } catch(err) { alert('Error: ' + err.message); }
 }
 
-renderTable();
+async function deleteTask(id) {
+  if (!confirm('Delete this task?')) return;
+  try {
+    await apiFetch('/tasks/' + id, { method: 'DELETE' });
+    await reloadTasks();
+  } catch(err) { alert('Error: ' + err.message); }
+}
+
+async function reloadTasks() {
+  await loadTasks();
+  renderTable();
+}
+
+// Initial load
+reloadTasks();
 </script>
 </body>
 </html>

@@ -4,35 +4,34 @@
 <meta charset="UTF-8"/>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>SalesFAST 7 — Account Detail</title>
+<title>SalesFAST 7 — Customer Detail</title>
 <link rel="stylesheet" href="../css/app.css"/>
 <style>
-.detail-grid{display:grid;grid-template-columns:1fr 340px;gap:20px}
-.info-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
-.info-row:last-child{border-bottom:none}
-.info-label{font-size:12px;color:var(--text3);min-width:120px}
-.info-value{font-size:13px;font-weight:500;color:var(--text);text-align:right}
-.tab-bar{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:20px}
-.tab-btn{padding:10px 20px;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;cursor:pointer;font-family:inherit;position:relative;transition:color .15s}
-.tab-btn:hover{color:var(--text)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.info-label{font-size:12px;color:var(--text3);font-weight:500}
+.info-value{font-size:13px;font-weight:500;text-align:right}
+.stat-mini{padding:16px;text-align:center}
+.stat-mini-val{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.stat-mini-label{font-size:11px;color:var(--text3);margin-top:4px}
+.contact-card{display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;background:var(--surface2);margin-bottom:8px}
+.contact-avatar{width:36px;height:36px;border-radius:50%;background:var(--sf-blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.tab-bar{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:16px}
+.tab-btn{padding:10px 16px;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;cursor:pointer;font-family:inherit;position:relative}
 .tab-btn.active{color:var(--sf-blue);font-weight:600}
 .tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:var(--sf-blue)}
 .tab-content{display:none}.tab-content.active{display:block}
-.contact-card{display:flex;gap:12px;padding:14px;border-radius:10px;background:var(--surface2);margin-bottom:8px}
-.contact-avatar{width:36px;height:36px;border-radius:50%;background:var(--sf-blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
-.timeline-item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)}
-.timeline-item:last-child{border-bottom:none}
-.timeline-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
-.stat-mini{text-align:center;padding:16px}
-.stat-mini-val{font-size:22px;font-weight:800;letter-spacing:-.5px}
-.stat-mini-label{font-size:11px;color:var(--text3);margin-top:2px}
-@media(max-width:768px){.detail-grid{grid-template-columns:1fr}.tab-bar{overflow-x:auto;flex-wrap:nowrap}.tab-btn{white-space:nowrap;flex-shrink:0}}
+.timeline-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.timeline-dot{width:10px;height:10px;border-radius:50%;margin-top:5px;flex-shrink:0}
+@media(max-width:768px){.detail-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="bg-pattern"></div>
 <div id="nav"></div>
-<div class="page anim" id="page-content"></div>
+<div class="page anim" id="page-content">
+  <div style="padding:60px;text-align:center;color:var(--text3)">Loading...</div>
+</div>
 
 <script src="../js/helpers.js"></script>
 <script src="../js/i18n.js"></script>
@@ -40,382 +39,276 @@
 <script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML = renderNav('accounts');
+if(!requireAuth()) throw 'auth';
 
-// Get account ID from URL
-const params = new URLSearchParams(window.location.search);
-const accountId = parseInt(params.get('id') || '1', 10);
-const account = ACCOUNTS.find(a => a.id === accountId);
-
-if (!account) {
-  document.getElementById('page-content').innerHTML = '<div class="empty-state">Account not found</div>';
+var accountId = new URLSearchParams(window.location.search).get('id');
+var currentAccount = null; // store for edit form
+if (!accountId) {
+  document.getElementById('page-content').innerHTML = '<div class="empty-state">No account ID</div>';
 } else {
-  const contacts = CONTACTS.filter(c => c.accountId === accountId);
-  const opps = OPPS.filter(o => o.account === account.name);
-  const tasks = TASKS.filter(t => t.account === account.name);
-  const quotes = QUOTATIONS.filter(q => q.account === account.name);
-
-  document.getElementById('page-content').innerHTML = `
-    <!-- Header -->
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-      <a href="accounts.html" class="btn btn-secondary" style="padding:6px 12px">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        Back
-      </a>
-    </div>
-    <div class="page-header" style="margin-bottom:16px">
-      <div>
-        <div class="page-title" style="display:flex;align-items:center;gap:10px">
-          ${account.name}
-          <span class="status-badge" style="background:${account.status==='Active'?'rgba(46,132,74,.1);color:#2E844A':'rgba(147,147,147,.12);color:var(--text3)'};font-size:11px">${account.status||'Active'}</span>
-          <span class="tag">${account.tier||'Standard'}</span>
-        </div>
-        <div class="page-subtitle">${account.industry} &middot; ${account.phone}</div>
-      </div>
-      <div class="page-actions">
-        <a href="quotations.html?account=${encodeURIComponent(account.name)}" class="btn btn-primary" style="text-decoration:none;display:flex;align-items:center;gap:6px">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-          New Quotation
-        </a>
-        <a href="leads.html?account=${encodeURIComponent(account.name)}" class="btn btn-secondary" style="text-decoration:none;display:flex;align-items:center;gap:6px">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-          New Lead
-        </a>
-        <button class="btn btn-secondary">Edit</button>
-      </div>
-    </div>
-
-    <!-- Quick Stats -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
-      <div class="card stat-mini"><div class="stat-mini-val" style="color:var(--sf-blue)">${fmt(account.revenue)}</div><div class="stat-mini-label">Total Revenue</div></div>
-      <div class="card stat-mini"><div class="stat-mini-val">${opps.length}</div><div class="stat-mini-label">Opportunities</div></div>
-      <div class="card stat-mini"><div class="stat-mini-val">${quotes.length}</div><div class="stat-mini-label">Quotations</div></div>
-      <div class="card stat-mini"><div class="stat-mini-val">${contacts.length}</div><div class="stat-mini-label">Contacts</div></div>
-    </div>
-
-    <!-- Tabs -->
-    <div class="tab-bar">
-      <button class="tab-btn active" onclick="showTab('info',this)">Company Info</button>
-      <button class="tab-btn" onclick="showTab('contacts',this)">Contacts (${contacts.length})</button>
-      <button class="tab-btn" onclick="showTab('deals',this)">Deals (${opps.length})</button>
-      <button class="tab-btn" onclick="showTab('quotes',this)">Quotations (${quotes.length})</button>
-      <button class="tab-btn" onclick="showTab('tasks',this)">Tasks (${tasks.length})</button>
-      <button class="tab-btn" onclick="showTab('docs',this)">Documents</button>
-      <button class="tab-btn" onclick="showTab('timeline',this)">Timeline</button>
-    </div>
-
-    <!-- Tab: Company Info -->
-    <div class="tab-content active" id="tab-info">
-      <div class="detail-grid">
-        <div>
-          <div class="card" style="margin-bottom:16px">
-            <div class="form-section-title" style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Company Information</div>
-            <div class="info-row"><span class="info-label">Company Name (TH)</span><span class="info-value">${account.name}</span></div>
-            <div class="info-row"><span class="info-label">Industry</span><span class="info-value">${account.industry}</span></div>
-            <div class="info-row"><span class="info-label">Tax ID</span><span class="info-value" style="font-family:monospace">${account.taxId||'-'}</span></div>
-            <div class="info-row"><span class="info-label">Status</span><span class="info-value">${account.status||'Active'}</span></div>
-            <div class="info-row"><span class="info-label">Tier</span><span class="info-value">${account.tier||'Standard'}</span></div>
-          </div>
-          <div class="card">
-            <div class="form-section-title" style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Contact Information</div>
-            <div class="info-row"><span class="info-label">Phone</span><span class="info-value">${account.phone}</span></div>
-            <div class="info-row"><span class="info-label">Email</span><span class="info-value">${account.email||'-'}</span></div>
-            <div class="info-row"><span class="info-label">Website</span><span class="info-value">${account.website||'-'}</span></div>
-          </div>
-        </div>
-        <div>
-          <div class="card" style="margin-bottom:16px">
-            <div class="form-section-title" style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Tags</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px">${account.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
-          </div>
-          <div class="card">
-            <div class="form-section-title" style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Primary Contact</div>
-            ${contacts.length > 0 ? `
-              <div class="contact-card">
-                <div class="contact-avatar">${contacts[0].name[0]}</div>
-                <div>
-                  <div style="font-size:13px;font-weight:600">${contacts[0].name}</div>
-                  <div style="font-size:12px;color:var(--text2)">${contacts[0].title} &middot; ${contacts[0].phone}</div>
-                  <div style="font-size:12px;color:var(--text2)">${contacts[0].email}</div>
-                </div>
-              </div>
-            ` : '<div style="font-size:13px;color:var(--text3)">No contacts yet</div>'}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tab: Contacts -->
-    <div class="tab-content" id="tab-contacts">
-      <div class="card">
-        ${contacts.length === 0 ? '<div class="empty-state">No contacts for this account</div>' :
-          contacts.map(c => `
-            <div class="contact-card">
-              <div class="contact-avatar">${c.name[0]}</div>
-              <div style="flex:1">
-                <div style="font-size:14px;font-weight:600">${c.name}</div>
-                <div style="font-size:12px;color:var(--text2)">${c.title} &middot; ${c.account}</div>
-                <div style="font-size:12px;color:var(--text2);margin-top:4px">
-                  ${c.phone} &middot; ${c.email} ${c.line ? '&middot; LINE: '+c.line : ''}
-                </div>
-              </div>
-            </div>
-          `).join('')
-        }
-      </div>
-    </div>
-
-    <!-- Tab: Deals -->
-    <div class="tab-content" id="tab-deals">
-      <div class="card">
-        ${opps.length === 0 ? '<div class="empty-state">No opportunities for this account</div>' : `
-          <div class="table-wrap"><table>
-            <thead><tr><th>Deal Name</th><th>Stage</th><th>Value</th><th>Close Date</th><th>Assigned</th></tr></thead>
-            <tbody>${opps.map(o => `
-              <tr>
-                <td style="font-weight:500">${o.name}</td>
-                <td><span class="status-badge" style="background:${STAGE_COLORS[o.stage]||'var(--sf-blue)'}18;color:${STAGE_COLORS[o.stage]||'var(--sf-blue)'}">${o.stage}</span></td>
-                <td style="font-weight:600;color:var(--sf-blue)">${fmt(o.value)}</td>
-                <td style="color:var(--text2);font-size:12px">${o.close}</td>
-                <td style="color:var(--text2)">${o.assigned}</td>
-              </tr>
-            `).join('')}</tbody>
-          </table></div>
-        `}
-      </div>
-    </div>
-
-    <!-- Tab: Quotations -->
-    <div class="tab-content" id="tab-quotes">
-      <div class="card">
-        ${quotes.length === 0 ? '<div class="empty-state">No quotations for this account</div>' : `
-          <div class="table-wrap"><table>
-            <thead><tr><th>Number</th><th>Status</th><th>Subtotal</th><th>VAT</th><th>Total</th><th>Date</th></tr></thead>
-            <tbody>${quotes.map(q => `
-              <tr>
-                <td style="font-weight:500">${q.number}</td>
-                <td><span class="status-badge" style="background:${STATUS_COLORS[q.status]}18;color:${STATUS_COLORS[q.status]}">${STATUS_LABELS[q.status]||q.status}</span></td>
-                <td>${fmt(q.subtotal)}</td>
-                <td>${fmt(q.vat)}</td>
-                <td style="font-weight:600;color:var(--sf-blue)">${fmt(q.grand)}</td>
-                <td style="color:var(--text2)">${q.date}</td>
-              </tr>
-            `).join('')}</tbody>
-          </table></div>
-        `}
-      </div>
-    </div>
-
-    <!-- Tab: Tasks -->
-    <div class="tab-content" id="tab-tasks">
-      <div class="card">
-        ${tasks.length === 0 ? '<div class="empty-state">No tasks for this account</div>' : `
-          <div class="table-wrap"><table>
-            <thead><tr><th>Task</th><th>Due Date</th><th>Priority</th><th>Status</th></tr></thead>
-            <tbody>${tasks.map(t => `
-              <tr style="${t.status==='Overdue'?'background:rgba(194,57,52,.04)':''}">
-                <td style="font-weight:500;${t.status==='Overdue'?'color:var(--red)':''}">${t.title}</td>
-                <td style="color:var(--text2);font-size:12px">${t.due}</td>
-                <td><span class="status-badge" style="background:${PRI_COLORS[t.priority]}18;color:${PRI_COLORS[t.priority]}">${t.priority}</span></td>
-                <td><span class="status-badge" style="background:${TASK_COLORS[t.status]}18;color:${TASK_COLORS[t.status]}">${t.status}</span></td>
-              </tr>
-            `).join('')}</tbody>
-          </table></div>
-        `}
-      </div>
-    </div>
-
-    <!-- Tab: Documents -->
-    <div class="tab-content" id="tab-docs">
-      <div class="card" style="margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div style="font-size:13px;font-weight:700;color:var(--sf-blue)">Documents</div>
-          <label class="btn btn-primary" style="cursor:pointer;margin:0;display:flex;align-items:center;gap:6px">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Upload
-            <input type="file" id="doc-upload" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.txt,.csv,.zip" style="display:none" onchange="handleUpload(this.files)"/>
-          </label>
-        </div>
-        <!-- Drop zone -->
-        <div id="drop-zone" style="border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;color:var(--text3);font-size:13px;margin-bottom:16px;transition:all .2s;cursor:pointer" onclick="document.getElementById('doc-upload').click()">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px;opacity:.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <div>Drag files here or click to upload</div>
-          <div style="font-size:11px;margin-top:4px;color:var(--text3)">PDF, Word, Excel, Images, ZIP (max 25MB)</div>
-        </div>
-        <!-- File list -->
-        <div id="doc-list"></div>
-      </div>
-    </div>
-
-    <!-- Tab: Timeline -->
-    <div class="tab-content" id="tab-timeline">
-      <div class="card">
-        <div class="timeline-item"><div class="timeline-dot" style="background:var(--sf-blue)"></div><div><div style="font-size:13px;font-weight:500">Account created</div><div style="font-size:12px;color:var(--text3);margin-top:2px">System &middot; Jan 2026</div></div></div>
-        ${opps.map(o => `<div class="timeline-item"><div class="timeline-dot" style="background:${STAGE_COLORS[o.stage]||'var(--sf-blue)'}"></div><div><div style="font-size:13px;font-weight:500">Deal: ${o.name} &mdash; ${o.stage}</div><div style="font-size:12px;color:var(--text3);margin-top:2px">${o.assigned} &middot; ${fmt(o.value)}</div></div></div>`).join('')}
-        ${tasks.map(t => `<div class="timeline-item"><div class="timeline-dot" style="background:${TASK_COLORS[t.status]}"></div><div><div style="font-size:13px;font-weight:500">Task: ${t.title}</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Due: ${t.due} &middot; ${t.status}</div></div></div>`).join('')}
-      </div>
-    </div>
-  `;
+  loadDetail();
 }
 
-function showTab(tabId, btn) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById('tab-' + tabId).classList.add('active');
+async function loadDetail() {
+  try {
+    var a = await apiFetch('/accounts/' + accountId);
+    if (!a || a.message) { document.getElementById('page-content').innerHTML = '<div class="empty-state">Account not found. <a href="accounts.html">Back</a></div>'; return; }
+    currentAccount = a;
+
+    var contacts = []; try { contacts = await apiFetch('/accounts/' + accountId + '/contacts') || []; } catch(e) {}
+    var activities = []; try { activities = await apiFetch('/accounts/' + accountId + '/activities?limit=20') || []; } catch(e) {}
+    if (!Array.isArray(contacts)) contacts = [];
+    if (!Array.isArray(activities)) activities = [];
+
+    var name = a.company_name || '';
+    var status = a.account_status || 'active';
+    var tier = a.account_tier || 'standard';
+    var industry = a.industry || '-';
+    var phone = a.phone || '-';
+    var email = a.email || '-';
+    var revenue = parseFloat(a.total_revenue || 0);
+    var tags = a.tags || [];
+
+    document.getElementById('page-content').innerHTML =
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">' +
+        '<a href="accounts.html" class="btn btn-secondary" style="padding:6px 12px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back</a>' +
+        '<div style="flex:1"></div>' +
+        '<button class="btn btn-secondary" onclick="openEditForm()" style="display:flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>' +
+        '<a href="leads.html?accountId=' + accountId + '&company=' + encodeURIComponent(name) + '&newLead=1" class="btn btn-primary" style="display:flex;align-items:center;gap:6px;text-decoration:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> New Lead</a>' +
+        '<a href="quotations.html?accountId=' + accountId + '" class="btn btn-secondary" style="display:flex;align-items:center;gap:6px;text-decoration:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> New Quotation</a>' +
+      '</div>' +
+      '<div class="page-header" style="margin-bottom:16px"><div>' +
+        '<div class="page-title">' + esc(name) + ' <span class="status-badge" style="background:rgba(46,132,74,.1);color:#2E844A;font-size:11px">' + esc(status) + '</span> <span class="tag">' + esc(tier) + '</span></div>' +
+        '<div class="page-subtitle">' + esc(industry) + ' &middot; ' + esc(phone) + '</div>' +
+      '</div></div>' +
+
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">' +
+        '<div class="card stat-mini"><div class="stat-mini-val" style="color:var(--sf-blue)">' + fmt(revenue) + '</div><div class="stat-mini-label">Revenue</div></div>' +
+        '<div class="card stat-mini"><div class="stat-mini-val">' + contacts.length + '</div><div class="stat-mini-label">Contacts</div></div>' +
+        '<div class="card stat-mini"><div class="stat-mini-val">' + esc(a.total_deals || '0') + '</div><div class="stat-mini-label">Deals</div></div>' +
+        '<div class="card stat-mini"><div class="stat-mini-val">' + activities.length + '</div><div class="stat-mini-label">Activities</div></div>' +
+      '</div>' +
+
+      '<div class="tab-bar">' +
+        '<button class="tab-btn active" onclick="showTab(\'info\',this)">Company Info</button>' +
+        '<button class="tab-btn" onclick="showTab(\'contacts\',this)">Contacts (' + contacts.length + ')</button>' +
+        '<button class="tab-btn" onclick="showTab(\'timeline\',this)">Timeline</button>' +
+      '</div>' +
+
+      '<div class="tab-content active" id="tab-info"><div class="detail-grid"><div>' +
+        '<div class="card" style="margin-bottom:16px">' +
+          '<div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Company Information</div>' +
+          infoRow('Customer Code', a.customer_code || '-') +
+          infoRow('Company Name', name) +
+          infoRow('Company Name (EN)', a.company_name_en || '-') +
+          infoRow('Industry', industry) +
+          infoRow('Tax ID', a.tax_id || '-') +
+          infoRow('Branch', a.branch_code || '00000') +
+          infoRow('Website', a.website || '-') +
+          infoRow('Status', status) +
+          infoRow('Tier', tier) +
+          infoRow('Credit Term', (a.credit_term || 30) + ' days') +
+          infoRow('Created By', a.created_by_name || '-') +
+        '</div>' +
+        '<div class="card">' +
+          '<div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Contact Information</div>' +
+          (contacts.length > 0 ?
+            '<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">ผู้ติดต่อหลัก</div>' +
+            infoRow('Name', contacts[0].first_name + ' ' + contacts[0].last_name) +
+            infoRow('Position', contacts[0].title || '-') +
+          '' : '') +
+          infoRow('Phone', phone) +
+          infoRow('Email', email) +
+          infoRow('Address', [a.address, a.sub_district, a.district, a.province, a.postal_code].filter(Boolean).join(', ') || '-') +
+        '</div>' +
+      '</div><div>' +
+        '<div class="card" style="margin-bottom:16px">' +
+          '<div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Tags</div>' +
+          (tags.length ? tags.map(function(t){ return '<span class="tag">' + esc(t) + '</span> '; }).join('') : '<span style="color:var(--text3);font-size:12px">No tags</span>') +
+        '</div>' +
+        '<div class="card">' +
+          '<div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Notes</div>' +
+          '<div style="font-size:13px;color:var(--text2)">' + esc(a.internal_notes || 'No notes') + '</div>' +
+        '</div>' +
+      '</div></div></div>' +
+
+      '<div class="tab-content" id="tab-contacts"><div class="card">' +
+        '<div style="display:flex;justify-content:space-between;margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:var(--sf-blue)">Contacts</div><button class="btn btn-primary" style="padding:6px 14px;font-size:12px" onclick="addContact()">+ Add</button></div>' +
+        (contacts.length === 0 ? '<div class="empty-state">No contacts</div>' :
+          contacts.map(function(c) {
+            return '<div class="contact-card"><div class="contact-avatar">' + esc((c.first_name||'?')[0]) + '</div><div style="flex:1">' +
+              '<div style="font-size:14px;font-weight:600">' + esc(c.first_name + ' ' + c.last_name) + '</div>' +
+              '<div style="font-size:12px;color:var(--text2)">' + esc(c.title||'') + (c.department ? ' &middot; ' + esc(c.department) : '') + '</div>' +
+              '<div style="font-size:12px;color:var(--text2);margin-top:4px">' + esc(c.phone||'') + (c.email ? ' &middot; ' + esc(c.email) : '') + '</div>' +
+            '</div></div>';
+          }).join('')) +
+      '</div></div>' +
+
+      '<div class="tab-content" id="tab-timeline"><div class="card">' +
+        '<div class="timeline-item"><div class="timeline-dot" style="background:var(--sf-blue)"></div><div><div style="font-size:13px;font-weight:500">Account created</div><div style="font-size:12px;color:var(--text3)">' + (a.created_at ? a.created_at.slice(0,10) : '') + '</div></div></div>' +
+        activities.map(function(act) {
+          return '<div class="timeline-item"><div class="timeline-dot" style="background:var(--sf-blue)"></div><div><div style="font-size:13px;font-weight:500">' + esc(act.summary||'') + '</div><div style="font-size:12px;color:var(--text3)">' + (act.timestamp ? act.timestamp.slice(0,10) : '') + '</div></div></div>';
+        }).join('') +
+      '</div></div>';
+
+  } catch(e) {
+    console.error('loadDetail error:', e);
+    document.getElementById('page-content').innerHTML = '<div class="empty-state" style="color:var(--red)">Error: ' + esc(e.message) + '<br><br><a href="accounts.html" class="btn btn-secondary">Back to Accounts</a></div>';
+  }
+}
+
+function infoRow(label, value) {
+  return '<div class="info-row"><span class="info-label">' + esc(label) + '</span><span class="info-value">' + esc(value) + '</span></div>';
+}
+
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(function(el){ el.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(el){ el.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
 }
 
-/* ══════════════════════════════════════════════════════════
-   Documents — Upload, Preview, Download
-   ══════════════════════════════════════════════════════════ */
-var accountDocs = []; // {id, name, size, type, dataUrl, uploadedAt}
-
-function getFileIcon(type, name) {
-  var ext = (name || '').split('.').pop().toLowerCase();
-  if (type && type.indexOf('pdf') >= 0 || ext === 'pdf')
-    return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C23934" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>';
-  if (type && type.indexOf('image') >= 0 || ['png','jpg','jpeg','gif','webp'].indexOf(ext) >= 0)
-    return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B827C" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
-  if (['doc','docx'].indexOf(ext) >= 0)
-    return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0176D3" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>';
-  if (['xls','xlsx','csv'].indexOf(ext) >= 0)
-    return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E844A" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><rect x="8" y="13" width="8" height="4"/></svg>';
-  return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+function addContact() {
+  var first = prompt('First name:');
+  if (!first) return;
+  var last = prompt('Last name:') || '';
+  apiFetch('/accounts/' + accountId + '/contacts', {
+    method: 'POST',
+    body: JSON.stringify({ firstName: first, lastName: last })
+  }).then(function() { location.reload(); }).catch(function(e) { alert('Error: ' + e.message); });
 }
 
-function fmtSize(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / 1048576).toFixed(1) + ' MB';
+function createLeadFromAccount() {
+  var contactName = prompt('Contact name for this lead:');
+  if (!contactName) return;
+  var source = prompt('Source (website, referral, line, cold_call):', 'referral') || 'referral';
+
+  apiFetch('/leads', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: contactName,
+      companyName: document.querySelector('.page-title') ? document.querySelector('.page-title').textContent.trim().split(' ')[0] : '',
+      source: source,
+      metadata: { accountId: accountId }
+    })
+  }).then(function(res) {
+    if (res && res.id) {
+      alert('Lead created: ' + contactName);
+      window.location.href = 'leads.html';
+    }
+  }).catch(function(e) { alert('Error: ' + e.message); });
 }
 
-function handleUpload(files) {
-  if (!files || files.length === 0) return;
-  for (var i = 0; i < files.length; i++) {
-    var f = files[i];
-    if (f.size > 25 * 1024 * 1024) { alert(f.name + ' exceeds 25MB limit'); continue; }
-    (function(file) {
-      var reader = new FileReader();
-      reader.onload = function(ev) {
-        accountDocs.push({
-          id: Date.now() + Math.random(),
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          dataUrl: ev.target.result,
-          uploadedAt: new Date().toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric' })
-        });
-        renderDocs();
-      };
-      reader.readAsDataURL(file);
-    })(f);
+function createQuotationFromAccount() {
+  window.location.href = 'quotations.html?accountId=' + accountId;
+}
+
+function openEditForm() {
+  if (!currentAccount) return;
+  var a = currentAccount;
+  var contacts = a.contacts || [];
+  var contactName = contacts.length > 0 ? (contacts[0].first_name||'') + ' ' + (contacts[0].last_name||'') : '';
+  var contactTitle = contacts.length > 0 ? (contacts[0].title||'') : '';
+  var html = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">' +
+    '<button class="btn btn-secondary" style="padding:6px 12px" onclick="loadDetail()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Cancel</button>' +
+    '<div class="page-title">Edit Customer</div></div>' +
+    '<form onsubmit="saveEdit(event)">' +
+    '<div class="card" style="margin-bottom:16px">' +
+      '<div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Company Information</div>' +
+      '<div class="form-grid">' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Company Name *</label><input class="sf7-form-input" id="e-name" value="' + esc(a.company_name||'') + '" required/></div>' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Company Name (EN)</label><input class="sf7-form-input" id="e-name-en" value="' + esc(a.company_name_en||'') + '"/></div>' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Industry</label><input class="sf7-form-input" id="e-industry" value="' + esc(a.industry||'') + '"/></div>' +
+      '</div>' +
+      '<div class="form-grid" style="margin-top:12px">' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Tax ID</label><input class="sf7-form-input" id="e-tax" value="' + esc(a.tax_id||'') + '" maxlength="13"/></div>' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Website</label><input class="sf7-form-input" id="e-website" value="' + esc(a.website||'') + '"/></div>' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Status</label><select class="sf7-form-input" id="e-status"><option value="active"' + (a.account_status==='active'?' selected':'') + '>Active</option><option value="inactive"' + (a.account_status==='inactive'?' selected':'') + '>Inactive</option><option value="prospect"' + (a.account_status==='prospect'?' selected':'') + '>Prospect</option></select></div>' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Tier</label><select class="sf7-form-input" id="e-tier"><option value="standard"' + (a.account_tier==='standard'?' selected':'') + '>Standard</option><option value="silver"' + (a.account_tier==='silver'?' selected':'') + '>Silver</option><option value="gold"' + (a.account_tier==='gold'?' selected':'') + '>Gold</option><option value="platinum"' + (a.account_tier==='platinum'?' selected':'') + '>Platinum</option></select></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card" style="margin-bottom:16px">' +
+      '<div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Contact Information</div>' +
+      '<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">ผู้ติดต่อหลัก (Primary Contact)</div>' +
+      '<div class="form-grid">' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Contact Name</label><input class="sf7-form-input" id="e-contact-name" value="' + esc(contactName) + '" placeholder="ชื่อผู้ติดต่อ"/></div>' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Position / Title</label><input class="sf7-form-input" id="e-contact-title" value="' + esc(contactTitle) + '" placeholder="ตำแหน่ง"/></div>' +
+      '</div>' +
+      '<div class="form-grid" style="margin-top:12px">' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Phone</label><input class="sf7-form-input" id="e-phone" value="' + esc(a.phone||'') + '"/></div>' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Email</label><input class="sf7-form-input" id="e-email" type="email" value="' + esc(a.email||'') + '"/></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card" style="margin-bottom:16px">' +
+      '<div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Address</div>' +
+      '<div class="sf7-form-group"><label class="sf7-form-label">Address</label><textarea class="sf7-form-input" id="e-addr" rows="2">' + esc(a.address||'') + '</textarea></div>' +
+      '<div class="form-grid" style="margin-top:12px">' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Sub-district</label><input class="sf7-form-input" id="e-sub" value="' + esc(a.sub_district||'') + '"/></div>' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">District</label><input class="sf7-form-input" id="e-dist" value="' + esc(a.district||'') + '"/></div>' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Province</label><input class="sf7-form-input" id="e-prov" value="' + esc(a.province||'') + '"/></div>' +
+      '</div>' +
+      '<div class="form-grid" style="margin-top:12px">' +
+        '<div class="sf7-form-group"><label class="sf7-form-label">Postal Code</label><input class="sf7-form-input" id="e-zip" value="' + esc(a.postal_code||'') + '" maxlength="5"/></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card" style="margin-bottom:16px">' +
+      '<div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Notes</div>' +
+      '<div class="sf7-form-group"><textarea class="sf7-form-input" id="e-notes" rows="3">' + esc(a.internal_notes||'') + '</textarea></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;justify-content:flex-end">' +
+      '<button type="button" class="btn btn-secondary" onclick="loadDetail()">Cancel</button>' +
+      '<button type="submit" class="btn btn-primary">Save Changes</button>' +
+    '</div></form>';
+  document.getElementById('page-content').innerHTML = html;
+}
+
+async function saveEdit(e) {
+  e.preventDefault();
+  var data = {
+    companyName: document.getElementById('e-name').value,
+    companyNameEn: document.getElementById('e-name-en').value || null,
+    industry: document.getElementById('e-industry').value || null,
+    taxId: document.getElementById('e-tax').value || null,
+    accountStatus: document.getElementById('e-status').value,
+    accountTier: document.getElementById('e-tier').value,
+    phone: document.getElementById('e-phone').value || null,
+    email: document.getElementById('e-email').value || null,
+    website: document.getElementById('e-website').value || null,
+    address: document.getElementById('e-addr').value || null,
+    subDistrict: document.getElementById('e-sub').value || null,
+    district: document.getElementById('e-dist').value || null,
+    province: document.getElementById('e-prov').value || null,
+    postalCode: document.getElementById('e-zip').value || null,
+    internalNotes: document.getElementById('e-notes').value || null,
+  };
+  try {
+    await apiFetch('/accounts/' + accountId, { method: 'PATCH', body: JSON.stringify(data) });
+
+    // Update or create primary contact
+    var contactNameVal = (document.getElementById('e-contact-name') || {}).value || '';
+    var contactTitleVal = (document.getElementById('e-contact-title') || {}).value || '';
+    if (contactNameVal) {
+      var parts = contactNameVal.trim().split(' ');
+      var firstName = parts[0] || '';
+      var lastName = parts.slice(1).join(' ') || '';
+      var contacts = (currentAccount && currentAccount.contacts) || [];
+      if (contacts.length > 0) {
+        // Update existing contact (use contacts endpoint — for now just log)
+        // TODO: add PATCH /contacts/:id endpoint
+      } else {
+        // Create new contact
+        await apiFetch('/accounts/' + accountId + '/contacts', {
+          method: 'POST',
+          body: JSON.stringify({ firstName: firstName, lastName: lastName, title: contactTitleVal, phone: data.phone, email: data.email })
+        }).catch(function(e) { console.error('Contact update:', e); });
+      }
+    }
+
+    loadDetail();
+  } catch(err) {
+    alert('Error: ' + err.message);
   }
 }
-
-function renderDocs() {
-  var el = document.getElementById('doc-list');
-  if (!el) return;
-  if (accountDocs.length === 0) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">No documents uploaded yet</div>';
-    return;
-  }
-  el.innerHTML = accountDocs.map(function(d, idx) {
-    var isImage = d.type && d.type.indexOf('image') >= 0;
-    var isPdf = d.type && d.type.indexOf('pdf') >= 0;
-    var canPreview = isImage || isPdf;
-    return '<div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;background:var(--surface2);margin-bottom:6px">' +
-      '<div style="width:40px;height:40px;border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border)">' +
-        (isImage ? '<img src="' + d.dataUrl + '" style="width:36px;height:36px;object-fit:cover;border-radius:6px"/>' : getFileIcon(d.type, d.name)) +
-      '</div>' +
-      '<div style="flex:1;min-width:0">' +
-        '<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(d.name) + '</div>' +
-        '<div style="font-size:11px;color:var(--text3)">' + fmtSize(d.size) + ' &middot; ' + d.uploadedAt + '</div>' +
-      '</div>' +
-      '<div style="display:flex;gap:6px;flex-shrink:0">' +
-        (canPreview ? '<button class="btn btn-secondary" style="padding:4px 10px;font-size:11px" onclick="previewDoc(' + idx + ')">Preview</button>' : '') +
-        '<button class="btn btn-secondary" style="padding:4px 10px;font-size:11px" onclick="downloadDoc(' + idx + ')">Download</button>' +
-        '<button style="border:none;background:none;color:var(--red);cursor:pointer;font-size:14px;padding:4px" onclick="deleteDoc(' + idx + ')" title="Delete">&times;</button>' +
-      '</div>' +
-    '</div>';
-  }).join('');
-}
-
-function previewDoc(idx) {
-  var d = accountDocs[idx];
-  if (!d) return;
-  var isImage = d.type && d.type.indexOf('image') >= 0;
-  // Create overlay
-  var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)';
-  overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
-
-  var box = document.createElement('div');
-  box.style.cssText = 'background:var(--surface);border-radius:12px;max-width:900px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)';
-
-  // Header
-  var header = document.createElement('div');
-  header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)';
-  header.innerHTML = '<div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(d.name) + '</div>' +
-    '<div style="display:flex;gap:8px;flex-shrink:0">' +
-      '<button class="btn btn-primary" style="padding:6px 14px;font-size:12px" onclick="downloadDoc(' + idx + ')">Download</button>' +
-      '<button class="btn btn-secondary" style="padding:6px 10px;font-size:14px" onclick="this.closest(\'div[style*=fixed]\').remove()">&times;</button>' +
-    '</div>';
-  box.appendChild(header);
-
-  // Content
-  var content = document.createElement('div');
-  content.style.cssText = 'flex:1;overflow:auto;padding:16px;display:flex;align-items:center;justify-content:center;min-height:300px';
-  if (isImage) {
-    content.innerHTML = '<img src="' + d.dataUrl + '" style="max-width:100%;max-height:70vh;border-radius:4px"/>';
-  } else {
-    content.innerHTML = '<iframe src="' + d.dataUrl + '" style="width:100%;height:70vh;border:none;border-radius:4px"></iframe>';
-  }
-  box.appendChild(content);
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-}
-
-function downloadDoc(idx) {
-  var d = accountDocs[idx];
-  if (!d) return;
-  var a = document.createElement('a');
-  a.href = d.dataUrl;
-  a.download = d.name;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-function deleteDoc(idx) {
-  if (!confirm('Delete "' + accountDocs[idx].name + '"?')) return;
-  accountDocs.splice(idx, 1);
-  renderDocs();
-}
-
-// Drag & drop on drop zone
-(function() {
-  setTimeout(function() {
-    var zone = document.getElementById('drop-zone');
-    if (!zone) return;
-    zone.addEventListener('dragover', function(e) {
-      e.preventDefault();
-      zone.style.borderColor = 'var(--sf-blue)';
-      zone.style.background = 'rgba(1,118,211,.04)';
-    });
-    zone.addEventListener('dragleave', function() {
-      zone.style.borderColor = '';
-      zone.style.background = '';
-    });
-    zone.addEventListener('drop', function(e) {
-      e.preventDefault();
-      zone.style.borderColor = '';
-      zone.style.background = '';
-      handleUpload(e.dataTransfer.files);
-    });
-  }, 100);
-})();
-
-// Initial render
-setTimeout(renderDocs, 50);
 </script>
 </body>
 </html>

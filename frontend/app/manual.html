@@ -60,6 +60,7 @@
 <script src="../js/nav.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('manual');
+if(!requireAuth()) throw 'auth';
 
 var ML='th';
 function setManualLang(l,btn){

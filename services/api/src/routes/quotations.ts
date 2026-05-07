@@ -72,31 +72,52 @@ quotations.post('/', async (c) => {
       await client.query(
         `INSERT INTO quotation_line_items (quotation_id, product_id, product_name, sku, quantity, unit_price, discount, wht_rate, line_total)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [qtId, li.productId, li.productName||'', li.sku||'', li.quantity, li.unitPrice, li.discount||0, li.whtRate||0, lineTotal]);
+        [qtId, li.productId||null, li.productName||'', li.sku||'', li.quantity, li.unitPrice, li.discount||0, li.whtRate||0, lineTotal]);
     }
 
     return c.json(qr.rows[0], 201);
   });
 });
 
-// ── Approve ──
+// ── Submit for Approval (Sales Rep → Manager) ──
+quotations.post('/:id/submit', async (c) => {
+  const t = c.get('tenantId');
+  const r = await query(t,
+    `UPDATE quotations SET status = 'pending_approval', updated_at = NOW() WHERE id = $1 AND status = 'draft' RETURNING *`,
+    [c.req.param('id')]);
+  if (r.rows.length === 0) return c.json({ message: 'Not found or not in draft status' }, 404);
+  return c.json(r.rows[0]);
+});
+
+// ── Approve (Manager → sent to customer) ──
 quotations.post('/:id/approve', async (c) => {
   const t = c.get('tenantId');
   const userId = c.get('userId');
   const r = await query(t,
-    `UPDATE quotations SET status = 'sent', approved_by = $1, updated_at = NOW() WHERE id = $2 AND status IN ('draft','pending_approval') RETURNING *`,
+    `UPDATE quotations SET status = 'sent', approved_by = $1, updated_at = NOW() WHERE id = $2 AND status = 'pending_approval' RETURNING *`,
     [userId, c.req.param('id')]);
-  if (r.rows.length === 0) return c.json({ message: 'Not found or already processed' }, 404);
+  if (r.rows.length === 0) return c.json({ message: 'Not found or not pending approval' }, 404);
   return c.json(r.rows[0]);
 });
 
-// ── Reject ──
+// ── Reject (Manager → back to draft for Sales Rep to revise) ──
 quotations.post('/:id/reject', async (c) => {
   const t = c.get('tenantId');
   const r = await query(t,
-    `UPDATE quotations SET status = 'rejected', updated_at = NOW() WHERE id = $1 AND status IN ('draft','pending_approval') RETURNING *`,
+    `UPDATE quotations SET status = 'draft', updated_at = NOW() WHERE id = $1 AND status = 'pending_approval' RETURNING *`,
     [c.req.param('id')]);
-  return c.json(r.rows[0] || { message: 'Not found' });
+  if (r.rows.length === 0) return c.json({ message: 'Not found or not pending approval' }, 404);
+  return c.json(r.rows[0]);
+});
+
+// ── Mark as Accepted (customer accepted) ──
+quotations.post('/:id/accept', async (c) => {
+  const t = c.get('tenantId');
+  const r = await query(t,
+    `UPDATE quotations SET status = 'accepted', updated_at = NOW() WHERE id = $1 AND status = 'sent' RETURNING *`,
+    [c.req.param('id')]);
+  if (r.rows.length === 0) return c.json({ message: 'Not found or not in sent status' }, 404);
+  return c.json(r.rows[0]);
 });
 
 export default quotations;

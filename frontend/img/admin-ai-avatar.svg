@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <circle cx="60" cy="60" r="60" fill="url(#bg3)"/>
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0176D3"/>
+      <stop offset="100%" stop-color="#032D60"/>
+    </linearGradient>
+    <linearGradient id="hair3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1A1A2E"/>
+      <stop offset="100%" stop-color="#0F0F1A"/>
+    </linearGradient>
+    <linearGradient id="skin3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FDDCB5"/>
+      <stop offset="100%" stop-color="#F5C8A0"/>
+    </linearGradient>
+    <linearGradient id="blouse3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1B96FF"/>
+      <stop offset="100%" stop-color="#0176D3"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Hair back - long flowing -->
+  <ellipse cx="60" cy="50" rx="33" ry="36" fill="url(#hair3)"/>
+  <!-- Long hair flowing down -->
+  <path d="M28 52 Q24 70 28 90 Q30 96 34 94 Q32 76 34 58 Z" fill="url(#hair3)"/>
+  <path d="M92 52 Q96 70 92 90 Q90 96 86 94 Q88 76 86 58 Z" fill="url(#hair3)"/>
+
+  <!-- Neck -->
+  <rect x="52" y="72" width="16" height="12" rx="4" fill="url(#skin3)"/>
+
+  <!-- Blouse -->
+  <path d="M30 105 Q30 82 60 82 Q90 82 90 105 L90 120 L30 120 Z" fill="url(#blouse3)"/>
+  <!-- V-neck collar -->
+  <path d="M48 84 L60 96 L72 84" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Face -->
+  <ellipse cx="60" cy="55" rx="26" ry="28" fill="url(#skin3)"/>
+
+  <!-- Hair front - side-swept bangs -->
+  <path d="M34 46 Q34 22 60 20 Q86 22 86 46 L86 40 Q86 18 60 16 Q34 18 34 40 Z" fill="url(#hair3)"/>
+  <!-- Bangs - swept to the side -->
+  <path d="M36 44 Q40 30 50 34 Q46 26 56 28 Q52 22 62 26 Q60 20 70 26 Q68 22 76 30 Q80 28 84 40" fill="url(#hair3)"/>
+  <!-- Side hair left - long -->
+  <path d="M34 48 Q30 48 27 64 Q25 80 30 88 Q33 78 35 60 Z" fill="url(#hair3)"/>
+  <!-- Side hair right - long -->
+  <path d="M86 48 Q90 48 93 64 Q95 80 90 88 Q87 78 85 60 Z" fill="url(#hair3)"/>
+
+  <!-- Eyes - bigger, friendlier -->
+  <ellipse cx="47" cy="54" rx="5.5" ry="6" fill="#fff"/>
+  <ellipse cx="73" cy="54" rx="5.5" ry="6" fill="#fff"/>
+  <ellipse cx="48" cy="55" rx="3.5" ry="4" fill="#0176D3"/>
+  <ellipse cx="74" cy="55" rx="3.5" ry="4" fill="#0176D3"/>
+  <circle cx="49.5" cy="53.5" r="1.5" fill="#fff"/>
+  <circle cx="75.5" cy="53.5" r="1.5" fill="#fff"/>
+
+  <!-- Eyelashes -->
+  <path d="M41 49 Q44 47 47 48" fill="none" stroke="#1A1A2E" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M73 48 Q76 47 79 49" fill="none" stroke="#1A1A2E" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Eyebrows - friendly arch -->
+  <path d="M41 45 Q47 42 53 45" fill="none" stroke="#1A1A2E" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M67 45 Q73 42 79 45" fill="none" stroke="#1A1A2E" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Nose -->
+  <path d="M58 61 Q60 64 62 61" fill="none" stroke="#E8B090" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Big friendly smile -->
+  <path d="M48 67 Q60 77 72 67" fill="none" stroke="#C4836A" stroke-width="2" stroke-linecap="round"/>
+  <path d="M50 68 Q60 76 70 68" fill="#E8878A" opacity="0.6"/>
+
+  <!-- Blush -->
+  <ellipse cx="38" cy="64" rx="5" ry="3.5" fill="#FFB5B5" opacity="0.4"/>
+  <ellipse cx="82" cy="64" rx="5" ry="3.5" fill="#FFB5B5" opacity="0.4"/>
+
+  <!-- Small star/sparkle near eye (AI indicator) -->
+  <path d="M84 42 L85 39 L86 42 L89 43 L86 44 L85 47 L84 44 L81 43 Z" fill="#FFD700" opacity="0.8"/>
+  <path d="M34 38 L35 36 L36 38 L38 39 L36 40 L35 42 L34 40 L32 39 Z" fill="#FFD700" opacity="0.6"/>
+
+  <!-- Chat bubble icon on blouse -->
+  <path d="M52 96 Q52 92 58 92 L66 92 Q72 92 72 96 L72 100 Q72 104 66 104 L60 104 L56 108 L56 104 L52 104 Q52 104 52 100 Z" fill="rgba(255,255,255,.25)" stroke="rgba(255,255,255,.4)" stroke-width="0.8"/>
+  <!-- Dots in chat bubble -->
+  <circle cx="58" cy="98" r="1.2" fill="rgba(255,255,255,.6)"/>
+  <circle cx="62" cy="98" r="1.2" fill="rgba(255,255,255,.6)"/>
+  <circle cx="66" cy="98" r="1.2" fill="rgba(255,255,255,.6)"/>
+</svg>

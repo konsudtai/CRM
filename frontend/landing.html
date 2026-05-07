@@ -131,7 +131,6 @@ body{font-family:'Inter',sans-serif;color:var(--g900);background:#fff;overflow-x
   <p class="hero-sub" data-i18n="hero_sub">CRM ครบวงจรสำหรับทีมขาย SME ไทย จัดการลูกค้า ติดตามดีล ออกใบเสนอราคา และรับ Lead จาก LINE OA — ทุกอย่างในที่เดียว ไม่ต้องใช้ Excel อีกต่อไป</p>
   <div class="hero-actions">
     <a href="login.html" class="btn btn-fill btn-lg" data-i18n="hero_cta">เริ่มใช้งานเลย</a>
-    <a href="app/dashboard.html" class="btn btn-lg" style="background:var(--g50);color:var(--navy);border:1.5px solid var(--g200)" data-i18n="hero_demo">ดูตัวอย่าง Dashboard</a>
   </div>
   <div class="preview-wrap">
     <div class="preview-frame">
@@ -200,7 +199,7 @@ const I18N = {
     hero_badge:'ปิดดีลเร็วขึ้น · ไม่พลาดลูกค้า · ออกแบบเพื่อ SME ไทย',
     hero_title:'ขายเร็วขึ้น ปิดดีลได้มากขึ้น<br/>ด้วย <span>SalesFAST <span style="color:#2E844A">7</span></span>',
     hero_sub:'CRM ครบวงจรสำหรับทีมขาย SME ไทย จัดการลูกค้า ติดตามดีล ออกใบเสนอราคา และรับ Lead จาก LINE OA — ทุกอย่างในที่เดียว ไม่ต้องใช้ Excel อีกต่อไป',
-    hero_cta:'เริ่มใช้งานเลย', hero_demo:'ดูตัวอย่าง Dashboard',
+    hero_cta:'เริ่มใช้งานเลย',
     stat1_label:'ธุรกิจ SME ไทยที่ไว้วางใจ', stat2_label:'ยอดขายเพิ่มขึ้นเฉลี่ย', stat3_label:'เร็วกว่าจัดการด้วย Excel', stat4_label:'ลูกค้าพึงพอใจ',
     feat_eyebrow:'ทำไมต้อง SalesFAST 7', feat_title:'ทุกเครื่องมือที่ทีมขาย<br/>SME ไทยต้องการ', feat_sub:'ไม่ต้องใช้หลายโปรแกรม ไม่ต้องจำหลาย password ทุกอย่างอยู่ในที่เดียว ใช้งานได้ทันที ไม่ต้องเทรนนาน',
     f1_title:'เห็นยอดขายแบบ Real-time', f1_desc:'Dashboard สรุปยอดขาย Pipeline และผลงานทีมแบบ real-time ผู้บริหารเห็นภาพรวมได้ทันที ไม่ต้องรอรายงานสิ้นเดือน',
@@ -217,7 +216,7 @@ const I18N = {
     hero_badge:'Close deals faster · Never miss a lead · Built for Thai SMEs',
     hero_title:'Sell faster, close more deals<br/>with <span>SalesFAST <span style="color:#2E844A">7</span></span>',
     hero_sub:'The complete CRM for Thai SME sales teams. Manage customers, track deals, send quotations, and capture leads from LINE OA — all in one place. No more Excel.',
-    hero_cta:'Get Started', hero_demo:'View Dashboard Demo',
+    hero_cta:'Get Started',
     stat1_label:'Thai SMEs trust us', stat2_label:'Average sales increase', stat3_label:'Faster than Excel', stat4_label:'Customer satisfaction',
     feat_eyebrow:'Why SalesFAST 7', feat_title:'Every tool your Thai<br/>SME sales team needs', feat_sub:'No more juggling multiple apps. Everything in one place, ready to use from day one — no long training required.',
     f1_title:'Real-time Sales Visibility', f1_desc:'Dashboard with live KPIs, pipeline, and team performance. Managers see the full picture instantly — no waiting for end-of-month reports.',
@@ -260,6 +259,191 @@ document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 function animNum(el, target, suffix, dur) { dur = dur || 1500; let start = null; const step = ts => { if (!start) start = ts; const p = Math.min((ts - start) / dur, 1); const ease = 1 - Math.pow(1 - p, 3); el.textContent = Math.round(ease * target).toLocaleString() + (suffix || ''); if (p < 1) requestAnimationFrame(step) }; requestAnimationFrame(step) }
 const sObs = new IntersectionObserver(e => e.forEach(el => { if (el.isIntersecting) { animNum(document.getElementById('s1'), 2400, '+'); animNum(document.getElementById('s2'), 35, '%'); animNum(document.getElementById('s3'), 8, 'x'); animNum(document.getElementById('s4'), 97, '%'); sObs.disconnect() } }), { threshold: .3 });
 sObs.observe(document.querySelector('.stats'));
+</script>
+
+<!-- น้องแอ๊ด — Lead Collection Chat Widget -->
+<style>
+.ad-fab{position:fixed;bottom:24px;right:24px;z-index:900;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#0176D3,#032D60);box-shadow:0 4px 24px rgba(1,118,211,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;border:3px solid #fff;padding:0}
+.ad-fab:hover{transform:scale(1.08);box-shadow:0 6px 32px rgba(1,118,211,.5)}
+.ad-fab:active{transform:scale(.95)}
+.ad-fab-icon{width:32px;height:32px;color:#fff}
+.ad-badge{position:absolute;top:-2px;right:-2px;width:20px;height:20px;border-radius:50%;background:#2E844A;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;animation:ad-pulse 2s ease infinite}
+@keyframes ad-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.ad-panel{position:fixed;bottom:100px;right:24px;z-index:901;width:380px;max-height:560px;background:#fff;border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.18);border:1px solid #E5E7EB;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateY(12px) scale(.95);transition:all .25s;overflow:hidden}
+.ad-panel.open{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
+.ad-header{background:linear-gradient(135deg,#032D60,#0176D3);padding:16px;display:flex;align-items:center;gap:12px}
+.ad-avatar{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid rgba(255,255,255,.2);font-size:16px}
+.ad-hname{font-size:15px;font-weight:700;color:#fff}
+.ad-hstatus{font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:4px}
+.ad-hstatus span{width:6px;height:6px;border-radius:50%;background:#4BCA81}
+.ad-close{width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;margin-left:auto}
+.ad-close:hover{background:rgba(255,255,255,.2);color:#fff}
+.ad-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:220px;max-height:360px}
+.ad-msg{max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.55}
+.ad-msg.bot{background:#F3F4F6;color:#111827;align-self:flex-start;border-bottom-left-radius:4px}
+.ad-msg.usr{background:#0176D3;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.ad-typing{display:flex;gap:4px;padding:8px 14px;align-self:flex-start}
+.ad-typing span{width:6px;height:6px;border-radius:50%;background:#9CA3AF;animation:ad-dot .6s ease infinite}
+.ad-typing span:nth-child(2){animation-delay:.1s}
+.ad-typing span:nth-child(3){animation-delay:.2s}
+@keyframes ad-dot{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.ad-quick{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px}
+.ad-qbtn{padding:6px 14px;border-radius:20px;border:1px solid #E5E7EB;background:#fff;font-size:12px;font-weight:500;color:#0176D3;cursor:pointer;font-family:inherit;transition:all .15s}
+.ad-qbtn:hover{background:rgba(1,118,211,.06);border-color:#0176D3}
+.ad-input-wrap{padding:12px 16px;border-top:1px solid #E5E7EB;display:flex;gap:8px}
+.ad-input{flex:1;padding:10px 14px;border-radius:24px;border:1.5px solid #E5E7EB;background:#F9FAFB;font-size:13px;font-family:inherit;color:#111827;outline:none}
+.ad-input:focus{border-color:#0176D3}
+.ad-input::placeholder{color:#9CA3AF}
+.ad-send{width:36px;height:36px;border-radius:50%;border:none;background:#0176D3;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ad-send:hover{background:#014486}
+@media(max-width:480px){.ad-panel{width:calc(100vw - 24px);right:12px;bottom:96px;max-height:70vh}.ad-fab{bottom:16px;right:16px;width:56px;height:56px}}
+</style>
+
+<button class="ad-fab" onclick="toggleAd()" style="padding:0;overflow:hidden">
+  <img src="img/admin-ai-avatar.svg" style="width:100%;height:100%;border-radius:50%" alt="น้องแอ๊ด"/>
+  <span class="ad-badge">1</span>
+</button>
+<div class="ad-panel" id="ad-panel">
+  <div class="ad-header">
+    <div class="ad-avatar" style="padding:0;overflow:hidden"><img src="img/admin-ai-avatar.svg" style="width:100%;height:100%;border-radius:50%" alt="น้องแอ๊ด"/></div>
+    <div><div class="ad-hname">น้องแอ๊ด — Sales Assistant</div><div class="ad-hstatus"><span></span> Online</div></div>
+    <button class="ad-close" onclick="toggleAd()">&times;</button>
+  </div>
+  <div class="ad-msgs" id="ad-msgs"></div>
+  <div class="ad-quick" id="ad-quick"></div>
+  <div class="ad-input-wrap">
+    <input class="ad-input" id="ad-input" placeholder="พิมพ์ข้อความ..." onkeydown="if(event.key==='Enter')sendAd()"/>
+    <button class="ad-send" onclick="sendAd()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+  </div>
+</div>
+
+<script>
+var adOpen=false;
+
+function toggleAd(){adOpen=!adOpen;document.getElementById('ad-panel').classList.toggle('open',adOpen);if(adOpen)document.querySelector('.ad-badge').style.display='none'}
+
+function addAdMsg(type,text){var m=document.getElementById('ad-msgs'),d=document.createElement('div');d.className='ad-msg '+type;d.innerHTML=text;m.appendChild(d);m.scrollTop=m.scrollHeight}
+
+// Init greeting
+setTimeout(function(){
+  addAdMsg('bot','สวัสดีค่ะ! 👋 น้องแอ๊ดยินดีให้บริการค่ะ<br><br>สนใจสอบถามข้อมูลสินค้า บริการ หรือต้องการให้ทีมงานติดต่อกลับ สามารถพิมพ์ได้เลยค่ะ');
+  document.getElementById('ad-quick').innerHTML=['สนใจสินค้า','ขอใบเสนอราคา','ต้องการให้ติดต่อกลับ','สอบถามราคา'].map(function(t){return '<button class="ad-qbtn" onclick="document.getElementById(\'ad-input\').value=\''+t+'\';sendAd()">'+t+'</button>'}).join('');
+},500);
+
+function sendAd(){
+  var inp=document.getElementById('ad-input'),q=inp.value.trim();if(!q)return;inp.value='';
+  addAdMsg('usr',q);
+  document.getElementById('ad-quick').innerHTML='';
+
+  // Show typing
+  var ty=document.createElement('div');ty.className='ad-typing';ty.id='ad-ty';
+  ty.innerHTML='<span></span><span></span><span></span>';
+  document.getElementById('ad-msgs').appendChild(ty);
+
+  // Call AI Agent Service (streaming) — agentType: admin
+  var agentApi='https://ejk5xmi2e8.execute-api.ap-southeast-1.amazonaws.com/agents/stream';
+  var body=JSON.stringify({
+    message:q,
+    agentType:'admin',
+    tenantId:'default',
+    userId:'landing-visitor',
+    userRole:'Visitor',
+    context:'landing_page'
+  });
+
+  fetch(agentApi,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'}
+  , body:body
+  }).then(function(res){
+    var e=document.getElementById('ad-ty');if(e)e.remove();
+    if(!res.ok||!res.body){
+      // Fallback: if agent service not available, use simple lead collection
+      fallbackResponse(q);
+      return;
+    }
+    var reader=res.body.getReader();
+    var decoder=new TextDecoder();
+    var msgDiv=document.createElement('div');msgDiv.className='ad-msg bot';
+    document.getElementById('ad-msgs').appendChild(msgDiv);
+    var fullText='';
+
+    function readChunk(){
+      reader.read().then(function(result){
+        if(result.done){if(!fullText)msgDiv.innerHTML='ขออภัยค่ะ ไม่มีข้อมูลตอบกลับ กรุณาลองใหม่ค่ะ';return}
+        var chunk=decoder.decode(result.value,{stream:true});
+        chunk.split('\n').forEach(function(line){
+          if(!line.startsWith('data: '))return;
+          var data=line.slice(6).trim();
+          if(data==='[DONE]')return;
+          try{
+            var evt=JSON.parse(data);
+            if(evt.type==='text'&&evt.content){fullText+=evt.content;msgDiv.innerHTML=fullText}
+            if(evt.type==='tool_start'){msgDiv.innerHTML=fullText+'<br><span style="font-size:10px;color:#9CA3AF">กำลังค้นหาข้อมูล...</span>'}
+            if(evt.type==='lead_created'){msgDiv.innerHTML=fullText+'<br><span style="font-size:10px;color:#2E844A">✓ บันทึกข้อมูลเรียบร้อย</span>'}
+          }catch(ex){}
+        });
+        document.getElementById('ad-msgs').scrollTop=document.getElementById('ad-msgs').scrollHeight;
+        readChunk();
+      });
+    }
+    readChunk();
+  }).catch(function(){
+    var e=document.getElementById('ad-ty');if(e)e.remove();
+    fallbackResponse(q);
+  });
+}
+
+// Fallback lead collection when AI Agent is not available
+var fbStep=0;
+var fbData={name:'',phone:'',company:'',interest:'',budget:''};
+
+function fallbackResponse(q){
+  if(fbStep===0){
+    fbData.interest=q;
+    addAdMsg('bot','ขอบคุณที่สนใจค่ะ! เพื่อให้ทีมงานติดต่อกลับได้ รบกวนขอชื่อด้วยนะคะ');
+    fbStep=1;
+  } else if(fbStep===1){
+    fbData.name=q;
+    addAdMsg('bot','ขอบคุณคุณ '+q+' ค่ะ 😊 รบกวนขอเบอร์โทรศัพท์ด้วยนะคะ');
+    fbStep=2;
+  } else if(fbStep===2){
+    fbData.phone=q;
+    addAdMsg('bot','ได้ค่ะ! ชื่อบริษัทหรือองค์กรคือชื่ออะไรคะ? (พิมพ์ "-" ถ้าเป็นส่วนตัว)');
+    fbStep=3;
+  } else if(fbStep===3){
+    fbData.company=q==='-'?'':q;
+    addAdMsg('bot','สุดท้ายค่ะ งบประมาณโดยประมาณเท่าไหร่คะ? (พิมพ์ "-" ถ้ายังไม่แน่ใจ)');
+    fbStep=4;
+  } else if(fbStep===4){
+    fbData.budget=q==='-'?'':q;
+    submitFbLead();
+    addAdMsg('bot','ขอบคุณมากค่ะ! 🎉 บันทึกข้อมูลเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุดค่ะ<br><br><strong>สรุป:</strong><br>• ชื่อ: '+fbData.name+'<br>• เบอร์: '+fbData.phone+'<br>• บริษัท: '+(fbData.company||'-')+'<br>• สนใจ: '+fbData.interest+'<br>• งบ: '+(fbData.budget||'ยังไม่ระบุ'));
+    fbStep=5;
+  } else {
+    addAdMsg('bot','ขอบคุณค่ะ! ทีมงานจะติดต่อกลับเร็วๆ นี้ค่ะ หากมีคำถามเพิ่มเติมพิมพ์ได้เลยนะคะ 😊');
+  }
+}
+
+function submitFbLead(){
+  fetch('/leads',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      name:fbData.name,
+      companyName:fbData.company||'(Landing Page)',
+      phone:fbData.phone,
+      source:'Website Chat',
+      metadata:{
+        estimatedValue:parseInt(fbData.budget)||0,
+        projectName:fbData.interest,
+        notes:'Lead from landing page chat (น้องแอ๊ด)',
+        priority:'Medium',
+        budget:fbData.budget
+      }
+    })
+  }).catch(function(){});
+}
 </script>
 </body>
 </html>

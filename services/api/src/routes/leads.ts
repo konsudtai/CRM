@@ -11,6 +11,7 @@ leads.use('*', authMiddleware);
 // ── GET /leads ──
 leads.get('/', async (c) => {
   const t = c.get('tenantId');
+  const user = c.get('user') as any;
   const status = c.req.query('status');
   const assignedTo = c.req.query('assignedTo');
   const search = c.req.query('search');
@@ -21,13 +22,21 @@ leads.get('/', async (c) => {
   const params: any[] = [t];
   let idx = 2;
 
+  // Sales Rep can only see their own leads
+  const isManager = user.roles && (user.roles.includes('Admin') || user.roles.includes('Sales Manager'));
+  if (!isManager && !assignedTo) {
+    where += ` AND assigned_to = $${idx}`;
+    params.push(user.sub);
+    idx++;
+  }
+
   if (status) { where += ` AND status = $${idx}`; params.push(status); idx++; }
   if (assignedTo) { where += ` AND assigned_to = $${idx}`; params.push(assignedTo); idx++; }
   if (search) { where += ` AND (name ILIKE $${idx} OR company_name ILIKE $${idx} OR email ILIKE $${idx})`; params.push(`%${search}%`); idx++; }
 
   const countR = await query(t, `SELECT count(*) FROM leads WHERE ${where}`, params);
-  params.push(limit, (page - 1) * limit);
-  const dataR = await query(t, `SELECT * FROM leads WHERE ${where} ORDER BY created_at DESC LIMIT $${idx} OFFSET $${idx + 1}`, params);
+  const dataParams = [...params, limit, (page - 1) * limit];
+  const dataR = await query(t, `SELECT * FROM leads WHERE ${where} ORDER BY created_at DESC LIMIT $${idx} OFFSET $${idx + 1}`, dataParams);
 
   return c.json({ data: dataR.rows, total: parseInt(countR.rows[0].count), page, limit });
 });
@@ -43,14 +52,17 @@ leads.get('/:id', async (c) => {
 // ── POST /leads ──
 leads.post('/', async (c) => {
   const t = c.get('tenantId');
+  const userId = c.get('userId');
   const b = await c.req.json().catch(() => ({}));
   if (!b.name) return c.json({ message: 'name is required' }, 400);
+
+  const assignedTo = b.assignedTo || userId;
 
   const r = await query(t,
     `INSERT INTO leads (tenant_id, name, company_name, email, phone, line_id, source, status, assigned_to, metadata)
      VALUES ($1,$2,$3,$4,$5,$6,$7,'New',$8,$9) RETURNING *`,
     [t, b.name, b.companyName||null, b.email||null, b.phone||null, b.lineId||null,
-     b.source||'manual', b.assignedTo||null, JSON.stringify(b.metadata||{statusHistory:[{status:'New',timestamp:new Date().toISOString()}]})]
+     b.source||'manual', assignedTo, JSON.stringify(b.metadata||{statusHistory:[{status:'New',timestamp:new Date().toISOString()}],createdBy:userId,accountId:b.accountId||null})]
   );
   return c.json(r.rows[0], 201);
 });

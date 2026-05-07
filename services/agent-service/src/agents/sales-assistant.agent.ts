@@ -22,7 +22,7 @@ import { BedrockModel } from '@strands-agents/sdk/models/bedrock';
 // CRM Tools (existing)
 import {
   searchLeads, assignLead, createLead,
-  searchAccounts, getAccountDetail,
+  searchAccounts, getAccountDetail, getAssignedSalesRep,
   createQuotation, getQuotation, approveQuotation,
   searchProducts, searchTasks, createTask,
   searchOpportunities, draftEmail,
@@ -70,7 +70,7 @@ export function createSalesAssistantAgent(config: {
   tenantId?: string;
 }) {
   const model = new BedrockModel({
-    modelId: config.modelId || 'anthropic.claude-3-5-haiku-20241022-v1:0',
+    modelId: config.modelId || 'anthropic.claude-sonnet-4-6-20250514-v1:0',
     region: config.region || process.env.BEDROCK_REGION || 'ap-southeast-1',
     temperature: 0.4,
   });
@@ -80,7 +80,7 @@ export function createSalesAssistantAgent(config: {
   const allTools = [
     // CRM core
     searchLeads, assignLead, createLead,
-    searchAccounts, getAccountDetail,
+    searchAccounts, getAccountDetail, getAssignedSalesRep,
     createQuotation, getQuotation, approveQuotation,
     searchProducts, searchTasks, createTask,
     searchOpportunities, draftEmail,

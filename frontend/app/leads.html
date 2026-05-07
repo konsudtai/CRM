@@ -3,52 +3,64 @@
 <div class="bg-pattern"></div><div id="nav"></div>
 <div class="page anim">
   <div class="page-header"><div><div class="page-title" data-i18n="nav_pipeline">Pipeline</div><div class="page-subtitle">Manage leads and deals through every stage</div></div>
-    <div class="page-actions"><button class="btn btn-secondary">Import CSV</button><button class="btn btn-primary" onclick="openCreate()">+ New Lead</button></div></div>
-  <div class="kanban" id="kanban"></div>
+    <div class="page-actions"><select id="rep-filter" class="btn btn-secondary" style="font-size:12px;padding:8px 12px;min-width:160px" onchange="onRepFilter()"><option value="">All Sales Reps</option></select><button class="btn btn-primary" onclick="openCreate()">+ New Lead</button></div></div>
+  <div class="kanban" id="kanban"><div style="text-align:center;padding:40px;color:var(--text3)">Loading...</div></div>
 
-  <!-- Create Lead Form (hidden) -->
+  <!-- Create Lead Form -->
   <div id="lead-form" style="display:none">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> <span data-i18n="btn_back">Back</span></button>
+      <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back</button>
       <div class="page-title">New Lead</div>
     </div>
     <form onsubmit="saveLead(event)">
+
+      <!-- 1. Customer Selection -->
       <div class="card" style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Link to Existing Customer (optional)</div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">🏢 Customer</div>
         <div class="sf7-form-group" style="position:relative">
-          <label class="sf7-form-label">Search Customer</label>
-          <input class="sf7-form-input" id="fl-customer-search" placeholder="Type company name to search..." oninput="searchCustomer(this.value)" autocomplete="off"/>
-          <div id="fl-customer-results" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:10;background:var(--surface);border:1px solid var(--border);border-radius:0 0 8px 8px;box-shadow:0 8px 24px rgba(0,0,0,.1);max-height:200px;overflow-y:auto"></div>
+          <label class="sf7-form-label">Search Customer (by name, code, phone, tax ID)</label>
+          <input class="sf7-form-input" id="fl-customer-search" placeholder="Type to search..." oninput="searchCustomer(this.value)" autocomplete="off"/>
+          <div id="fl-customer-results" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:10;background:var(--surface);border:1px solid var(--border);border-radius:0 0 8px 8px;box-shadow:0 8px 24px rgba(0,0,0,.1);max-height:240px;overflow-y:auto"></div>
         </div>
-        <div id="fl-customer-selected" style="display:none;margin-top:10px;padding:12px;border-radius:8px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1)">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div style="font-size:13px;font-weight:600" id="fl-sel-name"></div>
-              <div style="font-size:11px;color:var(--text2)" id="fl-sel-info"></div>
-            </div>
-            <button type="button" onclick="clearCustomer()" style="border:none;background:none;color:var(--red);cursor:pointer;font-size:12px;font-weight:500">Remove</button>
-          </div>
-        </div>
+        <div id="fl-customer-selected" style="display:none;margin-top:10px;padding:14px;border-radius:8px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1)"></div>
       </div>
+
+      <!-- 2. Contact Person -->
       <div class="card" style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Lead Information</div>
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">👤 Contact Person</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Contact Name *</label><input class="sf7-form-input" id="fl-name" required placeholder="Khun ..."/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Company</label><input class="sf7-form-input" id="fl-company" placeholder="Company name"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Contact Name *</label><input class="sf7-form-input" id="fl-name" required placeholder="ชื่อผู้ติดต่อ"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Phone</label><input class="sf7-form-input" id="fl-contact-phone" placeholder="08x-xxx-xxxx"/></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Email</label><input class="sf7-form-input" id="fl-email" type="email"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Phone</label><input class="sf7-form-input" id="fl-phone"/></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
-          <div class="sf7-form-group"><label class="sf7-form-label">Source</label><select class="sf7-form-input" id="fl-source"><option>Website</option><option>Referral</option><option>Facebook</option><option>LINE</option><option>Event</option><option>Walk-in</option><option>Cold Call</option></select></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Budget (THB)</label><input class="sf7-form-input" id="fl-budget" type="number"/></div>
-          <div class="sf7-form-group"><label class="sf7-form-label">Assigned To</label><select class="sf7-form-input" id="fl-assigned"><option value="">-- Auto --</option></select></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Email</label><input class="sf7-form-input" id="fl-contact-email" type="email"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">LINE ID</label><input class="sf7-form-input" id="fl-contact-line" placeholder="@line_id"/></div>
         </div>
       </div>
+
+      <!-- 3. Project / Deal Info -->
+      <div class="card" style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">📋 Project / Deal Information</div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Project Name / Deal Title *</label><input class="sf7-form-input" id="fl-project" required placeholder="e.g. ระบบ ERP สำหรับ ABC Co."/></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+          <div class="sf7-form-group"><label class="sf7-form-label">Estimated Value (THB)</label><input class="sf7-form-input" id="fl-value" type="number" min="0" placeholder="0"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Expected Close Date</label><input class="sf7-form-input" id="fl-close-date" type="date"/></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Priority</label>
+            <select class="sf7-form-input" id="fl-priority"><option value="Medium">Medium</option><option value="High">High</option><option value="Low">Low</option></select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+          <div class="sf7-form-group"><label class="sf7-form-label">Source</label>
+            <select class="sf7-form-input" id="fl-source"><option>Website</option><option>Referral</option><option>Facebook</option><option>LINE</option><option>Event</option><option>Walk-in</option><option>Cold Call</option><option>Existing Customer</option></select></div>
+          <div class="sf7-form-group"><label class="sf7-form-label">Product / Service Interest</label>
+            <select class="sf7-form-input" id="fl-product"><option value="">-- Select Product --</option></select></div>
+        </div>
+        <div class="sf7-form-group" style="margin-top:12px"><label class="sf7-form-label">Notes / Requirements</label>
+          <textarea class="sf7-form-input" id="fl-notes" rows="3" placeholder="รายละเอียดเพิ่มเติม ความต้องการของลูกค้า..."></textarea></div>
+      </div>
+
       <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button type="button" class="btn btn-secondary" onclick="closeForm()" data-i18n="btn_cancel">Cancel</button>
-        <button type="submit" class="btn btn-primary" data-i18n="btn_save">Save</button>
+        <button type="button" class="btn btn-secondary" onclick="closeForm()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-save-lead">Save Lead</button>
       </div>
     </form>
   </div>
@@ -56,69 +68,10 @@
 </div>
 <script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
 <script src="../js/nav.js"></script><script src="../js/data.js"></script>
+<script src="../js/customer-search.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('leads');
-
-var selectedAccountId = null;
-
-function searchCustomer(q) {
-  var results = document.getElementById('fl-customer-results');
-  if (!q || q.length < 1) { results.style.display = 'none'; return; }
-  var query = q.toLowerCase();
-  var matches = ACCOUNTS.filter(function(a) {
-    return a.name.toLowerCase().indexOf(query) >= 0 ||
-      (a.taxId || '').indexOf(query) >= 0 ||
-      a.industry.toLowerCase().indexOf(query) >= 0 ||
-      (a.email || '').toLowerCase().indexOf(query) >= 0 ||
-      a.phone.indexOf(query) >= 0;
-  });
-  if (matches.length === 0) {
-    results.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--text3);text-align:center">No customers found — will create as new lead</div>';
-  } else {
-    results.innerHTML = matches.slice(0, 6).map(function(a) {
-      return '<div onclick="selectCustomer(' + a.id + ')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background=\'var(--row-hover)\'" onmouseout="this.style.background=\'transparent\'">' +
-        '<div style="font-size:13px;font-weight:600">' + a.name + '</div>' +
-        '<div style="font-size:11px;color:var(--text3)">' + a.industry + ' / ' + a.phone + (a.taxId ? ' / Tax: ' + a.taxId : '') + '</div>' +
-      '</div>';
-    }).join('');
-  }
-  results.style.display = 'block';
-}
-
-function selectCustomer(id) {
-  var a = ACCOUNTS.find(function(x) { return x.id === id; });
-  if (!a) return;
-  selectedAccountId = id;
-
-  // Fill form fields from customer data
-  document.getElementById('fl-company').value = a.name;
-  if (a.email) document.getElementById('fl-email').value = a.email;
-  if (a.phone) document.getElementById('fl-phone').value = a.phone;
-
-  // Show selected customer card
-  document.getElementById('fl-sel-name').textContent = a.name;
-  document.getElementById('fl-sel-info').textContent = a.industry + ' / ' + a.phone + (a.taxId ? ' / Tax: ' + a.taxId : '');
-  document.getElementById('fl-customer-selected').style.display = 'block';
-
-  // Hide search
-  document.getElementById('fl-customer-search').value = '';
-  document.getElementById('fl-customer-results').style.display = 'none';
-
-  // Also fill contact name from first contact if available
-  var contact = CONTACTS.find(function(c) { return c.accountId === id; });
-  if (contact && !document.getElementById('fl-name').value) {
-    document.getElementById('fl-name').value = contact.name;
-  }
-}
-
-function clearCustomer() {
-  selectedAccountId = null;
-  document.getElementById('fl-customer-selected').style.display = 'none';
-  document.getElementById('fl-company').value = '';
-  document.getElementById('fl-email').value = '';
-  document.getElementById('fl-phone').value = '';
-  document.getElementById('fl-name').value = '';
-}
+if(!requireAuth()) throw 'auth';
 
 // Close search results when clicking outside
 document.addEventListener('click', function(e) {
@@ -131,19 +84,25 @@ document.addEventListener('click', function(e) {
 function renderKanban(){
   var html=STAGES_ORDER.map(function(stage,colIdx){
     var leads=LEADS_DATA[stage]||[];
-    var total=leads.reduce(function(s,l){return s+(l.value||0)},0);
     var cards='';
     if(leads.length===0){
       cards='<div class="kanban-empty">Drop here</div>';
     }else{
       cards=leads.map(function(l,idx){
-        return '<div class="kanban-card" data-col="'+colIdx+'" data-idx="'+idx+'">'+
-          '<div class="kanban-card-name">'+esc(l.name)+'</div>'+
-          (l.company?'<div class="kanban-card-sub">'+esc(l.company)+'</div>':'')+
-          '<div class="kanban-card-footer"><span style="font-size:10px;color:var(--text3)">'+esc(l.source)+'</span>'+
-            (l.value?'<span style="font-size:10px;font-weight:600;color:var(--sf-blue)">'+fmt(l.value)+'</span>':'')+
+        var priColor = l.priority==='High'?'var(--red)':l.priority==='Low'?'var(--text3)':'var(--orange)';
+        return '<div class="kanban-card" data-col="'+colIdx+'" data-idx="'+idx+'" data-id="'+l.id+'">'+
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+            '<div class="kanban-card-name">'+esc(l.projectName||l.name)+'</div>'+
+            '<button onclick="event.stopPropagation();deleteLead(\''+l.id+'\')" style="border:none;background:none;color:var(--text3);cursor:pointer;padding:2px;font-size:14px;line-height:1" title="Delete">&times;</button>'+
           '</div>'+
-          (l.assigned?'<div style="font-size:10px;color:var(--text3);margin-top:6px">'+esc(l.assigned)+'</div>':'')+
+          (l.company?'<div class="kanban-card-sub">'+esc(l.company)+'</div>':'')+
+          '<div style="font-size:11px;color:var(--text2);margin-top:2px">'+esc(l.name)+'</div>'+
+          '<div class="kanban-card-footer">'+
+            '<span style="font-size:10px;color:var(--text3)">'+esc(l.source||'')+'</span>'+
+            (l.priority?'<span style="font-size:9px;font-weight:600;color:'+priColor+'">'+esc(l.priority)+'</span>':'')+
+          '</div>'+
+          (l.value?'<div style="font-size:11px;font-weight:600;color:var(--sf-blue);margin-top:4px">'+fmt(l.value)+'</div>':'')+
+          (l.customerCode?'<div style="font-size:9px;color:var(--text3);font-family:monospace;margin-top:2px">'+esc(l.customerCode)+'</div>':'')+
         '</div>';
       }).join('');
     }
@@ -154,7 +113,7 @@ function renderKanban(){
         '</div>'+
         '<span class="kanban-badge">'+leads.length+'</span>'+
       '</div>'+
-      '<div style="font-size:11px;font-weight:700;color:'+STAGE_COLORS[stage]+';margin-bottom:10px;padding:0 2px">'+fmt(total)+'</div>'+
+      '<div style="font-size:11px;font-weight:700;color:var(--sf-blue);margin-bottom:8px;padding:0 4px">'+fmt(leads.reduce(function(s,l){return s+(l.value||0)},0))+'</div>'+
       cards+
     '</div>';
   }).join('');
@@ -162,147 +121,191 @@ function renderKanban(){
 }
 
 /* ══════════════════════════════════════════════════════════
-   Mouse-based Drag & Drop (no HTML5 Drag API)
-   Works on all browsers without issues
+   Mouse-based Drag & Drop
    ══════════════════════════════════════════════════════════ */
 (function(){
-  var isDragging=false;
-  var srcCol=-1, srcIdx=-1;
-  var ghost=null;
-  var startX=0, startY=0;
-  var THRESHOLD=5; // px before drag starts
-
+  var isDragging=false, srcCol=-1, srcIdx=-1, ghost=null, startX=0, startY=0, THRESHOLD=5;
   document.addEventListener('mousedown',function(e){
-    if(e.button!==0)return; // left click only
+    if(e.button!==0)return;
     var card=e.target.closest('.kanban-card[data-col]');
     if(!card)return;
     srcCol=parseInt(card.getAttribute('data-col'));
     srcIdx=parseInt(card.getAttribute('data-idx'));
-    startX=e.clientX;
-    startY=e.clientY;
-
+    startX=e.clientX; startY=e.clientY;
     function onMove(ev){
       var dx=ev.clientX-startX, dy=ev.clientY-startY;
       if(!isDragging && Math.abs(dx)+Math.abs(dy)<THRESHOLD)return;
-
-      if(!isDragging){
-        isDragging=true;
-        card.classList.add('dragging');
-        // Create ghost element
-        ghost=card.cloneNode(true);
-        ghost.classList.remove('dragging');
-        ghost.style.cssText='position:fixed;z-index:9999;pointer-events:none;opacity:0.85;width:'+card.offsetWidth+'px;box-shadow:0 8px 32px rgba(0,0,0,.18);transform:rotate(2deg);transition:none;';
-        document.body.appendChild(ghost);
-      }
-
-      ghost.style.left=(ev.clientX-card.offsetWidth/2)+'px';
-      ghost.style.top=(ev.clientY-20)+'px';
-
-      // Highlight column under cursor
+      if(!isDragging){ isDragging=true; card.classList.add('dragging'); ghost=card.cloneNode(true); ghost.classList.remove('dragging'); ghost.style.cssText='position:fixed;z-index:9999;pointer-events:none;opacity:0.85;width:'+card.offsetWidth+'px;box-shadow:0 8px 32px rgba(0,0,0,.18);transform:rotate(2deg);transition:none;'; document.body.appendChild(ghost); }
+      ghost.style.left=(ev.clientX-card.offsetWidth/2)+'px'; ghost.style.top=(ev.clientY-20)+'px';
       highlightCol(ev.clientX,ev.clientY);
     }
-
     function onUp(ev){
-      document.removeEventListener('mousemove',onMove);
-      document.removeEventListener('mouseup',onUp);
-
+      document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp);
       if(!isDragging){srcCol=-1;srcIdx=-1;return}
-
-      // Find target column
       var targetCol=getColAt(ev.clientX,ev.clientY);
-
-      // Cleanup
       card.classList.remove('dragging');
-      if(ghost&&ghost.parentNode)ghost.parentNode.removeChild(ghost);
-      ghost=null;
+      if(ghost&&ghost.parentNode)ghost.parentNode.removeChild(ghost); ghost=null;
       document.querySelectorAll('.kanban-col').forEach(function(c){c.classList.remove('drag-over')});
-
       if(targetCol!==null && targetCol!==srcCol){
-        // Move lead data
-        var fromStage=STAGES_ORDER[srcCol];
-        var toStage=STAGES_ORDER[targetCol];
+        var fromStage=STAGES_ORDER[srcCol], toStage=STAGES_ORDER[targetCol];
         var fromList=LEADS_DATA[fromStage]||[];
         if(srcIdx>=0 && srcIdx<fromList.length){
           var lead=fromList.splice(srcIdx,1)[0];
           if(!LEADS_DATA[toStage])LEADS_DATA[toStage]=[];
           LEADS_DATA[toStage].push(lead);
           renderKanban();
+          apiFetch('/leads/'+lead.id, { method:'PATCH', body:JSON.stringify({status:toStage}) }).catch(function(err){console.error('Failed to update lead status:',err)});
         }
       }
-
       isDragging=false;srcCol=-1;srcIdx=-1;
     }
-
-    document.addEventListener('mousemove',onMove);
-    document.addEventListener('mouseup',onUp);
-    e.preventDefault(); // prevent text selection
+    document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+    e.preventDefault();
   });
-
-  function highlightCol(x,y){
-    var cols=document.querySelectorAll('.kanban-col[data-col]');
-    cols.forEach(function(c){
-      var r=c.getBoundingClientRect();
-      if(x>=r.left && x<=r.right && y>=r.top-30 && y<=r.bottom+30){
-        c.classList.add('drag-over');
-      }else{
-        c.classList.remove('drag-over');
-      }
-    });
-  }
-
-  function getColAt(x,y){
-    var cols=document.querySelectorAll('.kanban-col[data-col]');
-    for(var i=0;i<cols.length;i++){
-      var r=cols[i].getBoundingClientRect();
-      if(x>=r.left && x<=r.right && y>=r.top-30 && y<=r.bottom+30){
-        return parseInt(cols[i].getAttribute('data-col'));
-      }
-    }
-    return null;
-  }
+  function highlightCol(x,y){ document.querySelectorAll('.kanban-col[data-col]').forEach(function(c){ var r=c.getBoundingClientRect(); c.classList.toggle('drag-over', x>=r.left && x<=r.right && y>=r.top-30 && y<=r.bottom+30); }); }
+  function getColAt(x,y){ var cols=document.querySelectorAll('.kanban-col[data-col]'); for(var i=0;i<cols.length;i++){ var r=cols[i].getBoundingClientRect(); if(x>=r.left && x<=r.right && y>=r.top-30 && y<=r.bottom+30) return parseInt(cols[i].getAttribute('data-col')); } return null; }
 })();
 
-function openCreate(prefilAccountName){
+async function openCreate(prefilAccountId){
   document.getElementById('kanban').style.display='none';
   document.getElementById('lead-form').style.display='block';
-  document.getElementById('fl-name').value='';
-  document.getElementById('fl-company').value='';
-  document.getElementById('fl-email').value='';
-  document.getElementById('fl-phone').value='';
-  document.getElementById('fl-budget').value='';
-  document.getElementById('fl-customer-search').value='';
+  // Reset all fields
+  ['fl-name','fl-contact-phone','fl-contact-email','fl-contact-line','fl-project','fl-value','fl-close-date','fl-notes','fl-customer-search'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('fl-priority').value='Medium';
+  document.getElementById('fl-source').value='Website';
   document.getElementById('fl-customer-results').style.display='none';
   document.getElementById('fl-customer-selected').style.display='none';
+  document.getElementById('fl-customer-selected').innerHTML='';
   selectedAccountId=null;
-  document.getElementById('fl-assigned').innerHTML='<option value="">-- Auto --</option>'+REPS.map(r=>'<option>'+r.name+'</option>').join('');
-  window.scrollTo(0,0);
+  selectedAccountData=null;
 
-  // Auto-fill from account name if provided
-  if(prefilAccountName){
-    var acc=ACCOUNTS.find(function(a){return a.name===prefilAccountName});
-    if(acc){selectCustomer(acc.id)}
+  // Load products for dropdown
+  if(PRODUCTS.length===0) await loadProducts();
+  document.getElementById('fl-product').innerHTML='<option value="">-- Select Product --</option>'+
+    PRODUCTS.filter(function(p){return p.is_active!==false}).map(function(p){
+      return '<option value="'+p.id+'" data-name="'+esc(p.name)+'" data-sku="'+esc(p.sku)+'" data-price="'+(p.unit_price||0)+'">'+esc(p.name)+' ('+esc(p.sku)+') — '+fmt(parseFloat(p.unit_price)||0)+'</option>';
+    }).join('');
+
+  // Auto-select source if coming from existing customer
+  if(prefilAccountId){
+    document.getElementById('fl-source').value='Existing Customer';
+    await selectCustomer(prefilAccountId);
   }
+
+  window.scrollTo(0,0);
 }
+
 function closeForm(){
   document.getElementById('lead-form').style.display='none';
   document.getElementById('kanban').style.display='flex';
 }
-function saveLead(e){
+
+async function saveLead(e){
   e.preventDefault();
-  var name=document.getElementById('fl-name').value;
-  var company=document.getElementById('fl-company').value;
-  var source=document.getElementById('fl-source').value;
-  var assigned=document.getElementById('fl-assigned').value;
-  if(!LEADS_DATA['New'])LEADS_DATA['New']=[];
-  LEADS_DATA['New'].unshift({id:Date.now(),name:name,company:company,source:source,assigned:assigned||''});
-  closeForm();
+  var btn=document.getElementById('btn-save-lead');
+  btn.disabled=true; btn.textContent='Saving...';
+  try {
+    var productSel = document.getElementById('fl-product');
+    var productOpt = productSel.options[productSel.selectedIndex];
+    var productInfo = productSel.value ? {
+      productId: productSel.value,
+      productName: productOpt.dataset.name || '',
+      productSku: productOpt.dataset.sku || '',
+      productPrice: parseFloat(productOpt.dataset.price) || 0
+    } : null;
+
+    var body = {
+      name: document.getElementById('fl-name').value,
+      companyName: selectedAccountData ? selectedAccountData.company_name : '',
+      email: document.getElementById('fl-contact-email').value,
+      phone: document.getElementById('fl-contact-phone').value,
+      lineId: document.getElementById('fl-contact-line').value,
+      source: document.getElementById('fl-source').value,
+      metadata: {
+        accountId: selectedAccountId || null,
+        customerCode: selectedAccountData ? (selectedAccountData.customer_code || '') : '',
+        projectName: document.getElementById('fl-project').value,
+        estimatedValue: parseFloat(document.getElementById('fl-value').value) || 0,
+        expectedCloseDate: document.getElementById('fl-close-date').value || null,
+        priority: document.getElementById('fl-priority').value,
+        notes: document.getElementById('fl-notes').value,
+        product: productInfo,
+        contactPhone: document.getElementById('fl-contact-phone').value,
+        contactEmail: document.getElementById('fl-contact-email').value,
+        contactLine: document.getElementById('fl-contact-line').value,
+      }
+    };
+    await apiFetch('/leads', { method:'POST', body:JSON.stringify(body) });
+    closeForm();
+    await loadAndRender();
+  } catch(err) {
+    alert('Error saving lead: ' + err.message);
+  } finally {
+    btn.disabled=false; btn.textContent='Save Lead';
+  }
+}
+
+async function deleteLead(id){
+  if(!confirm('Delete this lead?')) return;
+  try {
+    await apiFetch('/leads/'+id, { method:'DELETE' });
+    await loadAndRender();
+  } catch(err) { alert('Error deleting lead: ' + err.message); }
+}
+
+async function loadAndRender(){
+  var repId=document.getElementById('rep-filter').value;
+  // loadLeads uses apiFetch('/leads?...') which auto-filters for Sales Rep on backend
+  // For Admin/Manager, pass assignedTo filter if selected
+  if(repId){
+    var res=await apiFetch('/leads?limit=100&assignedTo='+repId).catch(function(){return null});
+    var leads=(res&&res.data)||res||[];
+    LEADS_DATA={New:[],Contacted:[],Qualified:[],Proposal:[],Negotiation:[],Won:[],Lost:[]};
+    leads.forEach(function(l){
+      var s=l.status||'New';
+      var meta=(typeof l.metadata==='string'?JSON.parse(l.metadata):l.metadata)||{};
+      if(LEADS_DATA[s])LEADS_DATA[s].push({id:l.id,name:l.name,company:l.company_name,email:l.email,phone:l.phone,source:l.source,value:meta.estimatedValue||0,assignedTo:l.assigned_to,aiScore:l.ai_score,projectName:meta.projectName||'',priority:meta.priority||'',accountId:meta.accountId||null,customerCode:meta.customerCode||''});
+    });
+  } else {
+    await loadLeads();
+  }
   renderKanban();
 }
 
-renderKanban();
-// Auto-open create form with customer data if ?account= is in URL
+// ── Sales Rep filter ──
+var currentUser=getUserProfile();
+var isManagerRole=currentUser.role==='Admin'||currentUser.role==='Sales Manager';
+
+async function initRepFilter(){
+  var sel=document.getElementById('rep-filter');
+  if(!isManagerRole){
+    // Sales Rep: lock to own leads only, hide dropdown
+    sel.style.display='none';
+    return;
+  }
+  // Admin/Manager: load all users for dropdown
+  try{
+    var res=await apiFetch('/users');
+    var users=res||[];
+    sel.innerHTML='<option value="">All Sales Reps</option>'+users.map(function(u){
+      return '<option value="'+u.id+'">'+esc((u.first_name||'')+' '+(u.last_name||''))+'</option>';
+    }).join('');
+  }catch(e){console.error('loadUsers:',e)}
+}
+
+function onRepFilter(){loadAndRender()}
+
+// Initial load
+initRepFilter();
+loadAndRender();
+
+// Auto-open create form with customer data if URL params present
 (function(){
-  var p=new URLSearchParams(window.location.search).get('account');
-  if(p){openCreate(p)}
+  var params = new URLSearchParams(window.location.search);
+  var accountId = params.get('accountId');
+  if(accountId){ openCreate(accountId); }
+  if(params.get('newLead')==='1'){ openCreate(); }
 })();
 </script></body></html>

@@ -1,0 +1,273 @@
+<!DOCTYPE html><html lang="th" data-theme="light"><head><meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SalesFAST 7 — Lead Management</title><link rel="stylesheet" href="../css/app.css"/>
+<style>
+.lm-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.lm-search{flex:1;min-width:200px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-family:inherit;outline:none}
+.lm-search:focus{border-color:var(--sf-blue)}
+.lm-filter{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-family:inherit;cursor:pointer}
+.lm-stats{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.lm-stat{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);transition:all .15s}
+.lm-stat:hover{border-color:var(--sf-blue)}
+.lm-stat.active{background:var(--sf-blue);color:#fff;border-color:var(--sf-blue)}
+.lm-stat .cnt{font-weight:800;margin-left:4px}
+.lm-table{width:100%;border-collapse:separate;border-spacing:0}
+.lm-table th{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)}
+.lm-table td{padding:12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:top}
+.lm-table tr:hover td{background:rgba(1,118,211,.02)}
+.lm-name{font-weight:600;color:var(--text);cursor:pointer}.lm-name:hover{color:var(--sf-blue)}
+.lm-company{font-size:11px;color:var(--text2);margin-top:1px}
+.lm-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.lm-pri{font-size:10px;font-weight:600}
+.lm-actions{display:flex;gap:4px}
+.lm-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
+.lm-btn:hover{border-color:var(--sf-blue);color:var(--sf-blue)}
+.lm-btn-danger:hover{border-color:var(--red);color:var(--red)}
+/* Edit modal */
+.lm-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:none;align-items:center;justify-content:center}
+.lm-modal-overlay.open{display:flex}
+.lm-modal{background:var(--surface);border-radius:16px;padding:24px;width:90%;max-width:600px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.lm-modal-title{font-size:17px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.lm-modal-close{border:none;background:none;font-size:20px;cursor:pointer;color:var(--text3);padding:4px}
+.lm-empty{text-align:center;padding:40px;color:var(--text3);font-size:13px}
+</style>
+</head><body>
+<div class="bg-pattern"></div><div id="nav"></div>
+<div class="page anim">
+  <div class="page-header">
+    <div><div class="page-title">Lead Management</div><div class="page-subtitle">Search, view and edit all leads</div></div>
+    <div class="page-actions"><select id="rep-filter" class="btn btn-secondary" style="font-size:12px;padding:8px 12px;min-width:160px" onchange="loadAll()"><option value="">All Sales Reps</option></select><button class="btn btn-primary" onclick="window.location.href='leads.html?newLead=1'">+ New Lead</button></div>
+  </div>
+
+  <!-- Status filter pills -->
+  <div class="lm-stats" id="lm-stats"></div>
+
+  <!-- Search + filter bar -->
+  <div class="lm-toolbar">
+    <input class="lm-search" id="lm-search" placeholder="Search by name, company, email, phone..." oninput="debounceSearch()"/>
+    <select class="lm-filter" id="lm-sort" onchange="renderTable()">
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+      <option value="value-high">Value: High → Low</option>
+      <option value="value-low">Value: Low → High</option>
+      <option value="name">Name A-Z</option>
+    </select>
+  </div>
+
+  <!-- Lead table -->
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="overflow-x:auto">
+      <table class="lm-table">
+        <thead><tr>
+          <th>Lead / Company</th>
+          <th>Status</th>
+          <th>Value</th>
+          <th>Priority</th>
+          <th>Source</th>
+          <th>Contact</th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody id="lm-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="lm-modal-overlay" id="edit-modal">
+  <div class="lm-modal">
+    <div class="lm-modal-title"><span>Edit Lead</span><button class="lm-modal-close" onclick="closeEdit()">&times;</button></div>
+    <form onsubmit="saveEdit(event)">
+      <input type="hidden" id="ed-id"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="sf7-form-group"><label class="sf7-form-label">Contact Name *</label><input class="sf7-form-input" id="ed-name" required/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Company</label><input class="sf7-form-input" id="ed-company"/></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div class="sf7-form-group"><label class="sf7-form-label">Email</label><input class="sf7-form-input" id="ed-email" type="email"/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Phone</label><input class="sf7-form-input" id="ed-phone"/></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+        <div class="sf7-form-group"><label class="sf7-form-label">Status</label>
+          <select class="sf7-form-input" id="ed-status"><option>New</option><option>Contacted</option><option>Qualified</option><option>Proposal</option><option>Negotiation</option><option>Won</option><option>Lost</option></select></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Priority</label>
+          <select class="sf7-form-input" id="ed-priority"><option>High</option><option>Medium</option><option>Low</option></select></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Source</label>
+          <select class="sf7-form-input" id="ed-source"><option>Website</option><option>Referral</option><option>Facebook</option><option>LINE</option><option>Event</option><option>Walk-in</option><option>Cold Call</option><option>Existing Customer</option></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div class="sf7-form-group"><label class="sf7-form-label">Estimated Value (THB)</label><input class="sf7-form-input" id="ed-value" type="number" min="0"/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Project Name</label><input class="sf7-form-input" id="ed-project"/></div>
+      </div>
+      <div class="sf7-form-group" style="margin-top:12px"><label class="sf7-form-label">Notes</label><textarea class="sf7-form-input" id="ed-notes" rows="3"></textarea></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+        <button type="button" class="btn btn-secondary" onclick="closeEdit()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="ed-save-btn">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../js/helpers.js"></script><script src="../js/i18n.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
+<script>
+document.getElementById('nav').innerHTML=renderNav('lead-management');
+if(!requireAuth()) throw 'auth';
+
+var allLeads=[];
+var filterStatus='';
+var searchTimer=null;
+var statusColors={New:'#64748B',Contacted:'#0176D3',Qualified:'#0B827C',Proposal:'#D97706',Negotiation:'#DC2626',Won:'#2E844A',Lost:'#9CA3AF'};
+
+async function loadAll(){
+  var repId=(document.getElementById('rep-filter')||{}).value||'';
+  var url='/leads?limit=500';
+  if(repId) url+='&assignedTo='+repId;
+  var res=await apiFetch(url).catch(function(){return null});
+  if(!res) return;
+  allLeads=(res.data||res||[]).map(function(l){
+    var meta=(typeof l.metadata==='string'?JSON.parse(l.metadata):l.metadata)||{};
+    return {
+      id:l.id, name:l.name, company:l.company_name||'', email:l.email||'', phone:l.phone||'',
+      status:l.status||'New', source:l.source||'', assignedTo:l.assigned_to,
+      value:meta.estimatedValue||0, project:meta.projectName||'', priority:meta.priority||'Medium',
+      notes:meta.notes||'', customerCode:meta.customerCode||'', lineId:l.line_id||'',
+      createdAt:l.created_at, metadata:meta
+    };
+  });
+  renderStats();
+  renderTable();
+}
+
+// ── Sales Rep filter ──
+var currentUser=getUserProfile();
+var isManagerRole=currentUser.role==='Admin'||currentUser.role==='Sales Manager';
+
+async function initRepFilter(){
+  var sel=document.getElementById('rep-filter');
+  if(!isManagerRole){
+    sel.style.display='none';
+    return;
+  }
+  try{
+    var res=await apiFetch('/users');
+    var users=res||[];
+    sel.innerHTML='<option value="">All Sales Reps</option>'+users.map(function(u){
+      return '<option value="'+u.id+'">'+esc((u.first_name||'')+' '+(u.last_name||''))+'</option>';
+    }).join('');
+  }catch(e){console.error('loadUsers:',e)}
+}
+
+initRepFilter();
+
+function renderStats(){
+  var counts={};var total=allLeads.length;
+  allLeads.forEach(function(l){counts[l.status]=(counts[l.status]||0)+1});
+  var html='<div class="lm-stat'+(filterStatus===''?' active':'')+'" onclick="setFilter(\'\')">All<span class="cnt">'+total+'</span></div>';
+  STAGES_ORDER.forEach(function(s){
+    if(!counts[s])return;
+    html+='<div class="lm-stat'+(filterStatus===s?' active':'')+'" onclick="setFilter(\''+s+'\')" style="border-color:'+(filterStatus===s?statusColors[s]:'var(--border)')+';'+(filterStatus===s?'background:'+statusColors[s]+';color:#fff':'')+'">'+s+'<span class="cnt">'+counts[s]+'</span></div>';
+  });
+  document.getElementById('lm-stats').innerHTML=html;
+}
+
+function setFilter(s){filterStatus=s;renderStats();renderTable()}
+
+function debounceSearch(){clearTimeout(searchTimer);searchTimer=setTimeout(renderTable,200)}
+
+function getFiltered(){
+  var q=(document.getElementById('lm-search').value||'').toLowerCase().trim();
+  var list=allLeads;
+  if(filterStatus) list=list.filter(function(l){return l.status===filterStatus});
+  if(q) list=list.filter(function(l){
+    return (l.name+' '+l.company+' '+l.email+' '+l.phone+' '+l.project+' '+l.customerCode).toLowerCase().indexOf(q)>=0;
+  });
+  var sort=document.getElementById('lm-sort').value;
+  if(sort==='value-high') list.sort(function(a,b){return b.value-a.value});
+  else if(sort==='value-low') list.sort(function(a,b){return a.value-b.value});
+  else if(sort==='name') list.sort(function(a,b){return a.name.localeCompare(b.name)});
+  else if(sort==='oldest') list.sort(function(a,b){return (a.createdAt||'').localeCompare(b.createdAt||'')});
+  // default newest — already sorted by API
+  return list;
+}
+
+function renderTable(){
+  var leads=getFiltered();
+  if(leads.length===0){
+    document.getElementById('lm-tbody').innerHTML='<tr><td colspan="7" class="lm-empty">'+(allLeads.length===0?'No leads yet — create your first lead':'No leads match your search')+'</td></tr>';
+    return;
+  }
+  document.getElementById('lm-tbody').innerHTML=leads.map(function(l){
+    var sc=statusColors[l.status]||'#94A3B8';
+    var priColor=l.priority==='High'?'var(--red)':l.priority==='Low'?'var(--text3)':'var(--orange)';
+    return '<tr>'+
+      '<td><div class="lm-name" onclick="openEdit(\''+l.id+'\')">'+esc(l.name)+'</div>'+(l.company?'<div class="lm-company">'+esc(l.company)+(l.customerCode?' · '+esc(l.customerCode):'')+'</div>':'')+(l.project?'<div style="font-size:10px;color:var(--sf-blue);margin-top:2px">'+esc(l.project)+'</div>':'')+'</td>'+
+      '<td><span class="lm-badge" style="background:'+sc+'20;color:'+sc+'">'+esc(l.status)+'</span></td>'+
+      '<td style="font-weight:700;color:var(--sf-blue)">'+fmt(l.value)+'</td>'+
+      '<td><span class="lm-pri" style="color:'+priColor+'">'+esc(l.priority)+'</span></td>'+
+      '<td style="font-size:11px;color:var(--text2)">'+esc(l.source)+'</td>'+
+      '<td style="font-size:11px">'+esc(l.phone||l.email||'—')+'</td>'+
+      '<td><div class="lm-actions"><button class="lm-btn" onclick="openEdit(\''+l.id+'\')">Edit</button><button class="lm-btn lm-btn-danger" onclick="deleteLead(\''+l.id+'\')">Delete</button></div></td>'+
+    '</tr>';
+  }).join('');
+}
+
+function openEdit(id){
+  var l=allLeads.find(function(x){return x.id===id});
+  if(!l)return;
+  document.getElementById('ed-id').value=l.id;
+  document.getElementById('ed-name').value=l.name;
+  document.getElementById('ed-company').value=l.company;
+  document.getElementById('ed-email').value=l.email;
+  document.getElementById('ed-phone').value=l.phone;
+  document.getElementById('ed-status').value=l.status;
+  document.getElementById('ed-priority').value=l.priority||'Medium';
+  document.getElementById('ed-source').value=l.source||'Website';
+  document.getElementById('ed-value').value=l.value||0;
+  document.getElementById('ed-project').value=l.project;
+  document.getElementById('ed-notes').value=l.notes;
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeEdit(){document.getElementById('edit-modal').classList.remove('open')}
+
+async function saveEdit(e){
+  e.preventDefault();
+  var btn=document.getElementById('ed-save-btn');
+  btn.disabled=true;btn.textContent='Saving...';
+  try{
+    var id=document.getElementById('ed-id').value;
+    var l=allLeads.find(function(x){return x.id===id});
+    var meta=l?Object.assign({},l.metadata):{};
+    meta.estimatedValue=parseFloat(document.getElementById('ed-value').value)||0;
+    meta.projectName=document.getElementById('ed-project').value;
+    meta.priority=document.getElementById('ed-priority').value;
+    meta.notes=document.getElementById('ed-notes').value;
+
+    await apiFetch('/leads/'+id,{method:'PATCH',body:JSON.stringify({
+      name:document.getElementById('ed-name').value,
+      companyName:document.getElementById('ed-company').value,
+      email:document.getElementById('ed-email').value,
+      phone:document.getElementById('ed-phone').value,
+      status:document.getElementById('ed-status').value,
+      source:document.getElementById('ed-source').value,
+      metadata:meta
+    })});
+    closeEdit();
+    await loadAll();
+  }catch(err){alert('Error: '+err.message)}
+  finally{btn.disabled=false;btn.textContent='Save Changes'}
+}
+
+async function deleteLead(id){
+  if(!confirm('Delete this lead?'))return;
+  try{await apiFetch('/leads/'+id,{method:'DELETE'});await loadAll()}
+  catch(err){alert('Error: '+err.message)}
+}
+
+// Close modal on overlay click
+document.getElementById('edit-modal').addEventListener('click',function(e){if(e.target===this)closeEdit()});
+
+loadAll();
+setInterval(loadAll,30000);
+</script>
+</body></html>

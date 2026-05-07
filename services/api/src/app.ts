@@ -15,6 +15,7 @@ import opportunities from './routes/opportunities.js';
 import dashboard from './routes/dashboard.js';
 import notifications from './routes/notifications.js';
 import activities from './routes/activities.js';
+import agents from './routes/agents.js';
 
 const app = new Hono();
 
@@ -40,6 +41,7 @@ app.route('/opportunities', opportunities);
 app.route('/dashboard', dashboard);
 app.route('/notifications', notifications);
 app.route('/activities', activities);
+app.route('/agents', agents);
 
 // 404
 app.notFound((c) => c.json({ message: 'Not found' }, 404));

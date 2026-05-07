@@ -8,11 +8,16 @@ import { api } from '@/lib/api';
 
 type Period = 'month' | 'quarter' | 'year';
 
-interface RevenueSummary {
-  closedWon: number;
-  target: number;
-  newLeads: number;
-  conversionRate: number;
+const REFETCH_INTERVAL = 30_000; // 30 seconds realtime polling
+
+// ── Types matching real API responses ──
+
+interface KpiResponse {
+  month: { closed: number; target: number; leads: number; conv: number };
+  quarter: { closed: number; target: number; leads: number; conv: number };
+  year: { closed: number; target: number; leads: number; conv: number };
+  activeCustomers: number;
+  openTickets: number;
 }
 
 interface StageData {
@@ -33,30 +38,49 @@ interface RepPerformance {
 export default function DashboardPage() {
   const [period, setPeriod] = useState<Period>('month');
 
-  const { data: revenue } = useQuery<RevenueSummary>({
-    queryKey: ['revenue', period],
-    queryFn: () => api('/pipeline/summary', { params: { period } }),
-    placeholderData: { closedWon: 0, target: 0, newLeads: 0, conversionRate: 0 },
+  // ── KPI: revenue, target, leads, conversion (from /dashboard/kpi) ──
+  const { data: kpi } = useQuery<KpiResponse>({
+    queryKey: ['dashboard-kpi', period],
+    queryFn: () => api('/dashboard/kpi', { params: { period } }),
+    refetchInterval: REFETCH_INTERVAL,
+    placeholderData: {
+      month: { closed: 0, target: 0, leads: 0, conv: 0 },
+      quarter: { closed: 0, target: 0, leads: 0, conv: 0 },
+      year: { closed: 0, target: 0, leads: 0, conv: 0 },
+      activeCustomers: 0,
+      openTickets: 0,
+    },
   });
 
+  // ── Pipeline stages (from /dashboard/pipeline-stages) ──
   const { data: stages } = useQuery<StageData[]>({
-    queryKey: ['pipeline-stages'],
-    queryFn: () => api('/pipeline/summary'),
+    queryKey: ['dashboard-pipeline-stages'],
+    queryFn: () => api('/dashboard/pipeline-stages'),
+    refetchInterval: REFETCH_INTERVAL,
     placeholderData: [],
   });
 
+  // ── Rep performance (from /dashboard/rep-performance) ──
   const { data: reps } = useQuery<RepPerformance[]>({
-    queryKey: ['rep-performance', period],
-    queryFn: () => api('/targets', { params: { period } }),
+    queryKey: ['dashboard-rep-performance', period],
+    queryFn: () => api('/dashboard/rep-performance', { params: { period } }),
+    refetchInterval: REFETCH_INTERVAL,
     placeholderData: [],
   });
 
-  const safeRevenue = revenue ?? { closedWon: 0, target: 0, newLeads: 0, conversionRate: 0 };
+  const safeKpi = kpi ?? {
+    month: { closed: 0, target: 0, leads: 0, conv: 0 },
+    quarter: { closed: 0, target: 0, leads: 0, conv: 0 },
+    year: { closed: 0, target: 0, leads: 0, conv: 0 },
+    activeCustomers: 0,
+    openTickets: 0,
+  };
+  const periodKpi = safeKpi[period];
   const safeStages = stages ?? [];
   const safeReps = reps ?? [];
   const maxStageValue = Math.max(...safeStages.map((s) => s.totalValue), 1);
-  const targetPct = safeRevenue.target > 0
-    ? Math.min((safeRevenue.closedWon / safeRevenue.target) * 100, 100)
+  const targetPct = periodKpi.target > 0
+    ? Math.min((periodKpi.closed / periodKpi.target) * 100, 100)
     : 0;
 
   return (
@@ -87,13 +111,13 @@ export default function DashboardPage() {
         <Card>
           <Body size="caption" className="!text-[rgba(0,0,0,0.48)]">รายได้ (Closed-Won)</Body>
           <p className="mt-2 font-sf-pro-display text-[28px] font-semibold leading-[1.14] tracking-[0.196px] text-[#1d1d1f]">
-            {formatBaht(safeRevenue.closedWon)}
+            {formatBaht(periodKpi.closed)}
           </p>
         </Card>
         <Card>
           <Body size="caption" className="!text-[rgba(0,0,0,0.48)]">เป้าหมาย</Body>
           <p className="mt-2 font-sf-pro-display text-[28px] font-semibold leading-[1.14] tracking-[0.196px] text-[#1d1d1f]">
-            {formatBaht(safeRevenue.target)}
+            {formatBaht(periodKpi.target)}
           </p>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.06]">
             <div
@@ -105,13 +129,13 @@ export default function DashboardPage() {
         <Card>
           <Body size="caption" className="!text-[rgba(0,0,0,0.48)]">ลีดใหม่</Body>
           <p className="mt-2 font-sf-pro-display text-[28px] font-semibold leading-[1.14] tracking-[0.196px] text-[#1d1d1f]">
-            {safeRevenue.newLeads}
+            {periodKpi.leads}
           </p>
         </Card>
         <Card>
           <Body size="caption" className="!text-[rgba(0,0,0,0.48)]">อัตราการแปลง</Body>
           <p className="mt-2 font-sf-pro-display text-[28px] font-semibold leading-[1.14] tracking-[0.196px] text-[#1d1d1f]">
-            {safeRevenue.conversionRate.toFixed(1)}%
+            {periodKpi.conv.toFixed(1)}%
           </p>
         </Card>
       </div>

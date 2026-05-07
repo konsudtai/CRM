@@ -15,37 +15,6 @@
 .qt-line-table input:focus,.qt-line-table select:focus{border-color:var(--sf-blue)}
 .qt-remove{width:24px;height:24px;border-radius:50%;border:none;background:rgba(194,57,52,.06);color:#C23934;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
 .qt-remove:hover{background:rgba(194,57,52,.12)}
-/* Logo upload */
-.logo-upload{width:100%;height:80px;border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .15s;overflow:hidden;position:relative}
-.logo-upload:hover{border-color:var(--sf-blue)}
-.logo-upload img{max-height:70px;max-width:100%;object-fit:contain}
-.logo-upload-text{font-size:11px;color:var(--text3);text-align:center}
-/* A4 Preview */
-.preview-overlay{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all .2s}
-.preview-overlay.open{opacity:1;visibility:visible}
-.preview-container{background:#fff;width:210mm;max-width:95vw;max-height:90vh;overflow-y:auto;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative}
-.preview-toolbar{position:sticky;top:0;z-index:1;background:#fff;padding:12px 20px;border-bottom:1px solid #e5e5e5;display:flex;justify-content:space-between;align-items:center}
-.a4-page{width:210mm;max-width:100%;padding:20mm 18mm;font-family:'Inter',sans-serif;font-size:11px;color:#1a1a1a;line-height:1.5;box-sizing:border-box}
-.a4-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #0176D3}
-.a4-logo{max-height:60px;max-width:180px;object-fit:contain}
-.a4-company{text-align:right;font-size:10px;color:#666}
-.a4-title{font-size:22px;font-weight:800;color:#0176D3;margin-bottom:16px;letter-spacing:-.5px}
-.a4-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-.a4-info-box{background:#f8f9fa;border-radius:6px;padding:12px}
-.a4-info-label{font-size:9px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-.a4-info-value{font-size:12px;font-weight:500}
-.a4-table{width:100%;border-collapse:collapse;margin-bottom:20px}
-.a4-table th{background:#f0f4f8;padding:8px 10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;color:#555;border-bottom:1px solid #ddd;text-align:left}
-.a4-table td{padding:8px 10px;border-bottom:1px solid #eee;font-size:11px}
-.a4-table .right{text-align:right}
-.a4-totals{display:flex;justify-content:flex-end}
-.a4-totals-box{width:240px}
-.a4-totals-row{display:flex;justify-content:space-between;padding:4px 0;font-size:11px}
-.a4-totals-row.grand{border-top:2px solid #0176D3;padding-top:8px;margin-top:6px;font-size:14px;font-weight:700;color:#0176D3}
-.a4-footer{margin-top:40px;padding-top:16px;border-top:1px solid #ddd;display:grid;grid-template-columns:1fr 1fr;gap:40px}
-.a4-sig-line{border-top:1px solid #999;margin-top:40px;padding-top:6px;font-size:10px;color:#999}
-@media print{.preview-toolbar{display:none}.preview-container{max-width:none;max-height:none;box-shadow:none;border-radius:0}}
-@media(max-width:768px){.a4-page{padding:10mm 8mm}.a4-info-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -62,10 +31,11 @@
     <div class="filter-bar" style="margin-bottom:16px" id="qt-filter">
       <button class="filter-btn active" onclick="filterQt('all',this)">All</button>
       <button class="filter-btn" onclick="filterQt('draft',this)">Draft</button>
+      <button class="filter-btn" onclick="filterQt('pending_approval',this)">Pending Approval</button>
       <button class="filter-btn" onclick="filterQt('sent',this)">Sent</button>
       <button class="filter-btn" onclick="filterQt('accepted',this)">Accepted</button>
     </div>
-    <div class="card"><div class="table-wrap"><table><thead><tr><th>Number</th><th>Customer</th><th>Status</th><th>Subtotal</th><th>VAT</th><th>WHT</th><th>Total</th><th>Date</th><th style="width:140px">Actions</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
+    <div class="card"><div class="table-wrap"><table><thead><tr><th>Number</th><th>Customer</th><th>Status</th><th>Subtotal</th><th>VAT</th><th>WHT</th><th>Total</th><th>Date</th><th style="width:100px">Actions</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
   </div>
 
   <!-- Create Form -->
@@ -76,33 +46,12 @@
     </div>
     <div style="display:grid;grid-template-columns:1fr 300px;gap:16px">
       <div>
-        <!-- Company Logo + Info -->
-        <div class="card" style="margin-bottom:14px">
-          <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Company Logo & Details</div>
-          <div style="display:grid;grid-template-columns:120px 1fr;gap:14px">
-            <div>
-              <div class="logo-upload" onclick="document.getElementById('logo-input').click()" id="logo-preview">
-                <div class="logo-upload-text" id="logo-text">Click to<br/>upload logo</div>
-              </div>
-              <input type="file" id="logo-input" accept="image/*" style="display:none" onchange="handleLogo(event)"/>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div class="sf7-form-group"><label class="sf7-form-label">Company Name</label><input class="sf7-form-input" id="qt-company-name" placeholder="Your company name"/></div>
-              <div class="sf7-form-group"><label class="sf7-form-label">Tax ID</label><input class="sf7-form-input" id="qt-company-tax" placeholder="0105556012345"/></div>
-              <div class="sf7-form-group" style="grid-column:1/-1"><label class="sf7-form-label">Address</label><input class="sf7-form-input" id="qt-company-addr" placeholder="Company address"/></div>
-            </div>
-          </div>
-        </div>
         <!-- Customer -->
         <div class="card" style="margin-bottom:14px">
           <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Customer</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="sf7-form-group"><label class="sf7-form-label">Customer *</label><select class="sf7-form-input" id="qt-account" required></select></div>
-            <div class="sf7-form-group"><label class="sf7-form-label">Quotation No.</label><input class="sf7-form-input" id="qt-number" readonly style="opacity:.7"/></div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
             <div class="sf7-form-group"><label class="sf7-form-label">Valid Until</label><input class="sf7-form-input" id="qt-valid" type="date"/></div>
-            <div class="sf7-form-group"><label class="sf7-form-label">Notes</label><input class="sf7-form-input" id="qt-notes" placeholder="Optional"/></div>
           </div>
         </div>
         <!-- Lines -->
@@ -111,7 +60,7 @@
             <div style="font-size:13px;font-weight:700;color:var(--sf-blue)">Line Items</div>
             <button class="btn btn-secondary" onclick="addLine()" style="padding:5px 12px;font-size:12px">+ Add Item</button>
           </div>
-          <div class="table-wrap"><table class="qt-line-table"><thead><tr><th>Product / Description</th><th style="width:60px">Qty</th><th style="width:90px">Price</th><th style="width:70px">Disc.</th><th style="width:50px">WHT%</th><th style="width:80px">Total</th><th style="width:28px"></th></tr></thead><tbody id="qt-lines"></tbody></table></div>
+          <div class="table-wrap"><table class="qt-line-table"><thead><tr><th>Product</th><th style="width:60px">Qty</th><th style="width:90px">Price</th><th style="width:70px">Disc.</th><th style="width:50px">WHT%</th><th style="width:80px">Total</th><th style="width:28px"></th></tr></thead><tbody id="qt-lines"></tbody></table></div>
         </div>
       </div>
       <!-- Summary -->
@@ -124,18 +73,7 @@
           <div class="qt-summary-row"><span style="color:var(--text2)">WHT</span><span id="sum-wht" style="color:var(--red)">-&#3647;0</span></div>
           <div class="qt-summary-row total"><span style="color:var(--sf-blue)">Grand Total</span><span style="color:var(--sf-blue)" id="sum-grand">&#3647;0</span></div>
           <div style="display:flex;flex-direction:column;gap:8px;margin-top:20px">
-            <button class="btn btn-primary" onclick="saveQuotation('draft')" style="width:100%;justify-content:center">Save as Draft</button>
-            <button class="btn btn-secondary" onclick="submitForApproval()" style="width:100%;justify-content:center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              Submit for Approval
-            </button>
-          </div>
-          <div style="margin-top:12px;padding:10px;border-radius:8px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1)">
-            <div style="font-size:10px;font-weight:600;color:var(--sf-blue);margin-bottom:4px">APPROVAL WORKFLOW</div>
-            <div style="font-size:11px;color:var(--text2);line-height:1.5">
-              Draft &rarr; Pending Approval &rarr; Approved &rarr; Print/PDF<br/>
-              <span style="font-size:10px;color:var(--text3)">Sales Manager approval required before printing</span>
-            </div>
+            <button class="btn btn-primary" onclick="saveQuotation()" id="btn-save-qt" style="width:100%;justify-content:center">Save as Draft</button>
           </div>
         </div>
       </div>
@@ -143,210 +81,203 @@
   </div>
 </div>
 
-<!-- A4 Preview Modal -->
-<div class="preview-overlay" id="preview-overlay" onclick="if(event.target===this)closePreview()">
-  <div class="preview-container">
-    <div class="preview-toolbar">
-      <span style="font-size:13px;font-weight:600">Quotation Preview (A4)</span>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-primary" onclick="printQuotation()" style="padding:6px 16px;font-size:12px">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-          Print / Save PDF
-        </button>
-        <button class="btn btn-secondary" onclick="closePreview()" style="padding:6px 12px;font-size:12px">Close</button>
-      </div>
-    </div>
-    <div id="a4-content"></div>
-  </div>
-</div>
-
 <script src="../js/helpers.js"></script><script src="../js/i18n.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('quotations');
-let qtFilter='all',lineCounter=0,companyLogo='';
+if(!requireAuth()) throw 'auth';
 
-function filterQt(f,btn){qtFilter=f;document.querySelectorAll('#qt-filter .filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTable()}
+var qtFilter='all', lineCounter=0;
+
+function filterQt(f,btn){qtFilter=f;document.querySelectorAll('#qt-filter .filter-btn').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');renderTable()}
+
 function renderTable(){
-  const f=qtFilter==='all'?QUOTATIONS:QUOTATIONS.filter(q=>q.status===qtFilter);
-  document.getElementById('tbody').innerHTML=f.map(q=>{
-    var actions='';
-    if(q.status==='draft') actions='<button class="btn btn-secondary" style="padding:3px 10px;font-size:11px" onclick="event.stopPropagation()">Submit</button>';
-    else if(q.status==='pending_approval') actions='<span style="font-size:11px;color:#DD7A01;font-weight:600">Awaiting</span>';
-    else if(q.status==='sent'||q.status==='accepted') actions='<span style="font-size:11px;color:#2E844A;font-weight:600">Approved</span>&nbsp;<button class="btn btn-secondary" style="padding:2px 8px;font-size:10px;color:#06C755;border-color:#06C755" onclick="event.stopPropagation();sendQtLine('+q.id+')">LINE</button>';
-    else if(q.status==='rejected') actions='<span style="font-size:11px;color:#C23934;font-weight:600">Rejected</span>';
-    return '<tr><td><a href="quotation-detail.html?id='+q.id+'" class="table-link">'+q.number+'</a></td><td style="color:var(--text2);font-size:12px">'+q.account+'</td><td><span class="status-badge" style="background:'+STATUS_COLORS[q.status]+'18;color:'+STATUS_COLORS[q.status]+'">'+(STATUS_LABELS[q.status]||q.status)+'</span></td><td>'+fmt(q.subtotal)+'</td><td>'+fmt(q.vat)+'</td><td style="color:var(--red)">-'+fmt(q.wht)+'</td><td style="font-weight:600;color:var(--sf-blue)">'+fmt(q.grand)+'</td><td style="color:var(--text2)">'+q.date+'</td><td>'+actions+'</td></tr>';
+  var f=qtFilter==='all'?QUOTATIONS:QUOTATIONS.filter(function(q){return q.status===qtFilter});
+  document.getElementById('tbody').innerHTML=f.map(function(q){
+    var statusLabel = (STATUS_LABELS[q.status]||q.status);
+    var statusColor = (STATUS_COLORS[q.status]||'var(--text2)');
+    var dateStr = q.created_at ? new Date(q.created_at).toLocaleDateString('th-TH') : '-';
+    var actions = '';
+    if(q.status==='draft') actions='<button class="btn btn-primary" style="padding:3px 10px;font-size:11px" onclick="submitQt(\''+q.id+'\')">Submit for Approval</button>';
+    else if(q.status==='pending_approval') actions='<button class="btn btn-primary" style="padding:3px 10px;font-size:11px" onclick="approveQt(\''+q.id+'\')">Approve</button> <button class="btn btn-secondary" style="padding:3px 10px;font-size:11px;color:var(--red)" onclick="rejectQt(\''+q.id+'\')">Reject</button>';
+    else if(q.status==='sent') actions='<button class="btn btn-primary" style="padding:3px 10px;font-size:11px" onclick="acceptQt(\''+q.id+'\')">Mark Accepted</button>';
+    else if(q.status==='accepted') actions='<span style="font-size:11px;color:#2E844A;font-weight:600">✓ Accepted</span>';
+
+    return '<tr>'+
+      '<td style="font-weight:500;color:var(--sf-blue)">'+esc(q.quotation_number||'')+'</td>'+
+      '<td style="color:var(--text2);font-size:12px">'+esc(q.account_name||'')+'</td>'+
+      '<td><span class="status-badge" style="background:'+statusColor+'18;color:'+statusColor+'">'+statusLabel+'</span></td>'+
+      '<td>'+fmt(parseFloat(q.subtotal)||0)+'</td>'+
+      '<td>'+fmt(parseFloat(q.vat_amount)||0)+'</td>'+
+      '<td style="color:var(--red)">-'+fmt(parseFloat(q.wht_amount)||0)+'</td>'+
+      '<td style="font-weight:600;color:var(--sf-blue)">'+fmt(parseFloat(q.grand_total)||0)+'</td>'+
+      '<td style="color:var(--text2)">'+dateStr+'</td>'+
+      '<td>'+actions+'</td>'+
+    '</tr>';
   }).join('')||'<tr><td colspan="9" class="empty-state">No quotations</td></tr>';
 }
 
-function handleLogo(e){
-  const file=e.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=function(ev){
-    companyLogo=ev.target.result;
-    document.getElementById('logo-preview').innerHTML='<img src="'+companyLogo+'" alt="Logo"/>';
-  };
-  reader.readAsDataURL(file);
-}
+async function openCreate(){
+  // Load accounts and products
+  if(ACCOUNTS.length===0) await loadAccounts();
+  if(PRODUCTS.length===0) await loadProducts();
 
-function openCreate(){
-  document.getElementById('list-view').style.display='none';document.getElementById('qt-filter').style.display='none';document.getElementById('create-btn').style.display='none';document.getElementById('form-view').style.display='block';
-  document.getElementById('qt-account').innerHTML='<option value="">-- Select --</option>'+ACCOUNTS.map(a=>'<option value="'+a.name+'">'+a.name+'</option>').join('');
-  var d=new Date();d.setDate(d.getDate()+30);document.getElementById('qt-valid').value=d.toISOString().slice(0,10);
-  var year=new Date().getFullYear()+543;document.getElementById('qt-number').value='QT-'+year+'-'+String(QUOTATIONS.length+1).padStart(4,'0');
-  lineCounter=0;document.getElementById('qt-lines').innerHTML='';addLine();window.scrollTo(0,0);
+  document.getElementById('list-view').style.display='none';
+  document.getElementById('qt-filter').style.display='none';
+  document.getElementById('create-btn').style.display='none';
+  document.getElementById('form-view').style.display='block';
+
+  document.getElementById('qt-account').innerHTML='<option value="">-- Select Customer --</option>'+ACCOUNTS.map(function(a){
+    return '<option value="'+a.id+'">'+esc(a.customer_code?a.customer_code+' — ':'')+esc(a.company_name)+'</option>';
+  }).join('');
+
+  var d=new Date();d.setDate(d.getDate()+30);
+  document.getElementById('qt-valid').value=d.toISOString().slice(0,10);
+  lineCounter=0;document.getElementById('qt-lines').innerHTML='';addLine();
+  window.scrollTo(0,0);
+
   // Auto-select account if passed via URL param
-  var urlAcc=new URLSearchParams(window.location.search).get('account');
+  var urlAcc=new URLSearchParams(window.location.search).get('accountId');
   if(urlAcc){document.getElementById('qt-account').value=urlAcc}
 }
-function closeForm(){document.getElementById('form-view').style.display='none';document.getElementById('list-view').style.display='block';document.getElementById('qt-filter').style.display='inline-flex';document.getElementById('create-btn').style.display='inline-flex'}
+
+function closeForm(){
+  document.getElementById('form-view').style.display='none';
+  document.getElementById('list-view').style.display='block';
+  document.getElementById('qt-filter').style.display='inline-flex';
+  document.getElementById('create-btn').style.display='inline-flex';
+}
 
 function addLine(){
   lineCounter++;var id=lineCounter;
-  var opts='<option value="">-- Custom --</option>'+PRODUCTS.filter(p=>p.active).map(p=>'<option value="'+p.id+'" data-price="'+p.price+'" data-wht="'+p.wht+'" data-name="'+p.name+'">'+p.name+'</option>').join('');
+  var opts='<option value="">-- Custom --</option>'+PRODUCTS.filter(function(p){return p.is_active!==false}).map(function(p){
+    return '<option value="'+p.id+'" data-price="'+(p.unit_price||0)+'" data-wht="'+(p.wht_rate||0)+'" data-name="'+esc(p.name)+'" data-sku="'+(p.sku||'')+'">'+esc(p.name)+' ('+esc(p.sku)+')</option>';
+  }).join('');
   var row=document.createElement('tr');row.id='line-'+id;
-  row.innerHTML='<td><select onchange="selProd('+id+')" id="sel-'+id+'" style="margin-bottom:4px">'+opts+'</select><input type="text" id="name-'+id+'" placeholder="Type product/service name"/></td><td><input type="number" value="1" min="1" onchange="calc()" id="qty-'+id+'"/></td><td><input type="number" id="price-'+id+'" onchange="calc()" placeholder="0"/></td><td><input type="number" value="0" min="0" id="disc-'+id+'" onchange="calc()"/></td><td><input type="number" value="0" min="0" max="5" id="wht-'+id+'" onchange="calc()" style="width:44px"/></td><td style="font-weight:600;color:var(--sf-blue)" id="total-'+id+'">&#3647;0</td><td><button class="qt-remove" onclick="document.getElementById(\'line-'+id+'\').remove();calc()">x</button></td>';
+  row.innerHTML='<td><select onchange="selProd('+id+')" id="sel-'+id+'" style="margin-bottom:4px">'+opts+'</select><input type="text" id="name-'+id+'" placeholder="Product name"/></td><td><input type="number" value="1" min="1" onchange="calc()" id="qty-'+id+'"/></td><td><input type="number" id="price-'+id+'" onchange="calc()" placeholder="0"/></td><td><input type="number" value="0" min="0" id="disc-'+id+'" onchange="calc()"/></td><td><input type="number" value="0" min="0" max="5" id="wht-'+id+'" onchange="calc()" style="width:44px"/></td><td style="font-weight:600;color:var(--sf-blue)" id="total-'+id+'">&#3647;0</td><td><button class="qt-remove" onclick="document.getElementById(\'line-'+id+'\').remove();calc()">x</button></td>';
   document.getElementById('qt-lines').appendChild(row);calc();
 }
-function selProd(id){var s=document.getElementById('sel-'+id),o=s.options[s.selectedIndex];if(o&&o.value){document.getElementById('name-'+id).value=o.dataset.name||'';document.getElementById('price-'+id).value=o.dataset.price||0;document.getElementById('wht-'+id).value=o.dataset.wht||0}calc()}
+
+function selProd(id){
+  var s=document.getElementById('sel-'+id),o=s.options[s.selectedIndex];
+  if(o&&o.value){
+    document.getElementById('name-'+id).value=o.dataset.name||'';
+    document.getElementById('price-'+id).value=o.dataset.price||0;
+    document.getElementById('wht-'+id).value=o.dataset.wht||0;
+  }
+  calc();
+}
 
 function calc(){
   var rows=document.getElementById('qt-lines').querySelectorAll('tr'),sub=0,disc=0,wht=0;
-  rows.forEach(function(r){var id=r.id.replace('line-','');var p=parseFloat(document.getElementById('price-'+id)?.value)||0;var q=parseInt(document.getElementById('qty-'+id)?.value)||1;var d=parseFloat(document.getElementById('disc-'+id)?.value)||0;var w=parseFloat(document.getElementById('wht-'+id)?.value)||0;var lt=p*q;sub+=lt;disc+=d;wht+=lt*(w/100);document.getElementById('total-'+id).textContent=fmt(Math.max(0,lt-d))});
+  rows.forEach(function(r){
+    var id=r.id.replace('line-','');
+    var p=parseFloat(document.getElementById('price-'+id)?.value)||0;
+    var q=parseInt(document.getElementById('qty-'+id)?.value)||1;
+    var d=parseFloat(document.getElementById('disc-'+id)?.value)||0;
+    var w=parseFloat(document.getElementById('wht-'+id)?.value)||0;
+    var lt=p*q;sub+=lt;disc+=d;wht+=lt*(w/100);
+    var el=document.getElementById('total-'+id);
+    if(el) el.textContent=fmt(Math.max(0,lt-d));
+  });
   var after=sub-disc,vat=Math.round(after*0.07),grand=Math.round(after+vat-wht);
-  document.getElementById('sum-subtotal').textContent=fmt(sub);document.getElementById('sum-discount').textContent='-'+fmt(disc);document.getElementById('sum-vat').textContent=fmt(vat);document.getElementById('sum-wht').textContent='-'+fmt(Math.round(wht));document.getElementById('sum-grand').textContent=fmt(grand);
+  document.getElementById('sum-subtotal').textContent=fmt(sub);
+  document.getElementById('sum-discount').textContent='-'+fmt(disc);
+  document.getElementById('sum-vat').textContent=fmt(vat);
+  document.getElementById('sum-wht').textContent='-'+fmt(Math.round(wht));
+  document.getElementById('sum-grand').textContent=fmt(grand);
 }
 
 function getLineItems(){
-  var items=[];document.getElementById('qt-lines').querySelectorAll('tr').forEach(function(r){var id=r.id.replace('line-','');var name=document.getElementById('name-'+id)?.value||document.getElementById('sel-'+id)?.options[document.getElementById('sel-'+id).selectedIndex]?.text||'';var p=parseFloat(document.getElementById('price-'+id)?.value)||0;var q=parseInt(document.getElementById('qty-'+id)?.value)||1;var d=parseFloat(document.getElementById('disc-'+id)?.value)||0;var w=parseFloat(document.getElementById('wht-'+id)?.value)||0;items.push({name:name,qty:q,price:p,disc:d,wht:w,total:p*q-d})});return items;
+  var items=[];
+  document.getElementById('qt-lines').querySelectorAll('tr').forEach(function(r){
+    var id=r.id.replace('line-','');
+    var sel=document.getElementById('sel-'+id);
+    var productId=sel?sel.value:'';
+    var name=document.getElementById('name-'+id)?.value||'';
+    var sku=sel&&sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].dataset.sku||'':'';
+    var p=parseFloat(document.getElementById('price-'+id)?.value)||0;
+    var q=parseInt(document.getElementById('qty-'+id)?.value)||1;
+    var d=parseFloat(document.getElementById('disc-'+id)?.value)||0;
+    var w=parseFloat(document.getElementById('wht-'+id)?.value)||0;
+    items.push({productId:productId||undefined,productName:name,sku:sku,quantity:q,unitPrice:p,discount:d,whtRate:w});
+  });
+  return items;
 }
 
-function previewQuotation(){
-  var account=document.getElementById('qt-account').value;
-  if(!account){alert('Please select a customer');return}
+async function saveQuotation(){
+  var accountId=document.getElementById('qt-account').value;
+  if(!accountId){alert('Please select a customer');return}
   var items=getLineItems();
   if(items.length===0){alert('Add at least one item');return}
 
-  var sub=0,disc=0,whtTotal=0;
-  items.forEach(function(i){sub+=i.price*i.qty;disc+=i.disc;whtTotal+=i.price*i.qty*(i.wht/100)});
-  var after=sub-disc,vat=Math.round(after*0.07),grand=Math.round(after+vat-whtTotal);
-  var cust=ACCOUNTS.find(function(a){return a.name===account})||{};
+  var btn=document.getElementById('btn-save-qt');
+  btn.disabled=true; btn.textContent='Saving...';
 
-  var compName=document.getElementById('qt-company-name').value||'SalesFAST 7';
-  var compAddr=document.getElementById('qt-company-addr').value||'';
-  var compTax=document.getElementById('qt-company-tax').value||'';
-  var qtNum=document.getElementById('qt-number').value;
-  var qtValid=document.getElementById('qt-valid').value;
-  var qtNotes=document.getElementById('qt-notes').value||'';
-  var today=new Date().toLocaleDateString('en-GB');
+  try {
+    var body={
+      accountId:accountId,
+      lineItems:items,
+      validUntil:document.getElementById('qt-valid').value||null,
+      totalDiscount:0
+    };
+    // Sum up discounts
+    items.forEach(function(i){body.totalDiscount+=(i.discount||0)});
 
-  // Build logo HTML
-  var logoHtml='';
-  if(companyLogo){
-    logoHtml='<img src="'+companyLogo+'" class="a4-logo"/>';
-  }else{
-    logoHtml='<div style="font-size:18px;font-weight:800;color:#0176D3">'+compName+'</div>';
+    await apiFetch('/quotations', { method:'POST', body:JSON.stringify(body) });
+    closeForm();
+    await reloadQuotations();
+  } catch(err) {
+    alert('Error: '+err.message);
+  } finally {
+    btn.disabled=false; btn.textContent='Save as Draft';
   }
-
-  // Build line items rows
-  var linesHtml='';
-  for(var i=0;i<items.length;i++){
-    var it=items[i];
-    linesHtml+='<tr>';
-    linesHtml+='<td>'+(i+1)+'</td>';
-    linesHtml+='<td>'+it.name+'</td>';
-    linesHtml+='<td class="right">'+it.qty+'</td>';
-    linesHtml+='<td class="right">'+fmt(it.price)+'</td>';
-    linesHtml+='<td class="right">'+(it.disc>0?'-'+fmt(it.disc):'-')+'</td>';
-    linesHtml+='<td class="right">'+(it.wht>0?it.wht+'%':'-')+'</td>';
-    linesHtml+='<td class="right" style="font-weight:600">'+fmt(Math.max(0,it.total))+'</td>';
-    linesHtml+='</tr>';
-  }
-
-  // Build totals
-  var totalsHtml='';
-  totalsHtml+='<div class="a4-totals-row"><span>Subtotal</span><span>'+fmt(sub)+'</span></div>';
-  if(disc>0) totalsHtml+='<div class="a4-totals-row"><span>Discount</span><span style="color:#C23934">-'+fmt(disc)+'</span></div>';
-  totalsHtml+='<div class="a4-totals-row"><span>VAT 7%</span><span>'+fmt(vat)+'</span></div>';
-  if(whtTotal>0) totalsHtml+='<div class="a4-totals-row"><span>WHT</span><span style="color:#C23934">-'+fmt(Math.round(whtTotal))+'</span></div>';
-  totalsHtml+='<div class="a4-totals-row grand"><span>Grand Total</span><span>'+fmt(grand)+'</span></div>';
-
-  // Build full A4 page
-  var html='<div class="a4-page">';
-  // Header
-  html+='<div class="a4-header">';
-  html+='<div>'+logoHtml;
-  if(compAddr) html+='<div style="font-size:10px;color:#666;margin-top:4px">'+compAddr+'</div>';
-  if(compTax) html+='<div style="font-size:10px;color:#666">Tax ID: '+compTax+'</div>';
-  html+='</div>';
-  html+='<div class="a4-company"><div style="font-size:16px;font-weight:700;color:#0176D3;margin-bottom:4px">QUOTATION</div>';
-  html+='<div>'+qtNum+'</div>';
-  html+='<div>Date: '+today+'</div>';
-  html+='<div>Valid Until: '+qtValid+'</div>';
-  html+='</div></div>';
-  // Info boxes
-  html+='<div class="a4-info-grid">';
-  html+='<div class="a4-info-box"><div class="a4-info-label">Bill To</div>';
-  html+='<div class="a4-info-value" style="font-weight:600">'+(cust.name||account)+'</div>';
-  if(cust.taxId) html+='<div style="font-size:10px;color:#666">Tax ID: '+cust.taxId+'</div>';
-  if(cust.phone) html+='<div style="font-size:10px;color:#666">'+cust.phone+(cust.email?' / '+cust.email:'')+'</div>';
-  html+='</div>';
-  html+='<div class="a4-info-box"><div class="a4-info-label">Payment Terms</div>';
-  html+='<div class="a4-info-value">Net 30 days</div>';
-  if(qtNotes) html+='<div style="font-size:10px;color:#666;margin-top:4px">'+qtNotes+'</div>';
-  html+='</div></div>';
-  // Table
-  html+='<table class="a4-table"><thead><tr>';
-  html+='<th style="width:40px">#</th><th>Description</th><th class="right" style="width:50px">Qty</th>';
-  html+='<th class="right" style="width:90px">Unit Price</th><th class="right" style="width:70px">Discount</th>';
-  html+='<th class="right" style="width:50px">WHT%</th><th class="right" style="width:90px">Amount</th>';
-  html+='</tr></thead><tbody>'+linesHtml+'</tbody></table>';
-  // Totals
-  html+='<div class="a4-totals"><div class="a4-totals-box">'+totalsHtml+'</div></div>';
-  // Signatures
-  html+='<div class="a4-footer">';
-  html+='<div><div style="font-size:10px;font-weight:600">Authorized Signature (Seller)</div>';
-  html+='<div class="a4-sig-line">Name: _____________________ Date: __________</div></div>';
-  html+='<div><div style="font-size:10px;font-weight:600">Accepted by (Customer)</div>';
-  html+='<div class="a4-sig-line">Name: _____________________ Date: __________</div></div>';
-  html+='</div>';
-  html+='</div>';
-
-  document.getElementById('a4-content').innerHTML=html;
-  document.getElementById('preview-overlay').classList.add('open');
-}
-function closePreview(){document.getElementById('preview-overlay').classList.remove('open')}
-function printQuotation(){window.print()}
-
-function saveQuotation(status){
-  var account=document.getElementById('qt-account').value;if(!account){alert('Please select a customer');return}
-  var items=getLineItems();if(items.length===0){alert('Add at least one item');return}
-  var sub=0,disc=0,whtTotal=0;items.forEach(function(i){sub+=i.price*i.qty;disc+=i.disc;whtTotal+=i.price*i.qty*(i.wht/100)});
-  var after=sub-disc,vat=Math.round(after*0.07),grand=Math.round(after+vat-whtTotal);
-  var now=new Date(),ml=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  QUOTATIONS.unshift({id:QUOTATIONS.length+1,number:document.getElementById('qt-number').value,account:account,status:status,subtotal:sub,vat:vat,wht:Math.round(whtTotal),grand:grand,date:now.getDate()+' '+ml[now.getMonth()]+' '+(now.getFullYear()+543-2000)});
-  closeForm();renderTable();
 }
 
-renderTable();
-// Auto-open create form if ?account= is in URL
-(function(){var p=new URLSearchParams(window.location.search).get('account');if(p){openCreate()}})();
-
-function submitForApproval(){
-  var account=document.getElementById('qt-account').value;
-  if(!account){alert('Please select a customer');return}
-  var items=getLineItems();if(items.length===0){alert('Add at least one item');return}
-  saveQuotation('pending_approval');
-  alert('✅ Quotation submitted for approval.\nSales Manager will review and approve.');
+async function submitQt(id){
+  if(!confirm('Submit this quotation for approval?')) return;
+  try {
+    await apiFetch('/quotations/'+id+'/submit', { method:'POST' });
+    await reloadQuotations();
+  } catch(err) { alert('Error: '+err.message); }
 }
 
-function sendQtLine(id){
-  var q=QUOTATIONS.find(function(x){return x.id===id});
-  if(!q)return;
-  var lineId=prompt('กรอก LINE User ID ของลูกค้า ('+q.account+'):');
-  if(!lineId)return;
-  // In production: POST /line/send/quotation
-  alert('✅ ส่งใบเสนอราคา '+q.number+' (฿'+q.grand.toLocaleString()+') ผ่าน LINE ไปยัง '+lineId+' เรียบร้อยแล้ว');
+async function approveQt(id){
+  if(!confirm('Approve this quotation and send to customer?')) return;
+  try {
+    await apiFetch('/quotations/'+id+'/approve', { method:'POST' });
+    await reloadQuotations();
+  } catch(err) { alert('Error: '+err.message); }
 }
+
+async function rejectQt(id){
+  if(!confirm('Reject this quotation? It will be sent back to draft for the Sales Rep to revise.')) return;
+  try {
+    await apiFetch('/quotations/'+id+'/reject', { method:'POST' });
+    await reloadQuotations();
+  } catch(err) { alert('Error: '+err.message); }
+}
+
+async function acceptQt(id){
+  if(!confirm('Mark this quotation as accepted by customer?')) return;
+  try {
+    await apiFetch('/quotations/'+id+'/accept', { method:'POST' });
+    await reloadQuotations();
+  } catch(err) { alert('Error: '+err.message); }
+}
+
+async function reloadQuotations(){
+  await loadQuotations();
+  renderTable();
+}
+
+// Initial load
+reloadQuotations();
+
+// Auto-open create form if URL param
+(function(){
+  var p=new URLSearchParams(window.location.search).get('accountId');
+  if(p){openCreate()}
+})();
 </script>
 </body>
 </html>

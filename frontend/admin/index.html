@@ -62,6 +62,9 @@
 </div>
 
 <script>
+// Auth guard — redirect to login if no token
+if (!localStorage.getItem('sf7_token')) { window.location.href = '../login.html'; }
+
 let currentSection='overview';
 function showSection(s){
   currentSection=s;

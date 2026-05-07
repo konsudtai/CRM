@@ -1087,6 +1087,13 @@ Resources:
       RouteKey: 'ANY /auth/{proxy+}'
       Target: !Sub 'integrations/${AuthIntegration}'
 
+  AuthBaseRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /auth'
+      Target: !Sub 'integrations/${AuthIntegration}'
+
   UsersRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -1094,11 +1101,25 @@ Resources:
       RouteKey: 'ANY /users/{proxy+}'
       Target: !Sub 'integrations/${AuthIntegration}'
 
+  UsersBaseRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /users'
+      Target: !Sub 'integrations/${AuthIntegration}'
+
   RolesRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref HttpApi
       RouteKey: 'ANY /roles/{proxy+}'
+      Target: !Sub 'integrations/${AuthIntegration}'
+
+  RolesBaseRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /roles'
       Target: !Sub 'integrations/${AuthIntegration}'
 
   # CRM routes
@@ -1125,11 +1146,53 @@ Resources:
       RouteKey: 'ANY /accounts/{proxy+}'
       Target: !Sub 'integrations/${CRMIntegration}'
 
+  AccountsBaseRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /accounts'
+      Target: !Sub 'integrations/${CRMIntegration}'
+
   TasksRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref HttpApi
       RouteKey: 'ANY /tasks/{proxy+}'
+      Target: !Sub 'integrations/${CRMIntegration}'
+
+  TasksBaseRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /tasks'
+      Target: !Sub 'integrations/${CRMIntegration}'
+
+  ActivitiesRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /activities/{proxy+}'
+      Target: !Sub 'integrations/${CRMIntegration}'
+
+  ActivitiesBaseRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /activities'
+      Target: !Sub 'integrations/${CRMIntegration}'
+
+  DashboardRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /dashboard/{proxy+}'
+      Target: !Sub 'integrations/${CRMIntegration}'
+
+  DashboardBaseRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /dashboard'
       Target: !Sub 'integrations/${CRMIntegration}'
 
   # Sales routes
@@ -1154,6 +1217,27 @@ Resources:
     Properties:
       ApiId: !Ref HttpApi
       RouteKey: 'ANY /leads/{proxy+}'
+      Target: !Sub 'integrations/${SalesIntegration}'
+
+  LeadsBaseRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /leads'
+      Target: !Sub 'integrations/${SalesIntegration}'
+
+  OpportunitiesRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /opportunities/{proxy+}'
+      Target: !Sub 'integrations/${SalesIntegration}'
+
+  OpportunitiesBaseRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /opportunities'
       Target: !Sub 'integrations/${SalesIntegration}'
 
   PipelineRoute:
@@ -1194,12 +1278,40 @@ Resources:
       RouteKey: 'ANY /quotations/{proxy+}'
       Target: !Sub 'integrations/${QuotationIntegration}'
 
+  QuotationsBaseRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /quotations'
+      Target: !Sub 'integrations/${QuotationIntegration}'
+
   ProductsRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref HttpApi
       RouteKey: 'ANY /products/{proxy+}'
       Target: !Sub 'integrations/${QuotationIntegration}'
+
+  ProductsBaseRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /products'
+      Target: !Sub 'integrations/${QuotationIntegration}'
+
+  NotificationsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /notifications/{proxy+}'
+      Target: !Sub 'integrations/${NotificationIntegration}'
+
+  NotificationsBaseRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /notifications'
+      Target: !Sub 'integrations/${NotificationIntegration}'
 
   # LINE OA routes (Notification service)
   LineRoute:

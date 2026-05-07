@@ -14,8 +14,18 @@ async function apiFetch(path, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (token) headers['Authorization'] = 'Bearer ' + token;
   const res = await fetch(API_BASE + path, { ...options, headers });
-  if (res.status === 401) { clearToken(); window.location.href = '../login.html'; return null; }
-  if (!res.ok) throw new Error('API error: ' + res.status);
+  if (res.status === 401) {
+    // Only redirect if we're not already on login page
+    if (!window.location.pathname.includes('login')) {
+      clearToken();
+      window.location.href = '../login.html';
+    }
+    return null;
+  }
+  if (!res.ok) {
+    const errText = await res.text().catch(() => 'Unknown error');
+    throw new Error('API ' + res.status + ': ' + errText.slice(0, 100));
+  }
   return res.json();
 }
 
@@ -78,9 +88,12 @@ async function loadLeads(status, search) {
     LEADS_DATA = { New: [], Contacted: [], Qualified: [], Proposal: [], Negotiation: [], Won: [], Lost: [] };
     leads.forEach(function(l) {
       var s = l.status || 'New';
+      var meta = (typeof l.metadata === 'string' ? JSON.parse(l.metadata) : l.metadata) || {};
       if (LEADS_DATA[s]) LEADS_DATA[s].push({
         id: l.id, name: l.name, company: l.company_name, email: l.email, phone: l.phone,
-        source: l.source, value: 0, assignedTo: l.assigned_to, aiScore: l.ai_score
+        source: l.source, value: meta.estimatedValue || 0, assignedTo: l.assigned_to, aiScore: l.ai_score,
+        projectName: meta.projectName || '', priority: meta.priority || '',
+        accountId: meta.accountId || null, customerCode: meta.customerCode || ''
       });
     });
     return leads;

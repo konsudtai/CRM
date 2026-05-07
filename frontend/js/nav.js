@@ -49,7 +49,7 @@ function getNavMenus() {
   return [
     { key:'dashboard', label:t('nav_dashboard'), items:[{page:'dashboard',name:t('nav_dashboard'),desc:t('nav_kpi_desc')}] },
     { key:'crm', label:t('nav_crm'), items:[{page:'accounts',name:t('nav_accounts'),desc:t('nav_accounts_desc')}] },
-    { key:'sales', label:t('nav_sales'), items:[{page:'leads',name:t('nav_pipeline'),desc:t('nav_pipeline_desc')}] },
+    { key:'sales', label:t('nav_sales'), items:[{page:'leads',name:t('nav_pipeline'),desc:t('nav_pipeline_desc')},{page:'lead-management',name:'Lead Management',desc:'Search, view & edit all leads'}] },
     { key:'activity', label:t('nav_activities'), items:[{page:'tasks',name:t('nav_tasks'),desc:t('nav_tasks_desc')},{page:'calendar',name:t('nav_calendar'),desc:t('nav_calendar_desc')}] },
     { key:'docs', label:t('nav_documents'), items:[{page:'quotations',name:t('nav_quotations'),desc:t('nav_quotations_desc')},{page:'products',name:t('nav_products'),desc:t('nav_products_desc')},{page:'manual',name:'User Manual',desc:'คู่มือการใช้งาน / User Guide'}] },
   ].concat(getUserProfile().role==='Admin'?[{ key:'system', label:t('nav_settings'), items:[{page:'settings',name:t('nav_settings_page'),desc:t('nav_settings_desc')}] }]:[]);
@@ -313,7 +313,7 @@ function sendCoMsg(){
 
   // Call Agent Service API (streaming)
   var user=getUserProfile();
-  var agentApi=(window.__SF7_API_BASE__||'/api')+'/agents/stream';
+  var agentApi='https://ejk5xmi2e8.execute-api.ap-southeast-1.amazonaws.com/agents/stream';
   var body=JSON.stringify({
     message:t,
     agentType:'sales-assistant',

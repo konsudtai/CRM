@@ -28,7 +28,7 @@ export function createAnalyticsAgent(config: {
   tenantId?: string;
 }) {
   const model = new BedrockModel({
-    modelId: config.modelId || 'anthropic.claude-3-5-haiku-20241022-v1:0',
+    modelId: config.modelId || 'anthropic.claude-sonnet-4-6-20250514-v1:0',
     region: config.region || process.env.BEDROCK_REGION || 'ap-southeast-1',
     temperature: 0.2,
   });

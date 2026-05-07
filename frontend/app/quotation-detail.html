@@ -76,6 +76,7 @@
 <script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML = renderNav('quotations');
+if(!requireAuth()) throw 'auth';
 
 var params = new URLSearchParams(window.location.search);
 var qtId = parseInt(params.get('id') || '1', 10);

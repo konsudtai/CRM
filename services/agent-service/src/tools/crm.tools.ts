@@ -92,6 +92,71 @@ export const createLead = tool({
 
 // ── Account & Contact ──
 
+export const getAssignedSalesRep = tool({
+  name: 'get_assigned_sales_rep',
+  description: 'ดูข้อมูล Sales Rep ที่ดูแลลูกค้า/Lead — ชื่อ, เบอร์โทร, email. ใช้เมื่อลูกค้าถามว่าใครดูแลอยู่',
+  inputSchema: z.object({
+    tenantId: z.string(),
+    leadId: z.string().optional().describe('Lead ID ที่ต้องการดูว่าใคร assign'),
+    accountId: z.string().optional().describe('Account ID ที่ต้องการดูว่าใครดูแล'),
+  }),
+  callback: async (input) => {
+    // Try lead first, then account
+    if (input.leadId) {
+      const lead = await apiCall(SALES_API, `/leads/${input.leadId}`, {
+        headers: { 'x-tenant-id': input.tenantId } as any,
+      });
+      if (lead && lead.assigned_to) {
+        const users = await apiCall(CRM_API, `/users`, {
+          headers: { 'x-tenant-id': input.tenantId } as any,
+        });
+        const rep = (users || []).find((u: any) => u.id === lead.assigned_to);
+        if (rep) {
+          return JSON.stringify({
+            salesRep: {
+              name: `${rep.first_name || ''} ${rep.last_name || ''}`.trim(),
+              email: rep.email || '',
+              phone: rep.phone || '',
+              lineId: rep.line_id || '',
+              role: rep.role || (rep.roles && rep.roles[0] && rep.roles[0].name) || 'Sales Rep',
+            },
+            leadName: lead.name,
+            leadCompany: lead.company_name,
+            status: lead.status,
+          });
+        }
+      }
+      return JSON.stringify({ message: 'Lead not found or no sales rep assigned yet' });
+    }
+    if (input.accountId) {
+      const account = await apiCall(CRM_API, `/accounts/${input.accountId}`, {
+        headers: { 'x-tenant-id': input.tenantId } as any,
+      });
+      if (account && account.account_owner) {
+        const users = await apiCall(CRM_API, `/users`, {
+          headers: { 'x-tenant-id': input.tenantId } as any,
+        });
+        const rep = (users || []).find((u: any) => u.id === account.account_owner);
+        if (rep) {
+          return JSON.stringify({
+            salesRep: {
+              name: `${rep.first_name || ''} ${rep.last_name || ''}`.trim(),
+              email: rep.email || '',
+              phone: rep.phone || '',
+              lineId: rep.line_id || '',
+              role: rep.role || (rep.roles && rep.roles[0] && rep.roles[0].name) || 'Sales Rep',
+            },
+            accountName: account.company_name,
+            accountStatus: account.account_status,
+          });
+        }
+      }
+      return JSON.stringify({ message: 'Account not found or no sales rep assigned yet' });
+    }
+    return JSON.stringify({ message: 'Please provide either leadId or accountId' });
+  },
+});
+
 export const searchAccounts = tool({
   name: 'search_accounts',
   description: 'ค้นหาข้อมูลลูกค้า (Account) ตามชื่อบริษัท, อุตสาหกรรม',

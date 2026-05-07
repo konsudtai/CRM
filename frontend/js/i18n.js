@@ -4,11 +4,11 @@ const LANG = {
 th: {
   // Nav menus
   nav_dashboard:'แดชบอร์ด', nav_crm:'CRM', nav_sales:'การขาย', nav_activities:'กิจกรรม', nav_documents:'เอกสาร', nav_settings:'ตั้งค่า',
-  nav_accounts:'บัญชีลูกค้า', nav_contacts:'ผู้ติดต่อ', nav_leads:'ลีด', nav_opportunities:'โอกาสขาย',
+  nav_accounts:'ลูกค้า', nav_contacts:'ผู้ติดต่อ', nav_leads:'ลีด', nav_opportunities:'โอกาสขาย',
   nav_pipeline:'ไปป์ไลน์', nav_pipeline_desc:'จัดการลีดและดีล',
   nav_tasks:'งาน', nav_calendar:'ปฏิทิน', nav_quotations:'ใบเสนอราคา', nav_products:'สินค้า',
   nav_notifications:'แจ้งเตือน', nav_settings_page:'ตั้งค่า',
-  nav_accounts_desc:'จัดการบัญชีลูกค้า', nav_contacts_desc:'รายชื่อผู้ติดต่อ',
+  nav_accounts_desc:'จัดการข้อมูลลูกค้า', nav_contacts_desc:'รายชื่อผู้ติดต่อ',
   nav_leads_desc:'ไปป์ไลน์ลีด', nav_opportunities_desc:'จัดการดีล',
   nav_tasks_desc:'จัดการงาน', nav_calendar_desc:'ตารางนัดหมาย',
   nav_quotations_desc:'ใบเสนอราคา', nav_products_desc:'แคตตาล็อกสินค้า',
@@ -82,11 +82,11 @@ th: {
 },
 en: {
   nav_dashboard:'Dashboard', nav_crm:'CRM', nav_sales:'Sales', nav_activities:'Activities', nav_documents:'Documents', nav_settings:'Settings',
-  nav_accounts:'Accounts', nav_contacts:'Contacts', nav_leads:'Leads', nav_opportunities:'Opportunities',
+  nav_accounts:'Customers', nav_contacts:'Contacts', nav_leads:'Leads', nav_opportunities:'Opportunities',
   nav_pipeline:'Pipeline', nav_pipeline_desc:'Manage leads and deals',
   nav_tasks:'Tasks', nav_calendar:'Calendar', nav_quotations:'Quotations', nav_products:'Products',
   nav_notifications:'Notifications', nav_settings_page:'Settings',
-  nav_accounts_desc:'Customer accounts', nav_contacts_desc:'Contact people',
+  nav_accounts_desc:'Manage customers', nav_contacts_desc:'Contact people',
   nav_leads_desc:'Lead pipeline', nav_opportunities_desc:'Deal management',
   nav_tasks_desc:'Task management', nav_calendar_desc:'Schedule & events',
   nav_quotations_desc:'Proposals & quotes', nav_products_desc:'Product catalog',

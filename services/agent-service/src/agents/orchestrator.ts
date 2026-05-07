@@ -17,6 +17,8 @@ import { z } from 'zod';
 import { createAdminAIAgent } from './admin-ai.agent';
 import { createSalesAssistantAgent } from './sales-assistant.agent';
 import { createAnalyticsAgent } from './analytics.agent';
+import { setOrchestratorRef } from '../tools/a2a.tools';
+import { getCrmMcpTools } from '../mcp/crm-mcp-client';
 
 export interface AgentConfig {
   modelId?: string;
@@ -47,9 +49,13 @@ export class AgentOrchestrator {
   private salesAgent: Agent;
   private analyticsAgent: Agent;
   private config: AgentConfig;
+  private initialized = false;
 
   constructor(config: AgentConfig) {
     this.config = config;
+
+    // Inject orchestrator reference for A2A communication
+    setOrchestratorRef(this);
 
     this.adminAgent = createAdminAIAgent({
       modelId: config.modelId,
@@ -71,6 +77,30 @@ export class AgentOrchestrator {
       region: config.region,
       tenantId: config.tenantId,
     });
+
+    // Initialize MCP tools asynchronously
+    this.initMcpTools();
+  }
+
+  /**
+   * Load CRM MCP tools and inject into all agents.
+   * Falls back to HTTP-based tools if MCP server is unavailable.
+   */
+  private async initMcpTools() {
+    if (this.initialized) return;
+    try {
+      const mcpTools = await getCrmMcpTools();
+      if (mcpTools.length > 0) {
+        // Inject MCP tools into all agents (they supplement existing tools)
+        (this.adminAgent as any).addTools?.(mcpTools);
+        (this.salesAgent as any).addTools?.(mcpTools);
+        (this.analyticsAgent as any).addTools?.(mcpTools);
+      }
+      this.initialized = true;
+    } catch (err: any) {
+      console.error(`MCP init failed (using HTTP fallback): ${err.message}`);
+      this.initialized = true;
+    }
   }
 
   /**

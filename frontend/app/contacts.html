@@ -11,6 +11,7 @@
 <script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('contacts');
+if(!requireAuth()) throw 'auth';
 function render(){const q=(document.getElementById('search').value||'').toLowerCase();const f=CONTACTS.filter(c=>c.name.toLowerCase().includes(q)||c.email.toLowerCase().includes(q));document.getElementById('tbody').innerHTML=f.map(c=>`<tr><td style="font-weight:500">${c.name}</td><td><a href="account-detail.html?id=${c.accountId}" class="table-link">${c.account}</a></td><td style="color:var(--text2)">${c.title}</td><td>${c.email}</td><td style="color:var(--text2)">${c.phone}</td><td>${c.line||'—'}</td></tr>`).join('');}
 render();
 function updateSubtitle(){var el=document.getElementById("contacts-subtitle");if(el)el.textContent="รายชื่อผู้ติดต่อทั้งหมด — "+CONTACTS.length+" รายการ";}

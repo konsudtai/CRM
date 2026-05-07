@@ -11,9 +11,10 @@ products.get('/', async (c) => {
   const limit = parseInt(c.req.query('limit') || '50');
   let where = 'tenant_id = $1';
   const params: any[] = [t];
-  if (search) { where += ` AND (name ILIKE $2 OR sku ILIKE $2)`; params.push(`%${search}%`); }
+  let idx = 2;
+  if (search) { where += ` AND (name ILIKE $${idx} OR sku ILIKE $${idx})`; params.push(`%${search}%`); idx++; }
   params.push(limit);
-  const r = await query(t, `SELECT * FROM products WHERE ${where} ORDER BY name LIMIT $${params.length}`, params);
+  const r = await query(t, `SELECT * FROM products WHERE ${where} ORDER BY name LIMIT $${idx}`, params);
   return c.json(r.rows);
 });
 
@@ -40,15 +41,30 @@ products.patch('/:id', async (c) => {
   const t = c.get('tenantId');
   const b = await c.req.json().catch(() => ({}));
   const id = c.req.param('id');
-  const sets: string[] = []; const vals: any[] = []; let i = 1;
+
+  const mapping: Record<string, string> = {
+    name: 'name', sku: 'sku', description: 'description',
+    unitPrice: 'unit_price', unitOfMeasure: 'unit_of_measure',
+    whtRate: 'wht_rate', isActive: 'is_active',
+  };
+
+  const sets: string[] = [];
+  const vals: any[] = [];
+  let i = 1;
   for (const [k, v] of Object.entries(b)) {
-    const col = k.replace(/([A-Z])/g, '_$1').toLowerCase();
-    sets.push(`${col} = $${i}`); vals.push(v); i++;
+    const col = mapping[k];
+    if (col) { sets.push(`${col} = $${i}`); vals.push(v); i++; }
   }
   if (!sets.length) return c.json({ message: 'No fields' }, 400);
   vals.push(id);
   const r = await query(t, `UPDATE products SET ${sets.join(', ')} WHERE id = $${i} RETURNING *`, vals);
   return c.json(r.rows[0] || { message: 'Not found' });
+});
+
+products.delete('/:id', async (c) => {
+  const t = c.get('tenantId');
+  await query(t, 'DELETE FROM products WHERE id = $1', [c.req.param('id')]);
+  return c.json({ message: 'Deleted' });
 });
 
 export default products;
