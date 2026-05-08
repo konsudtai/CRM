@@ -47,7 +47,8 @@ fi
 
 # ── Step 2: Install deps & build ──
 echo "[2/6] Building application..."
-npm install --no-audit --no-fund --legacy-peer-deps
+rm -f package-lock.json
+npm install --no-audit --no-fund --legacy-peer-deps --loglevel=error
 npm run build
 echo "  Built: dist/app.js ($(du -h dist/app.js | cut -f1))"
 
