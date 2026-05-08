@@ -1,20 +1,28 @@
 {
   "name": "sf7-agentcore",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
+  "type": "module",
+  "description": "SalesFAST 7 — Multi-Agent AI on AgentCore Runtime (A2A + MCP)",
   "scripts": {
-    "build": "npx esbuild src/app.ts --bundle --platform=node --target=node22 --outfile=dist/app.js --external:@aws-sdk/*",
-    "package": "cd dist && zip -r ../agent.zip app.js"
+    "build": "npx esbuild src/app.ts --bundle --platform=node --target=node22 --outfile=dist/app.js --format=esm --external:pg-native --external:@opentelemetry/api --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
+    "start": "node dist/app.js",
+    "dev": "npx tsx src/app.ts",
+    "package": "npm run build && cd dist && zip -r ../agent.zip . && cd .. && echo 'Package: agent.zip'"
   },
   "dependencies": {
-    "@strands-agents/sdk": "^0.1.0",
+    "@strands-agents/sdk": "^1.1.0",
+    "@modelcontextprotocol/sdk": "^1.12.0",
     "express": "^5.0.0",
+    "pg": "^8.16.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
     "esbuild": "^0.25.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.8.0"
   }
 }

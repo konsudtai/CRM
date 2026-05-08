@@ -340,54 +340,18 @@ function sendAd(){
   ty.innerHTML='<span></span><span></span><span></span>';
   document.getElementById('ad-msgs').appendChild(ty);
 
-  // Call AI Agent Service (streaming) — agentType: admin
-  var agentApi='https://ejk5xmi2e8.execute-api.ap-southeast-1.amazonaws.com/agents/stream';
-  var body=JSON.stringify({
-    message:q,
-    agentType:'admin',
-    tenantId:'default',
-    userId:'landing-visitor',
-    userRole:'Visitor',
-    context:'landing_page'
-  });
-
+  // Call AI Agent Service (plain JSON)
+  var agentApi='/agents/chat';
   fetch(agentApi,{
     method:'POST',
-    headers:{'Content-Type':'application/json'}
-  , body:body
-  }).then(function(res){
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({message:q,agentType:'admin',tenantId:'default'})
+  }).then(function(res){return res.json().then(function(d){return{ok:res.ok,data:d}})})
+  .then(function(r){
     var e=document.getElementById('ad-ty');if(e)e.remove();
-    if(!res.ok||!res.body){
-      // Fallback: if agent service not available, use simple lead collection
-      fallbackResponse(q);
-      return;
-    }
-    var reader=res.body.getReader();
-    var decoder=new TextDecoder();
-    var msgDiv=document.createElement('div');msgDiv.className='ad-msg bot';
-    document.getElementById('ad-msgs').appendChild(msgDiv);
-    var fullText='';
-
-    function readChunk(){
-      reader.read().then(function(result){
-        if(result.done){if(!fullText)msgDiv.innerHTML='ขออภัยค่ะ ไม่มีข้อมูลตอบกลับ กรุณาลองใหม่ค่ะ';return}
-        var chunk=decoder.decode(result.value,{stream:true});
-        chunk.split('\n').forEach(function(line){
-          if(!line.startsWith('data: '))return;
-          var data=line.slice(6).trim();
-          if(data==='[DONE]')return;
-          try{
-            var evt=JSON.parse(data);
-            if(evt.type==='text'&&evt.content){fullText+=evt.content;msgDiv.innerHTML=fullText}
-            if(evt.type==='tool_start'){msgDiv.innerHTML=fullText+'<br><span style="font-size:10px;color:#9CA3AF">กำลังค้นหาข้อมูล...</span>'}
-            if(evt.type==='lead_created'){msgDiv.innerHTML=fullText+'<br><span style="font-size:10px;color:#2E844A">✓ บันทึกข้อมูลเรียบร้อย</span>'}
-          }catch(ex){}
-        });
-        document.getElementById('ad-msgs').scrollTop=document.getElementById('ad-msgs').scrollHeight;
-        readChunk();
-      });
-    }
-    readChunk();
+    var reply=(r.data&&(r.data.reply||r.data.error||r.data.message))||'';
+    if(!reply){fallbackResponse(q);return}
+    addAdMsg('bot',reply.replace(/\n/g,'<br>'));
   }).catch(function(){
     var e=document.getElementById('ad-ty');if(e)e.remove();
     fallbackResponse(q);

@@ -311,55 +311,21 @@ function sendCoMsg(){
   ty.innerHTML='<span></span><span></span><span></span>';
   document.getElementById('co-messages').appendChild(ty);
 
-  // Call Agent Service API (streaming)
+  // Call Agent Service (plain JSON — simpler + robust)
   var user=getUserProfile();
-  var agentApi='https://ejk5xmi2e8.execute-api.ap-southeast-1.amazonaws.com/agents/stream';
-  var body=JSON.stringify({
-    message:t,
-    agentType:'sales-assistant',
-    tenantId:user.tenantId||'default',
-    userId:user.id||'unknown',
-    userRole:user.role||'Sales Rep'
-  });
-
+  var agentApi='/agents/chat';
   fetch(agentApi,{
     method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sf7_token')||'')},
-    body:body
-  }).then(function(res){
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({message:t,agentType:'sales-assistant',tenantId:user.tenantId||'default'})
+  }).then(function(res){return res.json().then(function(d){return{ok:res.ok,data:d}})})
+  .then(function(r){
     var e=document.getElementById('co-typing');if(e)e.remove();
-    if(!res.ok||!res.body){addCoMsg('agent','ขออภัยค่ะ เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ');return}
-
-    // Read SSE stream
-    var reader=res.body.getReader();
-    var decoder=new TextDecoder();
-    var msgDiv=document.createElement('div');msgDiv.className='co-msg agent';
-    document.getElementById('co-messages').appendChild(msgDiv);
-    var fullText='';
-
-    function readChunk(){
-      reader.read().then(function(result){
-        if(result.done){if(!fullText)msgDiv.innerHTML='ขออภัยค่ะ ไม่มีข้อมูลตอบกลับค่ะ';return}
-        var chunk=decoder.decode(result.value,{stream:true});
-        var lines=chunk.split('\n');
-        lines.forEach(function(line){
-          if(!line.startsWith('data: '))return;
-          var data=line.slice(6).trim();
-          if(data==='[DONE]')return;
-          try{
-            var evt=JSON.parse(data);
-            if(evt.type==='text'&&evt.content){fullText+=evt.content;msgDiv.innerHTML=fullText}
-            if(evt.type==='tool_start'){msgDiv.innerHTML=fullText+'<br><span style="font-size:10px;color:var(--text3)">🔧 กำลังดำเนินการ...</span>'}
-          }catch(ex){}
-        });
-        var msgs=document.getElementById('co-messages');msgs.scrollTop=msgs.scrollHeight;
-        readChunk();
-      });
-    }
-    readChunk();
+    var reply=(r.data&&(r.data.reply||r.data.error||r.data.message))||'ขออภัยค่ะ ไม่ได้รับข้อมูลจาก AI';
+    addCoMsg('agent',reply.replace(/\n/g,'<br>'));
   }).catch(function(err){
     var e=document.getElementById('co-typing');if(e)e.remove();
-    addCoMsg('agent','ขออภัยค่ะ ไม่สามารถเชื่อมต่อ AI ได้ กรุณาลองใหม่ค่ะ');
+    addCoMsg('agent','ขออภัยค่ะ ไม่สามารถเชื่อมต่อได้: '+(err&&err.message?err.message:'network error'));
   });
 }
 function sendCoQuick(t){document.getElementById('co-input').value=t;sendCoMsg()}

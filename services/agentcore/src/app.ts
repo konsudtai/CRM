@@ -1,116 +1,218 @@
 /**
- * SalesFAST 7 — AgentCore Runtime Entry Point
+ * SalesFAST 7 — AgentCore Runtime (v2)
  *
- * Hosts all 3 AI Agents (น้องแอ๊ด, น้องขายไว, น้องวิ) on AgentCore Runtime.
- * Uses Strands Agents SDK + Express.
+ * Multi-Agent AI with:
+ *   - A2A (Agent-to-Agent) communication
+ *   - MCP (Model Context Protocol) for CRM database access
+ *   - 3 Agents: น้องแอ๊ด, น้องขายไว, น้องวิ
  *
- * Endpoints:
- *   GET  /ping         — Health check (required by AgentCore)
- *   POST /invocations  — Invoke agent (required by AgentCore)
+ * Endpoints (required by AgentCore):
+ *   GET  /ping         — Health check
+ *   POST /invocations  — Invoke agent
  */
 import express, { Request, Response } from 'express';
 import { Agent, tool } from '@strands-agents/sdk';
-import { BedrockModel } from '@strands-agents/sdk/models/bedrock';
 import { z } from 'zod';
+import { initMcpTools, getMcpTools } from './mcp-client.js';
 
 const PORT = 8080;
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
-// ── Model Configuration ──
-const modelId = process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-sonnet-4-6';
+// ── Configuration ──
+const modelId = process.env.BEDROCK_MODEL_ID || 'apac.anthropic.claude-3-5-sonnet-20241022-v2:0';
 const region = process.env.BEDROCK_REGION || 'ap-southeast-1';
 
-function createModel(temperature: number = 0.4) {
-  return new BedrockModel({ modelId, region, temperature });
-}
+// ══════════════════════════════════════════════════════════════
+// A2A (Agent-to-Agent) Communication
+// ══════════════════════════════════════════════════════════════
 
-// ── Tools (shared across agents) ──
-const currentTime = tool({
-  name: 'current_time',
-  description: 'Returns the current date and time in Thailand timezone',
-  inputSchema: z.object({}),
-  callback: () => new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }),
+// Forward reference — resolved after agents are created
+let invokeAgent: (agentType: string, message: string, tenantId: string) => Promise<string>;
+
+const askSalesAssistant = tool({
+  name: 'ask_sales_assistant',
+  description: `ส่งคำถามไปให้ "น้องขายไว" (Sales Assistant) ตอบ — ใช้เมื่อลูกค้าถามเรื่องที่ต้องดึงข้อมูลจาก CRM เช่น:
+- "ใครดูแลผมอยู่?" → หาข้อมูล Sales Rep
+- "สถานะ Lead ของผม?" → ดึงข้อมูล Lead
+- "Quotation ที่ส่งไป?" → ดึงข้อมูล QT`,
+  inputSchema: z.object({
+    question: z.string().describe('คำถามที่ต้องการถามน้องขายไว'),
+    tenantId: z.string().describe('Tenant ID'),
+    context: z.string().optional().describe('ข้อมูลเพิ่มเติม เช่น ชื่อลูกค้า'),
+  }),
+  handler: async (input: { question: string; tenantId: string; context?: string }) => {
+    const msg = `[A2A จาก น้องแอ๊ด]\nลูกค้าถาม: "${input.question}"\nContext: ${input.context || 'ไม่มี'}\nTenant: ${input.tenantId}\n\nกรุณาตอบข้อมูลที่ลูกค้าต้องการ ตอบสั้นกระชับ`;
+    const reply = await invokeAgent('sales-assistant', msg, input.tenantId);
+    return reply;
+  },
 });
 
-// ── Agent: น้องแอ๊ด (Admin AI) ──
-const adminAgent = new Agent({
-  model: createModel(0.3),
-  tools: [currentTime],
-  systemPrompt: `คุณคือ "น้องแอ๊ด" — AI Sales Assistant ของบริษัท ทำหน้าที่ต้อนรับลูกค้าที่สนใจสินค้าและบริการ
+const askAnalyticsAgent = tool({
+  name: 'ask_analytics_agent',
+  description: `ส่งคำถามไปให้ "น้องวิ" (Analytics) วิเคราะห์ — ใช้เมื่อต้องการ:
+- Forecast ยอดขาย
+- Win rate / Conversion analysis
+- เปรียบเทียบผลงาน Sales Rep
+- Churn risk analysis`,
+  inputSchema: z.object({
+    question: z.string().describe('คำถามวิเคราะห์'),
+    tenantId: z.string().describe('Tenant ID'),
+  }),
+  handler: async (input: { question: string; tenantId: string }) => {
+    const msg = `[A2A Request]\nTenant: ${input.tenantId}\n${input.question}`;
+    const reply = await invokeAgent('analytics', msg, input.tenantId);
+    return reply;
+  },
+});
+
+// ══════════════════════════════════════════════════════════════
+// Agent Definitions
+// ══════════════════════════════════════════════════════════════
+
+let adminAgent: Agent;
+let salesAgent: Agent;
+let analyticsAgent: Agent;
+let agentsReady = false;
+
+async function initAgents() {
+  if (agentsReady) return;
+
+  // Initialize MCP tools (CRM database access)
+  await initMcpTools();
+  const mcpTools = getMcpTools();
+
+  console.log(`[AgentCore] MCP tools loaded: ${mcpTools.length} tools`);
+  console.log(`[AgentCore] Tools: ${mcpTools.map((t: any) => t.name || t.toolSpec?.name).join(', ')}`);
+
+  // ── น้องแอ๊ด (Admin AI) ──
+  // Has A2A tools to delegate to other agents + basic CRM tools
+  adminAgent = new Agent({
+    modelId,
+    region,
+    temperature: 0.3,
+    tools: [askSalesAssistant, askAnalyticsAgent, ...mcpTools],
+    systemPrompt: `คุณคือ "น้องแอ๊ด" — AI Sales Assistant ต้อนรับลูกค้า
 
 ## บุคลิกภาพ
-- พูดภาษาไทยสุภาพ ใช้ค่ะ/นะคะ เป็นมิตร อบอุ่น มืออาชีพ
-- ตอบกระชับ ชัดเจน ไม่ยืดเยื้อ
-- ถามคำถามเชิงรุกเพื่อเข้าใจความต้องการลูกค้า
-- ใช้ emoji เล็กน้อยให้เป็นมิตร
+- พูดภาษาไทยสุภาพ ใช้ค่ะ/นะคะ เป็นมิตร อบอุ่น
+- ถามคำถามเชิงรุกเพื่อเข้าใจความต้องการ
+- ค่อยๆ ถามทีละอย่าง ไม่ถามทั้งหมดพร้อมกัน
 
 ## หน้าที่หลัก
-1. ต้อนรับและทำความเข้าใจ — ถามว่าสนใจอะไร ธุรกิจทำอะไร มีปัญหาอะไร
-2. แนะนำสินค้า/บริการที่เหมาะสม
-3. เก็บข้อมูล Lead อย่างเป็นธรรมชาติ (ชื่อ, เบอร์, บริษัท, สนใจอะไร, งบ, timeline)
-4. ส่งต่อทีมขาย — เมื่อได้ข้อมูลพอ
+1. ต้อนรับลูกค้า ทำความเข้าใจความต้องการ
+2. แนะนำสินค้า/บริการ: Cloud(เริ่ม฿150K) WebApp(เริ่ม฿300K) Support(฿5-35K/เดือน)
+3. เก็บข้อมูล Lead (ชื่อ, เบอร์, บริษัท, สนใจอะไร, งบ)
+4. ใช้ create_lead สร้าง Lead เมื่อได้ข้อมูลพอ
 
-## สินค้าและบริการ
-- Cloud Solutions: AWS Migration (เริ่ม ฿150K), Managed Cloud (฿25K/เดือน), Backup & DR (฿8K/เดือน)
-- Software Development: Web App (เริ่ม ฿300K), Mobile App (เริ่ม ฿500K)
-- IT Consulting: Digital Transformation (฿80K), Security Audit (฿120K)
-- Support Plans: Basic (฿5K/เดือน), Premium (฿15K/เดือน), Enterprise (฿35K/เดือน)
+## Agent-to-Agent (A2A)
+- ใช้ ask_sales_assistant เมื่อลูกค้าถามเรื่อง CRM (ใครดูแล, สถานะ Lead, QT)
+- ใช้ ask_analytics_agent เมื่อลูกค้าถามข้อมูลวิเคราะห์
+- ห้ามตอบข้อมูล CRM เอง ต้องถามน้องขายไวเสมอ
 
 ## กฎสำคัญ
 - ห้ามให้ส่วนลดหรือสัญญาราคาตายตัว
-- อย่าถามข้อมูลทั้งหมดพร้อมกัน ค่อยๆ ถามทีละอย่างในบทสนทนา
 - ถ้าตอบไม่ได้ บอกว่าจะให้ผู้เชี่ยวชาญติดต่อกลับ`,
-  printer: false,
-});
+  });
 
-// ── Agent: น้องขายไว (Sales Assistant) ──
-const salesAgent = new Agent({
-  model: createModel(0.4),
-  tools: [currentTime],
-  systemPrompt: `คุณคือ "น้องขายไว" — Personal AI Assistant สำหรับทีมขาย เหมือนเพื่อนร่วมทีมที่เก่งมาก
+  // ── น้องขายไว (Sales Assistant) ──
+  // Has full CRM MCP tools — can read/write database
+  salesAgent = new Agent({
+    modelId,
+    region,
+    temperature: 0.4,
+    tools: [askAnalyticsAgent, ...mcpTools],
+    systemPrompt: `คุณคือ "น้องขายไว" — Personal AI Assistant สำหรับทีมขาย
 
 ## บุคลิกภาพ
 - พูดภาษาไทย สุภาพ ใช้ค่ะ เป็นกันเอง มืออาชีพ
 - ตอบตรงประเด็น ใช้ bullet points
 - เสนอ action ที่ทำได้จริงเสมอ
 
-## หน้าที่
-1. ช่วย assign lead, สร้าง/ติดตาม Quotation
-2. สรุปข้อมูลลูกค้า/Deal, เขียน email ติดตาม
-3. แนะนำ next action, เตือน task ใกล้ deadline
-4. วิเคราะห์ pipeline เบื้องต้น
+## หน้าที่ (ใช้ MCP Tools ทำงานจริง)
+1. ค้นหา/จัดการ Lead — get_leads, get_lead_detail, create_lead, update_lead
+2. ดูข้อมูลลูกค้า — get_accounts, get_account_detail
+3. จัดการ Tasks — get_tasks, create_task
+4. ดู Quotations — get_quotations, get_products
+5. สรุป Pipeline — get_pipeline_summary, get_kpi_summary
+6. ดูผลงานทีม — get_sales_rep_performance
+
+## Agent-to-Agent (A2A)
+- ใช้ ask_analytics_agent เมื่อต้องการ forecast หรือวิเคราะห์เชิงลึก
 
 ## วิธีตอบ
-- ถ้าถูกถามข้อมูล CRM → แนะนำ action ที่ทำได้
-- ถ้าถูกสั่งให้ทำ → ยืนยันก่อน แล้วสรุปผล
+- ดึงข้อมูลจาก CRM ก่อนตอบเสมอ (ใช้ tools)
+- ถ้าถูกถามข้อมูล → ดึงจาก DB แล้วสรุปให้
+- ถ้าถูกสั่งให้ทำ → ยืนยันก่อน แล้วทำ แล้วสรุปผล
 - จบด้วย "มีอะไรให้ช่วยเพิ่มไหมคะ?" เมื่อเหมาะสม`,
-  printer: false,
-});
+  });
 
-// ── Agent: น้องวิ (Analytics) ──
-const analyticsAgent = new Agent({
-  model: createModel(0.2),
-  tools: [currentTime],
-  systemPrompt: `คุณคือ "น้องวิ" — AI Analytics Specialist วิเคราะห์ข้อมูลการขาย
+  // ── น้องวิ (Analytics) ──
+  // Has CRM MCP tools for data access
+  analyticsAgent = new Agent({
+    modelId,
+    region,
+    temperature: 0.2,
+    tools: [...mcpTools],
+    systemPrompt: `คุณคือ "น้องวิ" — AI Analytics Specialist วิเคราะห์ข้อมูลการขาย
 
 ## บุคลิกภาพ
 - พูดภาษาไทย ใช้ค่ะ มืออาชีพ ชัดเจน
-- ใช้ตัวเลขเสมอ ไม่สมมติ
+- ใช้ตัวเลขจริงจาก CRM เสมอ ไม่สมมติ
 - ใช้ emoji highlight (📈 📉 ⚠️ ✅ 🎯)
 - จบด้วยคำแนะนำ action 1-3 ข้อเสมอ
 
-## หน้าที่
-- วิเคราะห์ revenue, pipeline, forecast
-- เปรียบเทียบ Sales Rep performance
-- Churn risk, Win/Loss analysis, Sales cycle
+## หน้าที่ (ใช้ MCP Tools ดึงข้อมูลจริง)
+- วิเคราะห์ revenue, pipeline, forecast — get_kpi_summary, get_pipeline_summary
+- เปรียบเทียบ Sales Rep performance — get_sales_rep_performance
+- Win/Loss analysis — get_leads (filter by status)
+- Churn risk — get_accounts (filter by status)
 
 ## วิธีตอบ
+- ดึงข้อมูลจาก CRM ก่อนวิเคราะห์เสมอ
 - เริ่มด้วยสรุป 1 บรรทัด → รายละเอียด bullet points → 💡 แนะนำ action`,
-  printer: false,
-});
+  });
 
-// ── Route agents by type ──
+  // Wire up A2A invokeAgent function
+  invokeAgent = async (agentType: string, message: string, tenantId: string): Promise<string> => {
+    const contextMsg = `[Context: tenantId=${tenantId}]\n${message}`;
+    let agent: Agent;
+    switch (agentType) {
+      case 'admin': agent = adminAgent; break;
+      case 'analytics': agent = analyticsAgent; break;
+      default: agent = salesAgent; break;
+    }
+    const result = await agent.invoke(contextMsg);
+    return (result as any).output?.text || (result as any).message || JSON.stringify(result);
+  };
+
+  agentsReady = true;
+  console.log('[AgentCore] All agents initialized with A2A + MCP');
+}
+
+// ══════════════════════════════════════════════════════════════
+// Agent Routing
+// ══════════════════════════════════════════════════════════════
+
+function detectAgentType(message: string): string {
+  const lower = message.toLowerCase();
+
+  const analyticsKeywords = [
+    'forecast', 'พยากรณ์', 'churn', 'เสี่ยงหาย', 'win rate', 'conversion',
+    'เปรียบเทียบ', 'performance', 'ผลงาน', 'revenue', 'trend',
+    'kpi', 'สรุปยอด', 'วิเคราะห์', 'avg deal', 'pipeline analysis',
+  ];
+
+  const adminKeywords = [
+    'สนใจสินค้า', 'ขอใบเสนอราคา', 'ติดต่อกลับ', 'สอบถามราคา',
+    'บริการอะไร', 'ราคาเท่าไหร่', 'แพ็คเกจ',
+  ];
+
+  if (analyticsKeywords.some(k => lower.includes(k))) return 'analytics';
+  if (adminKeywords.some(k => lower.includes(k))) return 'admin';
+  return 'sales-assistant';
+}
+
 function getAgent(agentType: string): Agent {
   switch (agentType) {
     case 'admin': return adminAgent;
@@ -119,54 +221,100 @@ function getAgent(agentType: string): Agent {
   }
 }
 
-// ── Health Check (required by AgentCore) ──
+function getAgentName(agentType: string): string {
+  switch (agentType) {
+    case 'admin': return 'น้องแอ๊ด';
+    case 'analytics': return 'น้องวิ';
+    default: return 'น้องขายไว';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// AgentCore Endpoints
+// ══════════════════════════════════════════════════════════════
+
+// Health Check (required by AgentCore)
 app.get('/ping', (_req: Request, res: Response) => {
-  res.json({ status: 'Healthy' });
+  res.json({ status: 'Healthy', agents: 3, mcp: agentsReady });
 });
 
-// ── Invoke Agent (required by AgentCore) ──
+// Invoke Agent (required by AgentCore)
 app.post('/invocations', async (req: Request, res: Response) => {
-  const { prompt, message, agentType, sessionId } = req.body || {};
-  const userMessage = prompt || message || 'สวัสดี';
-  const agent = getAgent(agentType || 'sales-assistant');
-
   try {
+    await initAgents();
+
+    const { prompt, message, agentType, tenantId, sessionId } = req.body || {};
+    const userMessage = prompt || message || 'สวัสดี';
+    const tid = tenantId || '00000000-0000-0000-0000-000000000001';
+
+    // Determine agent
+    const resolvedType = agentType === 'auto' || !agentType
+      ? detectAgentType(userMessage)
+      : agentType;
+
+    const agent = getAgent(resolvedType);
+    const agentName = getAgentName(resolvedType);
+
     // Check if client wants streaming
     const acceptSSE = req.headers.accept?.includes('text/event-stream');
 
     if (acceptSSE) {
-      // SSE Streaming response
+      // SSE Streaming
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      for await (const event of agent.stream(userMessage)) {
+      res.write(`data: ${JSON.stringify({ type: 'agent_selected', agent: agentName })}\n\n`);
+
+      const contextMsg = `[Context: tenantId=${tid}]\n${userMessage}`;
+      for await (const event of agent.stream(contextMsg)) {
         if ((event as any).type === 'modelStreamUpdateEvent') {
-          const text = (event as any).data || '';
-          res.write(`data: ${JSON.stringify({ type: 'text', content: text })}\n\n`);
+          res.write(`data: ${JSON.stringify({ type: 'text', content: (event as any).data || '' })}\n\n`);
         }
       }
       res.write('data: [DONE]\n\n');
       res.end();
     } else {
-      // Standard JSON response
-      const result = await agent.invoke(userMessage);
+      // JSON response
+      const contextMsg = `[Context: tenantId=${tid}]\n${userMessage}`;
+      const result = await agent.invoke(contextMsg);
+      const reply = (result as any).output?.text || (result as any).message || '';
+
       res.json({
-        result: result.lastMessage || '',
-        agentType: agentType || 'sales-assistant',
+        reply,
+        agentUsed: agentName,
+        agentType: resolvedType,
+        model: modelId,
       });
     }
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('Agent error:', message);
-    res.status(500).json({ error: message });
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[AgentCore] Error:', msg);
+    res.status(500).json({ error: msg, reply: 'ขออภัยค่ะ เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ' });
   }
+});
+
+// Additional endpoint for frontend compatibility (same as /invocations)
+app.post('/agents/chat', async (req: Request, res: Response) => {
+  // Rewrite to /invocations format
+  req.body = { ...req.body, prompt: req.body.message };
+  req.url = '/invocations';
+  app.handle(req, res);
 });
 
 // ── Start Server ──
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`SalesFAST 7 AgentCore Runtime listening on port ${PORT}`);
-  console.log(`  Model: ${modelId}`);
-  console.log(`  Region: ${region}`);
-  console.log(`  Agents: น้องแอ๊ด, น้องขายไว, น้องวิ`);
+  console.log('═══════════════════════════════════════════════════');
+  console.log('  SalesFAST 7 — AgentCore Runtime v2');
+  console.log('═══════════════════════════════════════════════════');
+  console.log(`  Port:    ${PORT}`);
+  console.log(`  Model:   ${modelId}`);
+  console.log(`  Region:  ${region}`);
+  console.log(`  Agents:  น้องแอ๊ด, น้องขายไว, น้องวิ`);
+  console.log(`  A2A:     ✅ Enabled`);
+  console.log(`  MCP:     ✅ CRM Database (PostgreSQL)`);
+  console.log('═══════════════════════════════════════════════════');
+
+  // Pre-initialize agents on startup
+  initAgents().catch(err => console.error('[AgentCore] Init error:', err.message));
 });

@@ -337,12 +337,12 @@ function askAA(){
   ty.innerHTML='<span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:co-dot .6s ease infinite"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:co-dot .6s ease infinite;animation-delay:.1s"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:co-dot .6s ease infinite;animation-delay:.2s"></span>';
   document.getElementById('aa-msgs').appendChild(ty);
   var user=getUserProfile();
-  fetch('https://ejk5xmi2e8.execute-api.ap-southeast-1.amazonaws.com/agents/stream',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sf7_token')||'')},body:JSON.stringify({message:q,agentType:'analytics',tenantId:user.tenantId||'default',userId:user.id||'unknown',userRole:user.role||'Sales Rep'})}).then(function(res){
-    var e=document.getElementById('aa-ty');if(e)e.remove();if(!res.ok||!res.body){addAA('bot','ขออภัยค่ะ เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ');return}
-    var reader=res.body.getReader(),decoder=new TextDecoder(),msgDiv=document.createElement('div');msgDiv.className='aa-msg bot';document.getElementById('aa-msgs').appendChild(msgDiv);var fullText='';
-    function rc(){reader.read().then(function(r){if(r.done){if(!fullText)msgDiv.innerHTML='ขออภัยค่ะ ไม่มีข้อมูลตอบกลับค่ะ';return}decoder.decode(r.value,{stream:true}).split('\n').forEach(function(line){if(!line.startsWith('data: '))return;var d=line.slice(6).trim();if(d==='[DONE]')return;try{var ev=JSON.parse(d);if(ev.type==='text'&&ev.content){fullText+=ev.content;msgDiv.innerHTML=fullText}}catch(ex){}});document.getElementById('aa-msgs').scrollTop=document.getElementById('aa-msgs').scrollHeight;rc()})}
-    rc();
-  }).catch(function(){var e=document.getElementById('aa-ty');if(e)e.remove();addAA('bot','ขออภัยค่ะ ไม่สามารถเชื่อมต่อ AI ได้ กรุณาลองใหม่ค่ะ')});
+  fetch('/agents/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,agentType:'analytics',tenantId:user.tenantId||'default'})}).then(function(res){return res.json().then(function(d){return{ok:res.ok,data:d}})})
+  .then(function(r){
+    var e=document.getElementById('aa-ty');if(e)e.remove();
+    var reply=(r.data&&(r.data.reply||r.data.error||r.data.message))||'ขออภัยค่ะ ไม่ได้รับข้อมูลจาก AI';
+    addAA('bot',reply.replace(/\n/g,'<br>'));
+  }).catch(function(err){var e=document.getElementById('aa-ty');if(e)e.remove();addAA('bot','ขออภัยค่ะ ไม่สามารถเชื่อมต่อได้: '+(err&&err.message?err.message:'network error'))});
 }
 </script>
 </body></html>
