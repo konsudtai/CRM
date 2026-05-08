@@ -1,0 +1,9 @@
+fastapi>=0.115.6
+uvicorn[standard]>=0.34.0
+pydantic>=2.10.4
+strands-agents>=1.36.0
+strands-agents-tools>=0.2.9
+boto3>=1.36.0
+psycopg[binary,pool]>=3.2.4
+httpx>=0.28.1
+bedrock-agentcore>=0.1.9

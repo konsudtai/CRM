@@ -1,0 +1,2 @@
+SECURITY_GROUP=sg-0ce065f147925abc6
+SUBNETS=subnet-0215da3b8bbdf8ce5,subnet-0c55afb1b6c1c3ee2
