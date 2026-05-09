@@ -15,11 +15,16 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly chatService: ChatService) {}
 
   onModuleInit() {
-    if (process.env.ENABLE_SCHEDULER !== 'false') {
+    // In Lambda, scheduling is handled by EventBridge rules or CloudWatch Events
+    // Only run in-process scheduler for standalone service (ECS, local dev)
+    const isLambda = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+    if (process.env.ENABLE_SCHEDULER !== 'false' && !isLambda) {
       this.scheduleDailyDigest();
       this.scheduleDealHealthCheck();
       this.scheduleTaskReminders();
       this.logger.log('Scheduler started — daily digest, deal health, task reminders');
+    } else if (isLambda) {
+      this.logger.log('Running in Lambda — in-process scheduler disabled');
     }
   }
 

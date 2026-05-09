@@ -1,151 +1,221 @@
 /**
  * AI Agents Route — Proxy to AgentCore Runtime
  *
- * Frontend → CloudFront → /agents/chat → Lambda (this) → AgentCore Runtime
+ * Frontend calls /agents/chat → this route → AgentCore Runtime (Python/Docker)
+ * AgentCore handles: agent routing, tool use, A2A, MCP, memory
  *
- * Why Lambda proxy?
- *  - Frontend calls HTTPS URL on same origin (no CORS issues)
- *  - Lambda has AWS credentials to sign InvokeAgentRuntime calls
- *  - Falls back to legacy Bedrock Converse if AgentCore ARN not set
+ * Architecture:
+ *   User → /agents/chat → InvokeAgentRuntime (AgentCore)
+ *                          ├── น้องแอ๊ด (Admin AI)
+ *                          ├── น้องขายไว (Sales Assistant)
+ *                          └── น้องวิ (Analytics)
+ *
+ * Fallback: If AgentCore is unavailable, falls back to direct Bedrock Converse.
  */
 import { Hono } from 'hono';
-import { BedrockAgentCoreClient, InvokeAgentRuntimeCommand } from '@aws-sdk/client-bedrock-agentcore';
 import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
 import { query } from '../lib/db.js';
-import { randomUUID } from 'crypto';
 
 const agents = new Hono();
 
+const AGENTCORE_ARN = process.env.AGENTCORE_RUNTIME_ARN || '';
+const AGENTCORE_REGION = process.env.AGENTCORE_REGION || process.env.BEDROCK_REGION || 'ap-southeast-1';
+const MODEL_ID = process.env.BEDROCK_MODEL_ID || 'apac.anthropic.claude-3-5-sonnet-20241022-v2:0';
 const REGION = process.env.BEDROCK_REGION || 'ap-southeast-1';
-const AGENTCORE_RUNTIME_ARN = process.env.AGENTCORE_RUNTIME_ARN || '';
-const FALLBACK_MODEL_ID = process.env.BEDROCK_MODEL_ID || 'apac.anthropic.claude-3-5-sonnet-20241022-v2:0';
-
-const agentCoreClient = AGENTCORE_RUNTIME_ARN
-  ? new BedrockAgentCoreClient({ region: REGION })
-  : null;
-
-const bedrockClient = new BedrockRuntimeClient({ region: REGION });
+const USE_AGENTCORE = process.env.USE_AGENTCORE !== 'false' && !!AGENTCORE_ARN;
 
 // ══════════════════════════════════════════════════════════════
-// Session ID (33+ chars required by AgentCore)
+// AgentCore Integration
 // ══════════════════════════════════════════════════════════════
 
-function makeSessionId(providedId?: string): string {
-  if (providedId && providedId.length >= 33) return providedId;
-  // Pad: UUID is 36 chars, always passes
-  return (providedId || 'session') + '-' + randomUUID();
-}
+let agentcoreClient: any = null;
 
-function normalizeTenantId(tid?: string): string {
-  const def = '00000000-0000-0000-0000-000000000001';
-  if (!tid) return def;
-  const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRe.test(tid) ? tid : def;
-}
-
-// ══════════════════════════════════════════════════════════════
-// Primary: AgentCore Runtime invocation
-// ══════════════════════════════════════════════════════════════
-
-async function invokeAgentCore(params: {
-  message: string;
-  agentType: string;
-  tenantId: string;
-  sessionId: string;
-}): Promise<{ reply: string; agentUsed?: string; ms: number }> {
-  if (!agentCoreClient) {
-    throw new Error('AgentCore not configured');
+function getAgentCoreClient() {
+  if (!agentcoreClient) {
+    // Dynamic import to avoid issues if SDK not available
+    const { BedrockAgentCoreClient } = require('@aws-sdk/client-bedrock-agentcore') || {};
+    if (BedrockAgentCoreClient) {
+      agentcoreClient = new BedrockAgentCoreClient({ region: AGENTCORE_REGION });
+    }
   }
+  return agentcoreClient;
+}
 
-  const start = Date.now();
+async function invokeAgentCore(message: string, agentType: string, tenantId: string, sessionId?: string): Promise<{ reply: string; agentUsed: string; sessionId: string }> {
+  // Use AWS SDK to invoke AgentCore (works through VPC endpoints)
+  const { BedrockAgentCoreClient, InvokeAgentRuntimeCommand } = await import('@aws-sdk/client-bedrock-agentcore');
+
+  // AgentCore requires session ID to be 33-256 characters
+  const sid = sessionId && sessionId.length >= 33
+    ? sessionId
+    : `sf7-session-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}pad`;
+
   const payload = JSON.stringify({
-    message: params.message,
-    agentType: params.agentType,
-    tenantId: params.tenantId,
-    sessionId: params.sessionId,
+    message,
+    agentType,
+    tenantId,
+    sessionId: sid,
   });
 
-  const cmd = new InvokeAgentRuntimeCommand({
-    agentRuntimeArn: AGENTCORE_RUNTIME_ARN,
-    runtimeSessionId: params.sessionId,
-    payload: Buffer.from(payload),
+  const client = new BedrockAgentCoreClient({ region: AGENTCORE_REGION });
+
+  // Use AbortController for reliable timeout
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => abortController.abort(), 12000);
+
+  const command = new InvokeAgentRuntimeCommand({
+    agentRuntimeArn: AGENTCORE_ARN,
+    runtimeSessionId: sid,
+    payload: new TextEncoder().encode(payload),
     qualifier: 'DEFAULT',
   });
 
-  const res = await agentCoreClient.send(cmd);
-  // Response body is a stream of bytes — collect into string
-  let body = '';
-  if (res.response) {
-    // In Node 18+ AWS SDK v3 returns a byte array or readable
-    const chunks: Uint8Array[] = [];
-    // @ts-ignore — SDK type varies by version
-    for await (const chunk of res.response as any) {
-      chunks.push(chunk);
-    }
-    body = Buffer.concat(chunks).toString('utf-8');
-  }
-
-  let parsed: any;
+  let response: any;
   try {
-    parsed = JSON.parse(body);
-  } catch {
-    parsed = { reply: body };
+    response = await client.send(command, { abortSignal: abortController.signal });
+  } finally {
+    clearTimeout(timeoutId);
   }
 
-  // AgentCore wraps response as {"output": {...}}
-  const output = parsed.output || parsed;
+  // Decode response
+  const responseBody = response.response
+    ? new TextDecoder().decode(response.response)
+    : '{}';
+
+  const data = JSON.parse(responseBody);
+  const output = data.output || data;
+
   return {
-    reply: output.reply || output.message || JSON.stringify(output),
-    agentUsed: output.agentUsed,
-    ms: Date.now() - start,
+    reply: output.reply || output.message || responseBody,
+    agentUsed: output.agentUsed || output.agentType || agentType,
+    sessionId: output.sessionId || sid,
   };
 }
 
 // ══════════════════════════════════════════════════════════════
-// Fallback: Simple Bedrock Converse (used when AgentCore unavailable)
+// Fallback: Direct Bedrock Converse (if AgentCore unavailable)
 // ══════════════════════════════════════════════════════════════
 
-const FALLBACK_PROMPTS: Record<string, string> = {
-  admin: `คุณคือ "น้องแอ๊ด" AI Sales Assistant ต้อนรับลูกค้า พูดไทยสุภาพ ใช้ค่ะ เป็นมิตร ถามเชิงรุก เก็บ Lead(ชื่อ,เบอร์,บริษัท,สนใจอะไร,งบ) ค่อยๆถามทีละอย่าง แนะนำสินค้า: Cloud(เริ่ม฿150K) WebApp(เริ่ม฿300K) Support(฿5-35K/เดือน) ห้ามให้ส่วนลด ใช้ข้อมูล CRM ที่ให้มาตอบ`,
-  'sales-assistant': `คุณคือ "น้องขายไว" AI Assistant ทีมขาย พูดไทย ใช้ค่ะ ช่วย assign lead สร้าง QT สรุปลูกค้า เขียน email แนะนำ next action ใช้ข้อมูล CRM จริงที่ให้มา ตอบด้วย bullet points`,
-  analytics: `คุณคือ "น้องวิ" AI Analytics พูดไทย ใช้ค่ะ วิเคราะห์ข้อมูลจาก CRM จริงที่ให้มา ใช้ emoji(📈📉⚠️✅🎯) จบด้วยแนะนำ action`,
+const bedrockClient = new BedrockRuntimeClient({ region: REGION });
+const MAX_TOOL_ITERATIONS = 5;
+const TIME_BUDGET_MS = 22000;
+
+interface ToolDef {
+  name: string;
+  description: string;
+  inputSchema: any;
+  handler: (input: any, ctx: { tenantId: string; agentType: string }) => Promise<string>;
+}
+
+const CRM_TOOLS: ToolDef[] = [
+  {
+    name: 'get_leads',
+    description: 'ค้นหา Leads — filter ตาม status, search keyword.',
+    inputSchema: { json: { type: 'object', properties: { status: { type: 'string' }, search: { type: 'string' }, limit: { type: 'number', default: 10 } } } },
+    handler: async (input, ctx) => {
+      let where = 'tenant_id = $1'; const params: any[] = [ctx.tenantId]; let idx = 2;
+      if (input.status) { where += ` AND status = $${idx}`; params.push(input.status); idx++; }
+      if (input.search) { where += ` AND (name ILIKE $${idx} OR company_name ILIKE $${idx})`; params.push(`%${input.search}%`); idx++; }
+      params.push(Math.min(input.limit || 10, 20));
+      const res = await query(ctx.tenantId, `SELECT id, name, company_name, status, source, assigned_to, (metadata->>'estimatedValue') as value FROM leads WHERE ${where} ORDER BY created_at DESC LIMIT $${idx}`, params);
+      return JSON.stringify(res.rows);
+    },
+  },
+  {
+    name: 'get_lead_detail',
+    description: 'ดูรายละเอียด Lead + Sales Rep',
+    inputSchema: { json: { type: 'object', properties: { leadId: { type: 'string' }, search: { type: 'string' } } } },
+    handler: async (input, ctx) => {
+      if (input.leadId) {
+        const r = await query(ctx.tenantId, `SELECT l.*, u.first_name as rep_first, u.last_name as rep_last, u.email as rep_email, u.phone as rep_phone FROM leads l LEFT JOIN users u ON u.id = l.assigned_to WHERE l.id = $1 AND l.tenant_id = $2`, [input.leadId, ctx.tenantId]);
+        return JSON.stringify(r.rows);
+      }
+      if (input.search) {
+        const r = await query(ctx.tenantId, `SELECT l.*, u.first_name as rep_first, u.last_name as rep_last, u.email as rep_email, u.phone as rep_phone FROM leads l LEFT JOIN users u ON u.id = l.assigned_to WHERE l.tenant_id = $1 AND (l.name ILIKE $2 OR l.company_name ILIKE $2) LIMIT 5`, [ctx.tenantId, `%${input.search}%`]);
+        return JSON.stringify(r.rows);
+      }
+      return 'Provide leadId or search';
+    },
+  },
+  {
+    name: 'get_pipeline_summary',
+    description: 'สรุป Pipeline',
+    inputSchema: { json: { type: 'object', properties: {} } },
+    handler: async (_input, ctx) => {
+      const res = await query(ctx.tenantId, `SELECT status, count(*) as count, COALESCE(sum((metadata->>'estimatedValue')::numeric), 0) as total_value FROM leads WHERE tenant_id = $1 GROUP BY status`, [ctx.tenantId]);
+      return JSON.stringify(res.rows);
+    },
+  },
+  {
+    name: 'get_kpi_summary',
+    description: 'สรุป KPI ทั้งหมด',
+    inputSchema: { json: { type: 'object', properties: {} } },
+    handler: async (_input, ctx) => {
+      const [leads, accounts, tasks] = await Promise.all([
+        query(ctx.tenantId, `SELECT count(*) as total, count(*) FILTER (WHERE status='Won') as won FROM leads WHERE tenant_id = $1`, [ctx.tenantId]),
+        query(ctx.tenantId, `SELECT count(*) as total FROM accounts WHERE tenant_id = $1 AND deleted_at IS NULL AND account_status='active'`, [ctx.tenantId]),
+        query(ctx.tenantId, `SELECT count(*) as total, count(*) FILTER (WHERE status!='Completed' AND due_date<NOW()) as overdue FROM tasks WHERE tenant_id = $1`, [ctx.tenantId]),
+      ]);
+      return JSON.stringify({ leads: leads.rows[0], activeAccounts: accounts.rows[0].total, tasks: tasks.rows[0] });
+    },
+  },
+];
+
+const PROMPTS: Record<string, string> = {
+  admin: `คุณคือ "น้องแอ๊ด" — AI Sales Assistant ต้อนรับลูกค้า\nพูดภาษาไทยสุภาพ ใช้ค่ะ เป็นมิตร`,
+  'sales-assistant': `คุณคือ "น้องขายไว" — Sales Personal Assistant\nพูดภาษาไทย สุภาพ ใช้ค่ะ ใช้ tools ดึงข้อมูลจริงเสมอ`,
+  analytics: `คุณคือ "น้องวิ" — AI Analytics Specialist\nพูดภาษาไทย ใช้ค่ะ ใช้ emoji (📈 📉 ⚠️ ✅ 🎯)`,
 };
 
-async function getCrmContext(tenantId: string): Promise<string> {
-  try {
-    const [leads, accounts, tasks, pipeline] = await Promise.all([
-      query(tenantId, `SELECT name,company_name,status,source,(metadata->>'estimatedValue') as value,(metadata->>'projectName') as project FROM leads WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 10`, [tenantId]),
-      query(tenantId, `SELECT company_name,account_status,account_tier,total_revenue FROM accounts WHERE tenant_id=$1 AND deleted_at IS NULL LIMIT 5`, [tenantId]),
-      query(tenantId, `SELECT title,status,priority,due_date FROM tasks WHERE tenant_id=$1 ORDER BY due_date LIMIT 5`, [tenantId]),
-      query(tenantId, `SELECT status,count(*) as cnt,COALESCE(sum((metadata->>'estimatedValue')::numeric),0) as val FROM leads WHERE tenant_id=$1 GROUP BY status`, [tenantId]),
-    ]);
-    return `\n\n[CRM DATA]\nLeads(${leads.rows.length}): ${JSON.stringify(leads.rows)}\nAccounts: ${JSON.stringify(accounts.rows)}\nTasks: ${JSON.stringify(tasks.rows)}\nPipeline: ${JSON.stringify(pipeline.rows)}`;
-  } catch {
-    return '';
-  }
-}
-
-async function invokeFallback(params: {
-  message: string;
-  agentType: string;
-  tenantId: string;
-}): Promise<{ reply: string; ms: number }> {
+async function fallbackDirectBedrock(message: string, agentType: string, tenantId: string): Promise<{ reply: string; toolsUsed: string[] }> {
   const start = Date.now();
-  const systemPrompt = FALLBACK_PROMPTS[params.agentType] || FALLBACK_PROMPTS['sales-assistant'];
-  const crmContext = await getCrmContext(params.tenantId);
+  const tools = CRM_TOOLS;
+  const systemPrompt = PROMPTS[agentType] || PROMPTS['sales-assistant'];
+  const ctx = { tenantId, agentType };
+  const toolsUsed: string[] = [];
+  const toolConfig = { tools: tools.map(t => ({ toolSpec: { name: t.name, description: t.description, inputSchema: t.inputSchema } })) };
+  const messages: any[] = [{ role: 'user', content: [{ text: message }] }];
+  let finalReply = '';
 
-  const res = await bedrockClient.send(new ConverseCommand({
-    modelId: FALLBACK_MODEL_ID,
-    system: [{ text: systemPrompt + crmContext }],
-    messages: [{ role: 'user' as const, content: [{ text: params.message }] }],
-    inferenceConfig: { maxTokens: 1024, temperature: 0.4 },
-  }));
-  const reply = res.output?.message?.content?.[0]?.text || 'ขออภัยค่ะ ไม่สามารถตอบได้';
-  return { reply, ms: Date.now() - start };
+  for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {
+    const overBudget = (Date.now() - start) > TIME_BUDGET_MS;
+    const res = await bedrockClient.send(new ConverseCommand({
+      modelId: MODEL_ID,
+      system: [{ text: systemPrompt + `\n[Context: tenantId=${tenantId}]` + (overBudget ? '\n[Give final answer now.]' : '') }],
+      messages,
+      toolConfig: !overBudget ? toolConfig : undefined,
+      inferenceConfig: { maxTokens: 1024, temperature: 0.4 },
+    }));
+
+    const content = res.output?.message?.content || [];
+    messages.push({ role: 'assistant', content });
+    const toolUses = content.filter((c: any) => c.toolUse);
+
+    if (toolUses.length === 0 || res.stopReason !== 'tool_use' || overBudget) {
+      finalReply = content.map((c: any) => c.text || '').join('').trim();
+      break;
+    }
+
+    const toolResults: any[] = [];
+    for (const block of toolUses) {
+      const { toolUseId, name, input } = block.toolUse;
+      const toolDef = tools.find(t => t.name === name);
+      toolsUsed.push(name);
+      try {
+        const result = toolDef ? await toolDef.handler(input, ctx) : `Tool ${name} not found`;
+        toolResults.push({ toolResult: { toolUseId, content: [{ text: result.substring(0, 5000) }] } });
+      } catch (err: any) {
+        toolResults.push({ toolResult: { toolUseId, content: [{ text: `Error: ${err.message}` }], status: 'error' } });
+      }
+    }
+    messages.push({ role: 'user', content: toolResults });
+  }
+
+  return { reply: finalReply || 'ขออภัยค่ะ ไม่สามารถตอบได้ในขณะนี้', toolsUsed };
 }
 
 // ══════════════════════════════════════════════════════════════
-// HTTP Routes
+// Routes
 // ══════════════════════════════════════════════════════════════
 
 agents.post('/chat', async (c) => {
@@ -153,69 +223,71 @@ agents.post('/chat', async (c) => {
   const { message, agentType, tenantId, sessionId } = body as any;
   if (!message) return c.json({ error: 'message required' }, 400);
 
-  const tid = normalizeTenantId(tenantId);
-  const sid = makeSessionId(sessionId);
-  const type = agentType || 'sales-assistant';
+  const tid = tenantId || 'default';
+  const agent = agentType || 'sales-assistant';
 
-  try {
-    if (agentCoreClient) {
-      const out = await invokeAgentCore({ message, agentType: type, tenantId: tid, sessionId: sid });
+  // ── Primary: AgentCore Runtime ──
+  if (USE_AGENTCORE) {
+    try {
+      const result = await invokeAgentCore(message, agent, tid, sessionId);
       return c.json({
-        reply: out.reply,
-        agentUsed: out.agentUsed,
+        reply: result.reply,
+        agentUsed: result.agentUsed,
+        sessionId: result.sessionId,
         backend: 'agentcore',
-        sessionId: sid,
-        ms: out.ms,
       });
+    } catch (err: any) {
+      console.error('[AgentCore] Error, falling back to direct Bedrock:', err.message);
+      // Fall through to fallback
     }
-    // Fallback
-    const out = await invokeFallback({ message, agentType: type, tenantId: tid });
+  }
+
+  // ── Fallback: Direct Bedrock Converse ──
+  try {
+    const out = await fallbackDirectBedrock(message, agent, tid);
     return c.json({
       reply: out.reply,
-      backend: 'fallback',
-      model: FALLBACK_MODEL_ID,
-      ms: out.ms,
+      toolsUsed: out.toolsUsed,
+      backend: 'bedrock-converse-fallback',
     });
   } catch (err: any) {
     console.error('Agent chat error:', err.message);
-    // Try fallback if AgentCore errored
-    if (agentCoreClient) {
-      try {
-        const out = await invokeFallback({ message, agentType: type, tenantId: tid });
-        return c.json({
-          reply: out.reply,
-          backend: 'fallback-after-error',
-          agentCoreError: err.message,
-          ms: out.ms,
-        });
-      } catch (err2: any) {
-        return c.json({ reply: 'ขออภัยค่ะ เกิดข้อผิดพลาด: ' + String(err2.message).slice(0, 200), error: true }, 200);
-      }
-    }
     return c.json({ reply: 'ขออภัยค่ะ เกิดข้อผิดพลาด: ' + String(err.message).slice(0, 200), error: true }, 200);
   }
 });
 
-// Legacy SSE endpoint for backward compat
 agents.post('/stream', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const { message, agentType, tenantId, sessionId } = body as any;
   if (!message) return c.json({ message: 'message required' }, 400);
-  const tid = normalizeTenantId(tenantId);
-  const sid = makeSessionId(sessionId);
-  const type = agentType || 'sales-assistant';
 
+  const tid = tenantId || 'default';
+  const agent = agentType || 'sales-assistant';
+
+  // AgentCore doesn't support streaming natively from Lambda proxy,
+  // so we invoke and return as SSE
   try {
     let reply: string;
-    if (agentCoreClient) {
-      const out = await invokeAgentCore({ message, agentType: type, tenantId: tid, sessionId: sid });
-      reply = out.reply;
+    let backend: string;
+
+    if (USE_AGENTCORE) {
+      try {
+        const result = await invokeAgentCore(message, agent, tid, sessionId);
+        reply = result.reply;
+        backend = 'agentcore';
+      } catch {
+        const out = await fallbackDirectBedrock(message, agent, tid);
+        reply = out.reply;
+        backend = 'bedrock-converse-fallback';
+      }
     } else {
-      const out = await invokeFallback({ message, agentType: type, tenantId: tid });
+      const out = await fallbackDirectBedrock(message, agent, tid);
       reply = out.reply;
+      backend = 'bedrock-converse-fallback';
     }
+
     return new Response(
-      `data: ${JSON.stringify({ type: 'text', content: reply })}\n\ndata: [DONE]\n\n`,
+      `data: ${JSON.stringify({ type: 'text', content: reply, backend })}\n\ndata: [DONE]\n\n`,
       { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' } },
     );
   } catch (err: any) {
@@ -226,12 +298,13 @@ agents.post('/stream', async (c) => {
   }
 });
 
-// Health check
 agents.get('/health', (c) => c.json({
   ok: true,
   service: 'agents',
-  backend: agentCoreClient ? 'agentcore' : 'fallback',
-  agentcoreArn: AGENTCORE_RUNTIME_ARN ? '...' + AGENTCORE_RUNTIME_ARN.slice(-20) : null,
+  backend: USE_AGENTCORE ? 'agentcore' : 'bedrock-converse',
+  agentcoreArn: AGENTCORE_ARN || null,
+  features: ['tool_use', 'a2a', 'multi_agent', 'mcp'],
+  agents: ['admin', 'sales-assistant', 'analytics'],
   ts: Date.now(),
 }));
 

@@ -850,6 +850,7 @@ Resources:
                   - sqs:GetQueueAttributes
                 Resource:
                   - !GetAtt EventsQueue.Arn
+                  - !GetAtt AgentEventsQueue.Arn
               - Effect: Allow
                 Action:
                   - sns:CreateTopic
@@ -879,6 +880,21 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - bedrock:Retrieve
+                  - bedrock:RetrieveAndGenerate
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - bedrock-agentcore:InvokeAgentRuntime
+                  - bedrock-agentcore:CreateRuntimeSession
                 Resource: '*'
 
   # ============================================================
@@ -921,7 +937,7 @@ Resources:
       Runtime: nodejs20.x
       Handler: index.handler
       MemorySize: 1024
-      Timeout: 15
+      Timeout: 30
       Role: !GetAtt LambdaRole.Arn
       Code:
         ZipFile: |
@@ -943,6 +959,10 @@ Resources:
           DB_HOST: !GetAtt Database.Endpoint.Address
           CHAT_TABLE: !Ref ChatHistoryTable
           AI_STATE_TABLE: !Ref AIStateTable
+          BEDROCK_REGION: ap-southeast-1
+          BEDROCK_MODEL_ID: 'apac.anthropic.claude-3-5-sonnet-20241022-v2:0'
+          AGENTCORE_RUNTIME_ARN: ''
+          USE_AGENTCORE: 'true'
 
   SalesFunction:
     Type: AWS::Lambda::Function
@@ -1029,6 +1049,123 @@ Resources:
           LINE_SECRET_ARN: !Ref LineSecret
           CHAT_TABLE: !Ref ChatHistoryTable
           AI_STATE_TABLE: !Ref AIStateTable
+
+  # Agent Service Lambda — AI Agents (น้องแอ๊ด, น้องขายไว, น้องวิ)
+  AgentFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'sf7-${Environment}-agent'
+      Runtime: nodejs20.x
+      Handler: dist/lambda.handler
+      MemorySize: 1024
+      Timeout: 60
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        ZipFile: |
+          exports.handler = async () => ({ statusCode: 200, body: JSON.stringify({ service: 'agent', status: 'ok' }) });
+      VpcConfig:
+        SubnetIds:
+          - !Ref PrivateSubnetA
+          - !Ref PrivateSubnetB
+        SecurityGroupIds:
+          - !Ref LambdaSG
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DBSecret
+          JWT_SECRET_ARN: !Ref JWTSecretStore
+          SQS_AGENT_QUEUE_URL: !Ref AgentEventsQueue
+          S3_BUCKET: !Ref FilesBucket
+          NODE_ENV: production
+          CORS_ORIGIN: !Sub 'https://${CloudFrontDistribution.DomainName}'
+          DB_HOST: !GetAtt Database.Endpoint.Address
+          DB_PORT: '5432'
+          DB_USER: salesfast7
+          DB_NAME: salesfast7
+          DB_SSL: 'true'
+          BEDROCK_REGION: ap-southeast-1
+          BEDROCK_MODEL_ID: 'apac.anthropic.claude-3-5-sonnet-20241022-v2:0'
+          CHAT_TABLE: !Ref ChatHistoryTable
+          AI_STATE_TABLE: !Ref AIStateTable
+          ENABLE_EVENT_LISTENER: 'true'
+          ENABLE_SCHEDULER: 'true'
+          CRM_API_URL: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+          SALES_API_URL: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+          QUOTATION_API_URL: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+          NOTIFICATION_API_URL: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+          AUTH_API_URL: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+
+  # SQS -> Agent Lambda trigger (receives domain events for proactive actions)
+  AgentEventSource:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt AgentEventsQueue.Arn
+      FunctionName: !Ref AgentFunction
+      BatchSize: 1
+      Enabled: true
+
+  # Scheduled Events — Agent proactive actions
+  # Daily Digest: 8:30 AM Bangkok (01:30 UTC)
+  AgentDailyDigestRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub 'sf7-${Environment}-agent-daily-digest'
+      Description: 'Trigger agent daily digest at 8:30 AM Bangkok time'
+      ScheduleExpression: 'cron(30 1 * * ? *)'
+      State: ENABLED
+      Targets:
+        - Id: AgentLambda
+          Arn: !GetAtt AgentFunction.Arn
+          Input: '{"source":"scheduled","action":"daily_digest"}'
+
+  AgentDailyDigestPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AgentFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AgentDailyDigestRule.Arn
+
+  # Deal Health Check: every 6 hours
+  AgentDealHealthRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub 'sf7-${Environment}-agent-deal-health'
+      Description: 'Trigger agent deal health check every 6 hours'
+      ScheduleExpression: 'rate(6 hours)'
+      State: ENABLED
+      Targets:
+        - Id: AgentLambda
+          Arn: !GetAtt AgentFunction.Arn
+          Input: '{"source":"scheduled","action":"deal_health_check"}'
+
+  AgentDealHealthPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AgentFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AgentDealHealthRule.Arn
+
+  # Task Reminders: every hour
+  AgentTaskReminderRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub 'sf7-${Environment}-agent-task-reminders'
+      Description: 'Trigger agent task reminders every hour'
+      ScheduleExpression: 'rate(1 hour)'
+      State: ENABLED
+      Targets:
+        - Id: AgentLambda
+          Arn: !GetAtt AgentFunction.Arn
+          Input: '{"source":"scheduled","action":"task_reminders"}'
+
+  AgentTaskReminderPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AgentFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AgentTaskReminderRule.Arn
 
   # SQS -> Notification Lambda trigger
   NotificationEventSource:
@@ -1337,6 +1474,37 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*'
 
+  # Agent Service routes (AI Agents — น้องแอ๊ด, น้องขายไว, น้องวิ)
+  AgentIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt AgentFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  AgentPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AgentFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*'
+
+  AgentsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /agents/{proxy+}'
+      Target: !Sub 'integrations/${CRMIntegration}'
+
+  AgentsBaseRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /agents'
+      Target: !Sub 'integrations/${CRMIntegration}'
+
   # ============================================================
   # CloudWatch Alarms — Security Monitoring
   # ============================================================
@@ -1533,6 +1701,14 @@ Outputs:
   AgentEventsQueueUrl:
     Value: !Ref AgentEventsQueue
     Description: SQS queue URL for Agent Service events (fan-out from SNS)
+
+  AgentFunctionName:
+    Value: !Ref AgentFunction
+    Description: Agent Service Lambda function name
+
+  AgentFunctionArn:
+    Value: !GetAtt AgentFunction.Arn
+    Description: Agent Service Lambda function ARN
 
   EventsTopicArn:
     Value: !Ref EventsTopic

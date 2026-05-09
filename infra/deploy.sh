@@ -566,7 +566,7 @@ PROXY_ENDPOINT=$(aws cloudformation describe-stacks \
 if [ -n "$PROXY_ENDPOINT" ] && [ "$PROXY_ENDPOINT" != "None" ]; then
   echo "  Proxy endpoint: $PROXY_ENDPOINT"
   echo "  Updating Lambda functions to use RDS Proxy..."
-  for FN in "sf7-${ENV}-auth" "sf7-${ENV}-crm" "sf7-${ENV}-sales" "sf7-${ENV}-quotation" "sf7-${ENV}-notification"; do
+  for FN in "sf7-${ENV}-auth" "sf7-${ENV}-crm" "sf7-${ENV}-sales" "sf7-${ENV}-quotation" "sf7-${ENV}-notification" "sf7-${ENV}-agent"; do
     # Get current env vars, replace DB_HOST with proxy endpoint
     CURRENT_ENV=$(aws lambda get-function-configuration --function-name "$FN" --region "$REGION" --query "Environment.Variables" --output json 2>/dev/null || echo "{}")
     NEW_ENV=$(echo "$CURRENT_ENV" | python3 -c "import json,sys; d=json.load(sys.stdin); d['DB_HOST']='$PROXY_ENDPOINT'; print(json.dumps(d))" 2>/dev/null || echo "")
@@ -618,6 +618,27 @@ echo "# Company Profile — replace with your info" | \
 echo "# FAQ — replace with your FAQ" | \
   aws s3 cp - "s3://$KB_BUCKET/faq/faq.md" --region "$AI_REGION" 2>/dev/null || true
 echo "  KB: $KB_BUCKET"
+
+# ══════════════════════════════════════════════
+# STEP 11: Deploy Agent Service code
+# ══════════════════════════════════════════════
+
+echo ""
+echo "[11/11] Deploying Agent Service..."
+AGENT_DIR="$SCRIPT_DIR/../services/agent-service"
+if [ -d "$AGENT_DIR" ] && [ -f "$AGENT_DIR/package.json" ]; then
+  cd "$AGENT_DIR"
+  if [ -f "deploy.sh" ]; then
+    bash deploy.sh 2>&1 | tail -5
+  else
+    echo "  Agent deploy.sh not found — skipping."
+    echo "  Deploy manually: cd services/agent-service && bash deploy.sh"
+  fi
+  cd "$SCRIPT_DIR"
+else
+  echo "  Agent service not found — skipping."
+  echo "  Deploy manually: cd services/agent-service && bash deploy.sh"
+fi
 
 # ══════════════════════════════════════════════
 # DONE

@@ -56,8 +56,13 @@ export class EventListenerService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit() {
-    if (process.env.ENABLE_EVENT_LISTENER !== 'false') {
+    // In Lambda, SQS events come via event source mapping (handled in lambda.ts)
+    // Only poll SQS when running as a standalone service (ECS, local dev)
+    const isLambda = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+    if (process.env.ENABLE_EVENT_LISTENER !== 'false' && !isLambda) {
       this.startPolling();
+    } else if (isLambda) {
+      this.logger.log('Running in Lambda — SQS polling disabled (using event source mapping)');
     }
   }
 

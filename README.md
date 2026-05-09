@@ -1,8 +1,8 @@
 # SalesFAST 7
 
-**Agentic AI CRM for Thai SMB** | Bilingual (TH/EN) | Serverless on AWS
+**Agentic AI CRM for Thai SMB** | Bilingual (TH/EN) | Serverless on AWS | Amazon Bedrock AgentCore
 
-SalesFAST 7 is a full-featured CRM platform with 3 AI Agents (Strands Agents SDK + Amazon Bedrock) that work as real sales team members — scoring leads, creating quotations, sending notifications, and analyzing data. All agent actions write to the real database through the same APIs the UI uses.
+SalesFAST 7 is a full-featured CRM platform with 3 AI Agents deployed on **Amazon Bedrock AgentCore Runtime** that work as real sales team members — scoring leads, creating quotations, sending notifications, and analyzing data. All agent actions write to the real database through MCP tools.
 
 ---
 
@@ -10,18 +10,15 @@ SalesFAST 7 is a full-featured CRM platform with 3 AI Agents (Strands Agents SDK
 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
+- [Full Architecture](#full-architecture)
 - [Project Structure](#project-structure)
+- [CRM User Journey](#crm-user-journey)
+- [Function Flow](#function-flow)
+- [AI Agent System](#ai-agent-system)
 - [Deployment](#deployment)
 - [AWS Cost](#aws-cost)
-- [Architecture](#architecture)
-- [Backend Services](#backend-services)
-- [AI Agents](#ai-agents)
-- [Knowledge Base](#knowledge-base)
-- [LINE OA Integration](#line-oa-integration)
 - [Database Schema](#database-schema)
-- [Roles & Permissions](#roles--permissions)
 - [Security](#security)
-- [i18n — Thai / English](#i18n)
 
 ---
 
@@ -29,19 +26,18 @@ SalesFAST 7 is a full-featured CRM platform with 3 AI Agents (Strands Agents SDK
 
 | Module | Description |
 |--------|-------------|
-| Dashboard | Sales CRM Dashboard — KPI cards, Pipeline by Stage, Deal by Source, Top Open Deals, Kanban, Sales Rep Comparison, Customers & Revenue, Tasks Overview |
-| Accounts | Customer 360 — company info, Thai tax ID, contacts, deals, quotations, tasks, documents |
-| Pipeline | Kanban board with drag-and-drop + value per stage — New → Contacted → Qualified → Proposal → Negotiation → Won/Lost |
-| Lead Management | Table view — search, filter by status, sort, edit inline, Sales Rep filter (Admin/Manager only) |
-| Quotations | Create, approval workflow (draft → pending_approval → sent → accepted), reject returns to draft |
-| Tasks | Task list with filters, call logging, linked to accounts |
+| Dashboard | KPI cards, Pipeline by Stage, Deal by Source, Top Deals, Sales Rep Comparison |
+| Accounts | Customer 360 — company info, Thai tax ID, contacts, deals, quotations, tasks |
+| Pipeline | Kanban board with drag-and-drop, value per stage |
+| Lead Management | Table + Kanban, search, filter, AI scoring, duplicate detection |
+| Quotations | Create, approval workflow, PDF generation, LINE delivery |
+| Tasks | Task list, call logging, overdue detection, calendar view |
 | Products | Product catalog with SKU, pricing, WHT rate |
-| Calendar | Monthly calendar with task creation |
-| Settings | User management (add/delete), Roles & Permissions, LINE OA config, AI model selection, Knowledge Base ID |
-| Admin Portal | Tenant management, audit logs, security, API keys, webhooks, PDPA |
-| AI Agents | 3 agents: น้องแอ๊ด (Landing + LINE), น้องขายไว (CRM), น้องวิ (Dashboard) |
-| LINE OA | Auto-reply, auto-create Lead, send product/quotation via LINE |
-| i18n | Thai / English, Buddhist calendar, Thai address format |
+| Calendar | Monthly/weekly/daily view with task creation |
+| Settings | Users, Roles, LINE OA, AI config, Knowledge Base, Webhooks, PDPA |
+| AI Agents | 3 agents: น้องแอ๊ด (LINE), น้องขายไว (CRM), น้องวิ (Analytics) |
+| LINE OA | Auto-reply, auto-create Lead, send quotation via LINE |
+| i18n | Thai/English, Buddhist calendar, Thai address format |
 
 ---
 
@@ -49,17 +45,112 @@ SalesFAST 7 is a full-featured CRM platform with 3 AI Agents (Strands Agents SDK
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | HTML5, CSS3, Vanilla JS — Salesforce Lightning design |
-| Backend (Unified API) | Hono (TypeScript) on AWS Lambda — single function for all routes |
-| Backend (Services) | 6 NestJS microservices (TypeScript) on AWS Lambda |
-| AI Agents | Strands Agents SDK (TypeScript) + Amazon Bedrock (Claude Sonnet 4.6) |
-| Database | PostgreSQL 16 on RDS + RDS Proxy, Row Level Security |
+| Frontend (Legacy) | HTML5, CSS3, Vanilla JS — Salesforce Lightning design |
+| Frontend (Next.js) | Next.js 14 App Router, TanStack Query, Zustand, Tailwind, Apple Design |
+| Backend (Unified API) | Hono (TypeScript) on AWS Lambda |
+| Backend (Services) | 6 NestJS microservices (TypeScript) |
+| AI Runtime | Amazon Bedrock AgentCore (Python, Strands Agents SDK) |
+| AI Model | Claude Sonnet 3.5 v2 (via Bedrock, ap-southeast-1) |
+| Database | PostgreSQL 16 (RDS) + RDS Proxy, Row-Level Security |
 | Auth | bcrypt cost-12 + JWT (15min access / 7d refresh) |
-| CDN | CloudFront Pro Plan ($15/mo flat-rate, includes WAF + DDoS) |
-| Queue | SQS + SNS fan-out (event-driven agents) |
+| CDN | CloudFront Pro Plan ($15/mo flat-rate, WAF + DDoS) |
+| Queue | SQS + SNS fan-out (event-driven) |
 | Storage | S3 AES-256 encrypted |
-| IaC | CloudFormation |
+| IaC | CloudFormation (3 stacks) |
 | Monorepo | Turborepo + npm workspaces |
+
+---
+
+## Full Architecture
+
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                    USERS                                                 │
+│   👤 Sales Rep (Web)      👤 Manager (Web)      📱 ลูกค้า (LINE OA)                     │
+└──────────┬─────────────────────┬─────────────────────────┬──────────────────────────────┘
+           │                     │                         │
+           ▼                     ▼                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                        CloudFront Pro ($15/mo flat-rate)                                  │
+│                   CDN + WAF + DDoS + TLS 1.2+ + HTTP/3                                  │
+│   Static Files (/*) → S3 Frontend       API Routes → API Gateway HTTP API               │
+└──────────────────────────────────────────┬──────────────────────────────────────────────┘
+                                           │
+┌──────────────────────────────────────────┼──────────────────────────────────────────────┐
+│                           API Gateway HTTP API                                           │
+│   /auth/* /users/* /roles/*           → Auth Lambda                                     │
+│   /accounts/* /leads/* /tasks/* etc.  → CRM Lambda (Unified API)                        │
+│   /agents/*                           → CRM Lambda → AgentCore Runtime                  │
+└──────────────────────────────────────────┬──────────────────────────────────────────────┘
+                                           │
+┌──────────────────────────────────────────┼──────────────────────────────────────────────┐
+│                              VPC (10.0.0.0/16)                                           │
+│                                                                                          │
+│  ┌─── Private Subnets ───────────────────────────────────────────────────────────────┐  │
+│  │                                                                                    │  │
+│  │  ┌────────────────┐   ┌──────────────────────────────────────────────────────┐    │  │
+│  │  │  Auth Lambda   │   │         CRM Lambda (Unified Hono API)                 │    │  │
+│  │  │  • Login/JWT   │   │  All routes: accounts, leads, tasks, quotations,      │    │  │
+│  │  │  • MFA/SSO     │   │  products, opportunities, dashboard, notifications,   │    │  │
+│  │  │  • RBAC        │   │  activities, agents                                   │    │  │
+│  │  └────────────────┘   │                                                       │    │  │
+│  │                        │  /agents/chat flow:                                   │    │  │
+│  │                        │    1. Try AgentCore (12s timeout via VPC Endpoint)     │    │  │
+│  │                        │    2. If timeout → Fallback Bedrock Converse + tools   │    │  │
+│  │                        └──────────────────────────┬───────────────────────────┘    │  │
+│  │                                                   │                                │  │
+│  │  ┌────────────────────────────────────────────────┼────────────────────────────┐  │  │
+│  │  │              VPC Endpoints (9)                  │                             │  │  │
+│  │  │  • bedrock-agentcore  ←─────────────────────────                             │  │  │
+│  │  │  • bedrock-runtime (Bedrock Models)                                          │  │  │
+│  │  │  • sqs, secretsmanager, logs, ecr.api, ecr.dkr                              │  │  │
+│  │  │  • s3 (Gateway), dynamodb (Gateway)                                          │  │  │
+│  │  └─────────────────────────────────────────────────────────────────────────────┘  │  │
+│  │                                                   │                                │  │
+│  │  ┌────────────────────────────────────────────────▼────────────────────────────┐  │  │
+│  │  │           AgentCore Runtime (Python) — VPC Mode                              │  │  │
+│  │  │           ARN: arn:aws:bedrock-agentcore:ap-southeast-1:...:runtime/sf7_agents│  │  │
+│  │  │                                                                              │  │  │
+│  │  │  ┌────────────────────────────────────────────────────────────────────────┐ │  │  │
+│  │  │  │  Orchestrator (keyword-based auto-routing)                              │ │  │  │
+│  │  │  └──────┬──────────────────┬──────────────────┬────────────────────────────┘ │  │  │
+│  │  │         │                  │                  │                               │  │  │
+│  │  │  ┌──────▼──────┐    ┌─────▼───────┐    ┌─────▼───────┐                      │  │  │
+│  │  │  │  น้องแอ๊ด   │    │ น้องขายไว  │    │   น้องวิ    │                      │  │  │
+│  │  │  │ (Admin AI)  │    │(Sales Asst) │    │ (Analytics) │                      │  │  │
+│  │  │  │ A2A→sales   │    │ A2A→analyt  │    │ (terminal)  │                      │  │  │
+│  │  │  └─────────────┘    └─────────────┘    └─────────────┘                      │  │  │
+│  │  │         │                  │                  │                               │  │  │
+│  │  │  ┌──────▼──────────────────▼──────────────────▼────────────────────────────┐ │  │  │
+│  │  │  │  14 MCP Tools (psycopg3 → PostgreSQL)                                   │ │  │  │
+│  │  │  │  + Bedrock Claude (via bedrock-runtime VPC Endpoint)                     │ │  │  │
+│  │  │  │  + AgentCore Memory (session context)                                    │ │  │  │
+│  │  │  └─────────────────────────────────┬───────────────────────────────────────┘ │  │  │
+│  │  └────────────────────────────────────┼─────────────────────────────────────────┘  │  │
+│  │                                       │                                             │  │
+│  │  ┌────────────────────────────────────▼─────────────────────────────────────────┐  │  │
+│  │  │  RDS PostgreSQL 16 (db.t4g.medium, 100GB gp3)                                │  │  │
+│  │  │  • 30+ tables with Row-Level Security (RLS)                                   │  │  │
+│  │  │  • Multi-tenant isolation via tenant_id                                       │  │  │
+│  │  │  • RDS Proxy (connection pooling)                                             │  │  │
+│  │  │  • Encrypted at rest + SSL enforced                                           │  │  │
+│  │  └──────────────────────────────────────────────────────────────────────────────┘  │  │
+│  └────────────────────────────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                           Event-Driven Architecture                                      │
+│                                                                                          │
+│  CRM Lambda (writes) ──pub──▶ SNS Topic ──sub──▶ SQS: events → Notification Lambda     │
+│                                          ──sub──▶ SQS: agent-events → Agent Lambda      │
+│                                                                                          │
+│  EventBridge Rules:                                                                      │
+│    • cron(30 1 * * ? *)  → Agent: Daily Digest (8:30 AM Bangkok)                        │
+│    • rate(6 hours)       → Agent: Deal Health Check                                      │
+│    • rate(1 hour)        → Agent: Task Reminders                                         │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -67,432 +158,355 @@ SalesFAST 7 is a full-featured CRM platform with 3 AI Agents (Strands Agents SDK
 
 ```
 CRM/
-├── frontend/                    Static HTML/CSS/JS
-│   ├── app/                     14 pages (dashboard, accounts, leads, lead-management, quotations, etc.)
-│   ├── admin/                   Admin portal
-│   ├── landing.html             Landing page + น้องแอ๊ด chat widget
-│   ├── js/
-│   │   ├── nav.js               Navigation + น้องขายไว chat widget
-│   │   ├── data.js              API helper + data loaders (shared across pages)
-│   │   ├── helpers.js           Utilities: fmt(), esc(), auth helpers
-│   │   ├── customer-search.js   Customer search component
-│   │   └── i18n.js              Thai/English translations (150+ keys)
-│   ├── img/
-│   │   ├── co-agent-avatar.svg  น้องขายไว avatar
-│   │   ├── analytics-avatar.svg น้องวิ avatar
-│   │   └── admin-ai-avatar.svg  น้องแอ๊ด avatar
-│   └── css/app.css              Shared stylesheet
+├── apps/
+│   ├── web-crm/                 Next.js 14 App Router (Apple Design System)
+│   │   └── src/app/             (auth), (crm), (dashboard), (sales), (quotation), (settings)
+│   └── admin-portal/            Admin dashboard (placeholder)
 │
 ├── services/
 │   ├── api/                     Unified Hono API (single Lambda — all routes)
 │   │   └── src/routes/          auth, users, accounts, leads, tasks, products,
 │   │                            quotations, opportunities, dashboard, agents
-│   ├── auth-service/            NestJS — Auth, Users, Roles, API Keys
-│   ├── crm-service/             NestJS — Accounts, Contacts, Tasks
-│   ├── sales-service/           NestJS — Leads, Opportunities, Pipeline
-│   ├── quotation-service/       NestJS — Products, Quotations, PDF
-│   ├── notification-service/    NestJS — Notifications, Webhooks, LINE OA
-│   ├── agent-service/           NestJS — 3 AI Agents (Strands SDK)
-│   ├── crm-mcp-server/          MCP Server — CRM DB access for agents
-│   └── agentcore/               AgentCore Runtime package (future)
+│   ├── auth-service/            NestJS — Auth, Users, Roles, MFA, SSO
+│   ├── crm-service/             NestJS — Accounts, Contacts, Tasks, Timeline, Search
+│   ├── sales-service/           NestJS — Leads, Opportunities, Pipeline, Targets
+│   ├── quotation-service/       NestJS — Products, Quotations, PDF, Approval
+│   ├── notification-service/    NestJS — Notifications, Webhooks, LINE OA, Rate Limit
+│   ├── agent-service/           NestJS — AI Agents (Lambda deployment option)
+│   ├── agentcore-py/            Python — AgentCore Runtime (PRODUCTION ✅)
+│   ├── agentcore/               TypeScript — AgentCore Runtime (Docker option)
+│   └── crm-mcp-server/          MCP Server — CRM DB tools for agents
+│
+├── packages/
+│   ├── shared-types/            TypeScript interfaces (all entities)
+│   ├── ui-components/           Apple Design System components (React)
+│   └── utils/                   Thai localization (date, currency, address)
 │
 ├── database/
 │   ├── schema.sql               30+ tables with RLS
-│   ├── seed.sql                 Template — placeholders replaced by deploy.sh
+│   ├── seed.sql                 Default roles, admin user
 │   └── migrations/              Incremental migrations
 │
-├── infra/
-│   ├── cloudformation.yaml      CRM stack (VPC, RDS, Lambda, API GW, S3, CloudFront)
-│   ├── cloudformation-ai.yaml   AI stack (S3 KB bucket, IAM roles)
-│   ├── deploy.sh                Full deployment (11 steps)
-│   └── destroy.sh               Destroy all resources
+├── frontend/                    Legacy vanilla HTML/JS frontend (production)
+│   ├── app/                     14 CRM pages
+│   ├── admin/                   Admin portal
+│   ├── js/                      nav.js (chat widget), data.js, i18n.js
+│   └── css/app.css              Shared styles
 │
-└── packages/
-    ├── shared-types/            TypeScript interfaces
-    ├── ui-components/           Shared React components (Next.js app)
-    └── utils/                   Thai localization utilities
+└── infra/
+    ├── cloudformation.yaml      Main stack (VPC, RDS, Lambda, API GW, CloudFront, SQS/SNS)
+    ├── cloudformation-proxy.yaml RDS Proxy stack
+    ├── cloudformation-ai.yaml   AI stack (KB bucket, IAM roles)
+    ├── deploy.sh                Full deployment (11 steps)
+    ├── deploy-ai.sh             AI resources deploy
+    ├── deploy-agents.sh         Agent deployment (Lambda/AgentCore)
+    └── destroy.sh               Destroy all resources
+```
+
+
+---
+
+## CRM User Journey
+
+### Journey 1: New Customer via LINE OA
+
+```
+ลูกค้าส่งข้อความ LINE → LINE Webhook → Notification Lambda
+    → Agent (น้องแอ๊ด) ตอบอัตโนมัติ
+    → ถามสินค้า → ค้น Knowledge Base → แนะนำ
+    → เก็บข้อมูล (ชื่อ, เบอร์, บริษัท, สนใจอะไร)
+    → create_lead → DB
+    → Event: lead.created
+    → Agent (น้องขายไว) Score Lead + Notify Manager
+    → Manager เปิด CRM → เห็น Lead ใหม่ + AI Score
+    → Assign ให้ Sales Rep
+    → Event: lead.assigned
+    → Agent สร้าง Task "ติดต่อลูกค้าภายใน 24 ชม."
+    → ส่ง LINE แจ้ง Sales Rep
+```
+
+### Journey 2: Sales Rep Daily Workflow
+
+```
+เช้า 8:30 → Agent ส่ง Daily Digest (LINE + in-app)
+    "วันนี้มี 3 งาน, 2 Lead ใหม่, 1 QT รออนุมัติ"
+
+Sales Rep เปิด CRM → Dashboard → เห็น KPI
+    → คลิก Lead → ดูรายละเอียด + AI Score
+    → ถาม น้องขายไว "เตรียม meeting ลูกค้า ABC"
+    → Agent ดึงข้อมูลทั้งหมด: company, contacts, deals, activities
+    → แนะนำ talking points
+
+หลัง meeting → บอก น้องขายไว "สรุป meeting"
+    → Agent สร้าง Note + อัพเดท Stage + สร้าง Follow-up Task
+
+ต้องการออก QT → บอก น้องขายไว "ออก QT ให้ลูกค้า ABC"
+    → Agent ค้นสินค้า → ยืนยันรายการ → สร้าง QT (draft)
+    → แจ้ง Manager ให้ approve
+    → Manager approve → Agent ส่ง QT ผ่าน LINE ให้ลูกค้า
+    → สร้าง Task follow-up 3 วัน
+```
+
+### Journey 3: Manager Oversight
+
+```
+Manager เปิด Dashboard → เห็น Pipeline + KPI + Team Performance
+    → ถาม น้องวิ "เปรียบเทียบผลงานทีม"
+    → Agent ดึงข้อมูลจริง → วิเคราะห์ → แนะนำ action
+
+    → ถาม "ลูกค้าเสี่ยงหาย"
+    → Agent ดึง churn risk → แนะนำ re-engage
+
+ทุก 6 ชม. → Agent ตรวจ Deal Health
+    → Deal ค้าง stage เดิมนาน → แจ้ง Sales Rep + Manager
+    → สร้าง Task follow-up อัตโนมัติ
+```
+
+---
+
+## Function Flow
+
+### API Request Flow
+
+```
+Client → CloudFront → API Gateway → Lambda (VPC)
+    → JWT Validation (middleware)
+    → Route Handler
+    → RLS: SET app.current_tenant = tenant_id
+    → PostgreSQL Query
+    → Response
+    → (If write) Publish event to SNS Topic
+```
+
+### Agent Invocation Flow
+
+```
+POST /agents/chat { message, agentType, tenantId }
+    │
+    ├── Try AgentCore (12s timeout)
+    │       │
+    │       ▼ (via VPC Endpoint: bedrock-agentcore)
+    │   AgentCore Runtime Container
+    │       │
+    │       ├── Orchestrator: detect intent → route to agent
+    │       ├── Agent (Strands SDK): system prompt + tools
+    │       ├── Bedrock Claude: reasoning + tool_use decisions
+    │       ├── MCP Tools: psycopg3 → PostgreSQL (RLS)
+    │       ├── A2A: delegate to other agent if needed
+    │       └── Return { reply, agentUsed, sessionId }
+    │
+    ├── If timeout (cold start) → Fallback
+    │       │
+    │       ▼ (via VPC Endpoint: bedrock-runtime)
+    │   Bedrock Converse API (tool_use loop in Lambda)
+    │       ├── 4 basic tools: get_leads, get_lead_detail, get_pipeline, get_kpi
+    │       └── Return { reply, toolsUsed }
+    │
+    └── Response → Client { reply, backend: "agentcore" | "bedrock-converse-fallback" }
+```
+
+### Event Processing Flow
+
+```
+CRM Write (create/update/delete)
+    → Publish to SNS Topic (DomainEvent envelope)
+    → Fan-out:
+        ├── SQS: events → Notification Lambda
+        │       → LINE push / Email / Webhook delivery
+        │
+        └── SQS: agent-events → Agent Lambda
+                → Parse event type
+                → Invoke น้องขายไว with system prompt
+                → Agent takes action (score, notify, create task)
+                → Writes back to DB via API
+```
+
+---
+
+## AI Agent System
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│              Amazon Bedrock AgentCore Runtime (Python)                │
+│              Serverless • Pay-per-active-CPU • VPC Mode              │
+│                                                                      │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │  Orchestrator (auto-route by keywords)                          │ │
+│  │  analytics keywords → น้องวิ                                    │ │
+│  │  admin/product keywords → น้องแอ๊ด                              │ │
+│  │  everything else → น้องขายไว                                    │ │
+│  └──────────┬──────────────────┬──────────────────┬───────────────┘ │
+│             │                  │                  │                  │
+│  ┌──────────▼──────┐  ┌───────▼────────┐  ┌─────▼──────────┐      │
+│  │  น้องแอ๊ด       │  │  น้องขายไว     │  │  น้องวิ        │      │
+│  │  (Admin AI)     │  │  (Sales Asst)  │  │  (Analytics)   │      │
+│  │  temp: 0.3      │  │  temp: 0.4     │  │  temp: 0.2     │      │
+│  │                 │  │                │  │                │      │
+│  │  Tools:         │  │  Tools:        │  │  Tools:        │      │
+│  │  • get_products │  │  • ALL 14 MCP  │  │  • pipeline    │      │
+│  │  • create_lead  │  │  • ask_analyt  │  │  • kpi         │      │
+│  │  • ask_sales    │  │                │  │  • performance │      │
+│  │  • ask_analytics│  │                │  │  • leads       │      │
+│  │                 │  │                │  │  • accounts    │      │
+│  └─────────────────┘  └────────────────┘  └────────────────┘      │
+│                                                                      │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │  14 MCP Tools (direct PostgreSQL via psycopg3)                  │ │
+│  │                                                                 │ │
+│  │  LEADS:     get_leads, get_lead_detail, create_lead, update_lead│ │
+│  │  ACCOUNTS:  get_accounts, get_account_detail                    │ │
+│  │  USERS:     get_users                                           │ │
+│  │  TASKS:     get_tasks, create_task                              │ │
+│  │  PRODUCTS:  get_products                                        │ │
+│  │  QUOTES:    get_quotations                                      │ │
+│  │  ANALYTICS: get_pipeline_summary, get_kpi_summary,              │ │
+│  │             get_sales_rep_performance                            │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │  Infrastructure                                                 │ │
+│  │  • Bedrock Claude Sonnet 3.5 v2 (via VPC Endpoint)             │ │
+│  │  • PostgreSQL RDS (via VPC, same subnets)                       │ │
+│  │  • AgentCore Memory (session context, 90-day retention)         │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Agent Capabilities
+
+| Agent | Role | Tools | A2A | Use Case |
+|-------|------|-------|-----|----------|
+| **น้องแอ๊ด** | Admin AI | 2 MCP + 2 A2A | → sales, → analytics | ตอบลูกค้า LINE, เก็บ Lead, แนะนำสินค้า |
+| **น้องขายไว** | Sales Assistant | 14 MCP + 1 A2A | → analytics | จัดการ Lead/Task/QT, Daily Digest, Deal Health |
+| **น้องวิ** | Analytics | 5 MCP | (terminal) | KPI, Pipeline, Forecast, Win Rate, Churn |
+
+### Agent Communication (A2A)
+
+```
+ลูกค้า: "ใครดูแลผมอยู่?"
+    ↓
+น้องแอ๊ด: ต้องการข้อมูล CRM → call ask_sales_assistant("ใครดูแลลูกค้า?")
+    ↓
+น้องขายไว: call get_lead_detail(search="ชื่อลูกค้า") → ได้ Sales Rep info
+    ↓
+น้องแอ๊ด: "คุณมีคุณสมชายดูแลอยู่ค่ะ เบอร์ 08-xxxx-xxxx ค่ะ"
+```
+
+```
+Sales Rep: "Forecast เดือนหน้าเท่าไหร่?"
+    ↓
+น้องขายไว: ต้องการ analytics → call ask_analytics_agent("forecast")
+    ↓
+น้องวิ: call get_pipeline_summary() + get_kpi_summary() → วิเคราะห์
+    ↓
+น้องขายไว: "📈 Forecast: Best case ฿2.5M, Expected ฿1.8M, Worst ฿1.2M"
+```
+
+### Agent Journey: Lead Lifecycle
+
+```
+┌─────────┐    ┌──────────┐    ┌───────────┐    ┌──────────┐    ┌─────┐
+│  NEW    │───▶│CONTACTED │───▶│ QUALIFIED │───▶│ PROPOSAL │───▶│ WON │
+└─────────┘    └──────────┘    └───────────┘    └──────────┘    └─────┘
+     │              │               │                │              │
+     ▼              ▼               ▼                ▼              ▼
+  น้องขายไว:    น้องขายไว:     น้องขายไว:      น้องขายไว:     น้องขายไว:
+  • AI Score    • Log call     • Create QT     • Send QT      • Notify team
+  • Tag         • Update stage • Notify Mgr    • Follow-up    • Upgrade tier
+  • Notify Mgr  • Next task    • Meeting prep  • Track        • Delivery task
+  • Assign rec                                                 • Win analysis
 ```
 
 ---
 
 ## Deployment
 
-### 1. First Time Deploy
+### Quick Start
 
 ```bash
-# AWS CloudShell หรือ terminal ที่มี AWS CLI + Node.js 20+
 git clone https://github.com/konsudtai/CRM.git
 cd CRM/infra
 
+# Deploy everything (CRM + AI + Agents)
 bash deploy.sh \
-  --email    admin@mycompany.com \
-  --name     "Somchai Jaidee" \
-  --password "MyPass@123" \
-  --db-pass  auto \
-  --tenant   "My Company Ltd"
+  --email admin@company.com \
+  --name "Somchai Jaidee" \
+  --password "Pass@123" \
+  --db-pass auto \
+  --tenant "My Company"
+
+# Deploy AgentCore separately (if needed)
+bash deploy-agents.sh --agentcore
 ```
 
-`--db-pass auto` จะถามให้กรอก password เอง (interactive, ซ่อนตัวอักษร, ยืนยัน 2 ครั้ง)
-หรือระบุตรง: `--db-pass "MyDbP@ss99"`
-
-**ใช้เวลา ~15-20 นาที** Script ทำทุกอย่างอัตโนมัติ:
+### Deployment Steps (11)
 
 ```
-[0/9]  Pre-check — ลบ orphaned resources จาก deploy ครั้งก่อน (ถ้ามี)
-[1/9]  Deploy CloudFormation (VPC, RDS, Lambda, API GW, S3, CloudFront, SNS, SQS)
-[2/9]  Get stack outputs (URLs, endpoints)
-[3/9]  Build pg Lambda Layer + DB Init Lambda
-[4/9]  Generate seed.sql with bcrypt-hashed admin password
-[5/9]  Initialize database via Lambda (schema + seed)
-[6/9]  Upload frontend to S3
-[7/9]  Invalidate CloudFront cache
-[8/9]  Deploy AI stack (S3 KB bucket, IAM roles)
-[9/9]  Upload sample Knowledge Base documents
+[1/11]  Deploy CloudFormation (VPC, RDS, Lambda, API GW, CloudFront, SQS/SNS, DynamoDB)
+[2/11]  Get stack outputs
+[3/11]  Build pg Lambda Layer + DB Init Lambda
+[4/11]  Generate seed.sql with bcrypt-hashed admin password
+[5/11]  Initialize database (schema + seed)
+[6/11]  Upload frontend to S3
+[7/11]  Invalidate CloudFront cache
+[8/11]  Deploy RDS Proxy stack
+[9/11]  Deploy AI stack (KB bucket, IAM roles)
+[10/11] Upload Knowledge Base documents
+[11/11] Deploy Agent Service code
 ```
-
-**หลัง deploy:**
-
-```
-1. Subscribe CloudFront Pro Plan ($15/mo)
-   Console > CloudFront > Distribution > Pricing plan > Pro
-
-2. เปิด CloudFront URL > Login > เปลี่ยนรหัสผ่าน
-
-3. (Optional) Setup LINE OA
-   Settings > Add-ons > LINE OA > กรอก Token/Secret
-
-4. (Optional) Setup Knowledge Base
-   Bedrock Console > Create Knowledge Base > S3 source
-```
-
-| Flag | Required | Description |
-|------|:--------:|-------------|
-| `--email` | ✅ | Admin login email |
-| `--name` | ✅ | Admin full name |
-| `--password` | ✅ | Admin login password |
-| `--db-pass` | ✅ | DB password (`auto` = interactive prompt) |
-| `--tenant` | ✅ | Company name |
-| `--region` | | Default: `ap-southeast-1` (Singapore) |
-| `--ai-region` | | Default: `ap-southeast-1` |
-| `--jwt` | | Default: auto-generate |
-| `--stack` | | Default: `salesfast7-prod` |
-
-### 2. Update Code
-
-อัปเดต code ใหม่โดยไม่ลบ database — ข้อมูลเดิมยังอยู่ครบ
-
-```bash
-cd ~/CRM
-git pull origin main
-cd infra
-
-bash deploy.sh \
-  --email    admin@mycompany.com \
-  --name     "Somchai Jaidee" \
-  --password "MyPass@123" \
-  --db-pass  "SAME_PASSWORD_AS_FIRST_DEPLOY" \
-  --tenant   "My Company Ltd"
-```
-
-**สำคัญ:** `--db-pass` ต้องใช้ค่าเดิมที่ตั้งตอน deploy ครั้งแรก
-
-สิ่งที่อัปเดต: Frontend (S3), Lambda code, CloudFormation resources, CloudFront cache
-สิ่งที่ไม่กระทบ: Database, ข้อมูลลูกค้า, Users, Settings
-
-### 3. Clean & Deploy New
-
-ลบทุกอย่างแล้ว deploy ใหม่ตั้งแต่ต้น (~30 นาที) — **database จะถูกลบ**
-
-```bash
-cd ~/CRM/infra
-bash destroy.sh --yes
-
-bash deploy.sh \
-  --email    admin@mycompany.com \
-  --name     "Somchai Jaidee" \
-  --password "MyPass@123" \
-  --db-pass  auto \
-  --tenant   "My Company Ltd"
-```
-
-### 4. Destroy
-
-ลบทุกอย่าง — database, files, Lambda, CloudFront **กู้คืนไม่ได้**
-
-```bash
-cd ~/CRM/infra
-bash destroy.sh
-# พิมพ์ "destroy" เพื่อยืนยัน
-
-# หรือ skip confirmation:
-bash destroy.sh --yes
-```
-
-> ถ้า subscribe CloudFront Pro Plan อยู่ ต้อง cancel ใน Console ก่อน destroy
-> Console > CloudFront > Distribution > Cancel pricing plan
 
 ---
 
 ## AWS Cost
 
-| Category | Monthly Cost |
-|----------|------------:|
+| Component | Monthly |
+|-----------|---------|
 | RDS PostgreSQL (db.t4g.medium, 100GB) | $56 |
-| VPC Endpoints (3x, replaces NAT Gateway) | $22 |
+| VPC Endpoints (9 endpoints) | $22 |
+| CloudFront Pro (CDN+WAF+DDoS+DNS) | $15 |
 | RDS Proxy | $15 |
-| CloudFront Pro (CDN + WAF + DDoS) | $15 |
-| Bedrock AI (Claude 3.5 Haiku, ~30 users) | $5-15 |
-| Other (Backup, CloudWatch, Lambda, API GW, S3, SQS, DynamoDB, Secrets) | $10 |
-| **Total** | **~$123-133/mo** |
-
-Sweet spot: **30-50 active sales users** at ~$130/mo
-
----
-
-## Architecture
-
-```
-                    ┌──────────────────────────┐
-                    │  CloudFront Pro + WAF v2  │
-                    └─────────┬────────┬───────┘
-                     Static   │        │  API
-                    ┌─────────▼──┐  ┌──▼──────────────┐
-                    │  S3 Bucket │  │  API Gateway HTTP│
-                    └────────────┘  └──┬──────────────┘
-                                       │
-         ┌────────┬────────┬───────────┼────────┬────────┐
-    ┌────▼──┐┌────▼──┐┌────▼──┐┌──────▼──┐┌────▼──┐┌────▼──┐
-    │ Auth  ││ CRM   ││ Sales ││Quotation││Notif. ││Agent  │
-    │ 3001  ││ 3002  ││ 3003  ││  3004   ││ 3005  ││ 3006  │
-    └───┬───┘└───┬───┘└───┬───┘└────┬────┘└───┬───┘└───┬───┘
-        └────────┴────┬───┴─────────┘         │        │
-                      │                   ┌───▼───┐    │
-              ┌───────▼────────┐          │  SQS  │◄───┘
-              │   RDS Proxy    │          │+ SNS  │ (event listener)
-              └───────┬────────┘          └───────┘
-              ┌───────▼────────┐
-              │ PostgreSQL 16  │
-              │ 30+ tables RLS │
-              └────────────────┘
-```
-
----
-
-## Backend Services
-
-| Service | Port | Modules |
-|---------|:----:|---------|
-| auth-service | 3001 | Auth (login, MFA, JWT), Users, Roles, API Keys, IP Allowlist, Tenant |
-| crm-service | 3002 | Accounts, Contacts, Notes, Tasks, Activities, Tags, Timeline, Search, Audit, Consent, Email Sync, Calendar Sync |
-| sales-service | 3003 | Leads, Opportunities, Pipeline, Targets, Reports |
-| quotation-service | 3004 | Products, Quotations (VAT/WHT), PDF, Approval workflow |
-| notification-service | 3005 | Notifications, Webhooks, LINE OA |
-| **agent-service** | **3006** | **3 AI Agents (Strands SDK), Event Listener (SQS), Scheduler (Cron)** |
-
-
----
-
-## AI Agents
-
-Built with **Strands Agents SDK (TypeScript)** + **Amazon Bedrock**. All 3 agents call real APIs and write to the real database — users can still do everything manually through the UI.
-
-### Agent 1: Admin AI — LINE OA Auto-reply
-
-| Item | Detail |
-|---|---|
-| Name | น้องแอ๊ด |
-| Where | Landing page (chat widget) + LINE OA webhook |
-| Model | Claude Sonnet 4.6 (`global.anthropic.claude-sonnet-4-6`) |
-| Auth | Bedrock API Key (cross-account via `AWS_BEARER_TOKEN_BEDROCK`) |
-| Tools | search_knowledge_base, create_lead, search_products, search_accounts, ask_sales_assistant (A2A) |
-
-```
-ลูกค้าเปิด Landing Page → คุยกับน้องแอ๊ด → ถามสินค้า/ราคา
-→ น้องแอ๊ดค้น KB + แนะนำ → เก็บข้อมูล Lead อย่างเป็นธรรมชาติ
-→ create_lead ลง DB → event: lead.created → น้องขายไว รับต่อ
-→ ถ้าลูกค้าถาม "ใครดูแลผม?" → A2A: ask_sales_assistant → ได้ชื่อ/เบอร์ Sales Rep
-```
-
-### Agent 2: น้องขายไว — Sales Assistant (42 Tools)
-
-| Item | Detail |
-|---|---|
-| Where | Every CRM page (floating widget) + Event-driven + Scheduled |
-| Model | Claude Sonnet 4.6 |
-| Tools | 42 tools across CRM, Scoring, Activity, Deal Health, Follow-up, Notification |
-| Communication | MCP (CRM Database) + A2A (receives from น้องแอ๊ด, delegates to น้องวิ) |
-
-**10 Agentic Features:**
-
-| # | Feature | What it does | Writes to DB |
-|---|---|---|---|
-| 1 | Smart Lead Scoring | Score 0-100 (BANT) + recommend who to assign | `leads.ai_score` |
-| 2 | Auto Activity Log | Log every action to Timeline | `activities` |
-| 3 | Smart Follow-up | Auto-create Tasks after assign/QT/meeting | `tasks` |
-| 4 | Conversation Summary | Summarize LINE chat as handoff note | `notes` |
-| 5 | Deal Health Monitor | Check stale deals every 6h, score green/yellow/red | `opportunities.metadata` |
-| 6 | Meeting Prep | Pull all Account data before meeting, log after | `activities`, `notes` |
-| 7 | Smart Email/LINE | Compose email/LINE message for Sales | `notifications` |
-| 8 | Auto-tagging | Tag industry/interest/urgency automatically | `account_tags` |
-| 9 | Daily Digest | Morning summary at 8:30 per user per role | `notifications` |
-| 10 | Win/Loss Analysis | Analyze when Deal closes + coaching tips | `opportunities`, `tasks` |
-
-**Key Workflows:**
-
-```
-Lead Created → Score → Tag → Notify Manager → Manager assigns → Notify Rep → Create Task
-
-QT Request → Search Account → Search Products → Confirm → Create QT → Notify Manager
-→ Manager approves → Notify Rep → Send LINE to customer → Create follow-up Task
-
-Deal Won → Notify team → Analyze cycle → Upgrade Account tier → Create delivery Task
-Deal Lost → Record reason → Analyze → Create re-engage Task (3 months)
-```
-
-**Event-driven (SQS):**
-
-| Event | Action |
-|---|---|
-| `lead.created` | Score + Tag + Notify Manager |
-| `lead.assigned` | Notify Rep + Create Task + LINE |
-| `task.overdue` | Remind Rep + Notify Manager |
-| `quotation.finalized` | Notify Manager to approve |
-| `quotation.status_changed` | Notify Rep + recommend next step |
-| `opportunity.stage_changed` | Notify + recommend action + Create Task |
-| `opportunity.closed` | Win/Loss analysis + delivery/re-engage Task |
-
-**Scheduled (Cron):**
-
-| Job | Frequency | What |
-|---|---|---|
-| Daily Digest | 8:30 AM | KPI, Tasks, Leads, QTs per user |
-| Deal Health | Every 6h | Stale deals + churn risk |
-| Task Reminders | Every 1h | Upcoming + overdue tasks |
-
-**Role-based:**
-
-| Feature | Sales Rep | Sales Manager | Admin |
-|---|---|---|---|
-| View own Leads | ✅ | ✅ all team | ✅ all |
-| Assign Lead | ❌ notify Manager | ✅ | ✅ |
-| Create QT (draft) | ✅ | ✅ | ✅ |
-| Approve QT | ❌ | ✅ | ✅ |
-| Team performance | ❌ own only | ✅ | ✅ |
-
-### Agent 3: น้องวิ — Analytics (7 Tools)
-
-| Item | Detail |
-|---|---|
-| Where | Dashboard (floating widget) |
-| Model | Claude Sonnet 4.6 (temperature 0.2) |
-| Tools | get_kpi_summary, get_pipeline_analysis, get_revenue_data, get_sales_rep_performance, get_churn_risk_accounts, get_sales_cycle_analysis, get_forecast |
-| Communication | MCP (CRM Database) + A2A (receives from น้องขายไว) |
-
-All data comes from real DB queries — no hardcoded responses.
-
-### Agent Service Structure
-
-```
-services/agent-service/src/
-├── agents/
-│   ├── admin-ai.agent.ts          4 tools
-│   ├── sales-assistant.agent.ts   42 tools
-│   ├── analytics.agent.ts         7 tools
-│   └── orchestrator.ts            auto-routing + SSE streaming
-├── tools/
-│   ├── crm.tools.ts               Lead, Account, QT, Task, Email (12)
-│   ├── activity.tools.ts          log, note, notification, LINE (4)
-│   ├── scoring.tools.ts           lead score, tier, tags, workload (5)
-│   ├── deal-health.tools.ts       health, stage, close, stale (6)
-│   ├── followup.tools.ts          follow-up, overdue, meeting (7)
-│   ├── analytics.tools.ts         KPI, pipeline, revenue, forecast (7)
-│   └── knowledge-base.tools.ts    Bedrock KB search (1)
-└── modules/
-    ├── chat/                      POST /agents/chat, /agents/stream (SSE)
-    ├── events/                    SQS listener (8 event handlers)
-    └── scheduler/                 3 cron jobs
-```
-
-### Agent Communication Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│              Agent Layer (A2A — Agent-to-Agent)               │
-│                                                               │
-│  น้องแอ๊ด ←── A2A ──→ น้องขายไว ←── A2A ──→ น้องวิ            │
-│  (ask_sales_assistant)  (ask_analytics_agent)                │
-│                                                               │
-│  ใช้เมื่อ: ต้องการ reasoning, delegation, multi-step workflow │
-├─────────────────────────────────────────────────────────────┤
-│              Tool Layer (MCP — Agent-to-System)               │
-│                                                               │
-│  ทุก Agent ──── MCP Protocol ────→ CRM MCP Server            │
-│                                                               │
-│  Tools: get_leads, get_lead_detail, get_accounts,            │
-│         get_users, get_tasks, get_quotations,                │
-│         get_pipeline_summary, get_kpi_summary,               │
-│         create_lead, update_lead, create_task,               │
-│         get_products, get_sales_rep_performance              │
-├─────────────────────────────────────────────────────────────┤
-│              Data Layer                                       │
-│                                                               │
-│                  PostgreSQL (RDS)                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**A2A (Agent-to-Agent):** ใช้เมื่อ agent ต้องการ reasoning จาก agent อื่น
-- น้องแอ๊ด → น้องขายไว: "ใครดูแลลูกค้า ABC?" (ต้องการ Sales Rep info + recommendation)
-- น้องขายไว → น้องวิ: "Forecast เดือนหน้า?" (ต้องการ analytics)
-
-**MCP (Agent-to-System):** ใช้เมื่อ agent ต้องการ data ตรงๆ จาก DB
-- ทุก agent → CRM MCP Server: query leads, accounts, tasks, users (เร็ว, 1 hop)
-
----
-
-## Knowledge Base
-
-Stored in S3 → Bedrock Knowledge Base. Admin AI uses it to answer customer questions.
-
-```
-S3: sf7-prod-knowledge-base/
-├── products/product-catalog.json    ← auto-sync from DB daily
-├── company/company-profile.md       ← upload in Settings
-└── faq/faq.md                       ← upload in Settings
-```
-
-Upload via: Settings > Add-ons > AI > Knowledge Base > Upload
-
----
-
-## LINE OA Integration
-
-Optional add-on. Connects SalesFAST 7 with LINE Official Account.
-
-**Setup (10 min, one-time):**
-1. Create LINE Official Account at [LINE for Business](https://lineforbusiness.com/th/)
-2. Enable Messaging API at [LINE Developers](https://developers.line.biz)
-3. Copy Channel Access Token + Channel Secret
-4. Paste in CRM: Settings > Add-ons > LINE OA
-5. Copy Webhook URL from CRM → paste in LINE Developers
-6. Turn off Auto-reply in LINE OA Manager (AI Agent replies instead)
+| Bedrock Claude (on-demand, ~30 users) | $5-30 |
+| AgentCore Runtime (pay-per-active-CPU) | $2-5 |
+| Lambda (2 functions) | $2-3 |
+| DynamoDB (2 tables, on-demand) | $1-2 |
+| S3 + SQS + SNS + Secrets + Backup | $3-5 |
+| **Total** | **~$120-150/mo** |
 
 ---
 
 ## Database Schema
 
-**30+ tables** with Row Level Security (RLS) on all tables.
+**30+ tables** with Row-Level Security on all tables.
 
 | Section | Tables |
 |---------|--------|
-| Auth | tenants, users, roles, role_permissions, user_roles, api_keys, ip_allowlist_entries |
-| Accounts | accounts (45+ columns), contacts, account_shareholders, account_documents, tags, account_tags |
-| Activities | activities, notes, attachments, tasks |
-| Sales | pipeline_stages, leads (with ai_score), lead_scores, opportunities, opportunity_histories, sales_targets |
+| Auth | tenants, users, roles, role_permissions, user_roles, api_keys |
+| CRM | accounts, contacts, tags, account_tags, activities, notes, attachments |
+| Sales | pipeline_stages, leads, opportunities, opportunity_histories, sales_targets |
 | Quotations | products, quotations, quotation_line_items, quotation_sequences |
+| Tasks | tasks |
 | Notifications | notifications, webhook_configs, webhook_deliveries |
 | Compliance | audit_logs, consent_records |
 | Integrations | email_syncs, calendar_syncs |
-| AI | ai_config, kb_documents, kb_chunks (pgvector) |
+
+---
+
+## Security
+
+| Layer | Protection |
+|-------|-----------|
+| Edge | WAF (SQLi, XSS, rate limit), TLS 1.2+, HSTS, CSP, DDoS |
+| API | Throttling 50 req/s, CORS restricted to CloudFront domain |
+| Auth | bcrypt cost-12, JWT 15min, lockout after 5 attempts (15 min) |
+| DB | RLS all tables, parameterized queries, SSL enforced, encrypted at rest |
+| Network | VPC private subnets, 9 VPC endpoints (no NAT), Flow Logs |
+| Storage | S3 AES-256, BlockPublicAccess, OAC-only |
+| Secrets | AWS Secrets Manager (DB, JWT, LINE) |
+| Monitoring | CloudWatch alarms: auth errors, 4xx rate, RDS connections |
+| Backup | AWS Backup daily, 7-day retention |
+| Multi-tenant | Row-Level Security — complete data isolation per tenant |
 
 ---
 
@@ -501,46 +515,25 @@ Optional add-on. Connects SalesFAST 7 with LINE Official Account.
 | Permission | Admin | Sales Manager | Sales Rep | Viewer |
 |-----------|:-----:|:------------:|:---------:|:------:|
 | Accounts | CRUD | CRU | CR | R |
-| Contacts | CRUD | CRU | CR | R |
 | Leads | CRUD | CRUD | CRU | R |
 | Opportunities | CRUD | CRUD | CRU | R |
-| Quotations | CRUD | CRU | CR | R |
+| Quotations | CRUD | CRU (approve) | CR | R |
 | Tasks | CRUD | CRUD | CRU | R |
-| Reports | R | R | R | R |
-| Users | CRUD | — | — | — |
-| Settings | RU | — | — | — |
+| Users/Roles | CRUD | — | — | — |
+| AI Agents | All | All | Own data | Read |
 
 ---
 
-## Security
+## LINE OA Integration
 
-| Layer | Protection |
-|-------|-----------|
-| Edge | WAF v2 (SQLi, XSS, rate limit), TLS 1.2+, HSTS, CSP |
-| API | Throttling 50 req/s, CORS restricted to CloudFront |
-| App | Helmet, JWT 15min, bcrypt cost-12, lockout after 5 attempts |
-| DB | RLS all tables, parameterized queries, SSL enforced, encrypted at rest |
-| Network | VPC private subnets, VPC endpoints, Flow Logs |
-| Storage | S3 AES-256, BlockPublicAccess, OAC-only |
-| Secrets | AWS Secrets Manager, no hardcoded fallbacks (fail-fast) |
-| Monitoring | CloudWatch alarms: auth errors, 4xx rate, RDS connections |
-| Backup | AWS Backup daily, 7-day retention |
+```
+ลูกค้าส่ง LINE → LINE Platform → Webhook URL → Notification Lambda
+    → Forward to Agent (น้องแอ๊ด)
+    → AI ตอบ + เก็บ Lead อัตโนมัติ
+    → Reply via LINE Push Message
+```
 
----
-
-## i18n
-
-- 150+ translation keys (Thai / English)
-- `data-i18n` attributes on HTML elements
-- Language toggle in nav bar, stored in localStorage
-- Thai Buddhist calendar (พ.ศ.), Thai currency (฿), Thai address format
-
----
-
-## Default Credentials
-
-No default password — set during deployment via `--email` and `--password` flags.
-System forces password change on first login.
+Setup: Settings > Add-ons > LINE OA > Channel Access Token + Secret
 
 ---
 
