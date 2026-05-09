@@ -80,9 +80,9 @@ export default function OpportunitiesPage() {
                         <span className="font-sf-pro-text text-[14px] font-semibold tracking-[-0.224px] text-[#0071e3]">
                           {formatBaht(opp.estimatedValue)}
                         </span>
-                        {opp.aiCloseProbability != null && (
+                        {(opp as any).aiCloseProbability != null && (
                           <span className="font-sf-pro-text text-[10px] tracking-[-0.08px] text-[rgba(0,0,0,0.48)]">
-                            {opp.aiCloseProbability}%
+                            {(opp as any).aiCloseProbability}%
                           </span>
                         )}
                       </div>

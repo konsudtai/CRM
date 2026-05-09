@@ -17,7 +17,7 @@ interface FadeInProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
   viewOnce?: boolean;
 }
 
-const directionOffset = {
+const directionOffset: Record<string, { x?: number; y?: number }> = {
   up: { y: 1 },
   down: { y: -1 },
   left: { x: 1 },
