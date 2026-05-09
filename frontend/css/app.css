@@ -201,7 +201,73 @@ tbody td{padding:11px 12px;font-size:13px}
 
 /* Animations */
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+@keyframes barGrow{from{width:0}to{width:var(--bar-width,100%)}}
+
 .anim{animation:fadeUp .4s ease both}
+.anim-down{animation:fadeDown .4s ease both}
+.anim-fade{animation:fadeIn .5s ease both}
+.anim-left{animation:slideInLeft .4s ease both}
+.anim-right{animation:slideInRight .4s ease both}
+.anim-scale{animation:scaleIn .35s ease both}
+
+/* Scroll-triggered: hidden until observed */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s cubic-bezier(.25,.1,.25,1),transform .5s cubic-bezier(.25,.1,.25,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-left{opacity:0;transform:translateX(-20px);transition:opacity .5s cubic-bezier(.25,.1,.25,1),transform .5s cubic-bezier(.25,.1,.25,1)}
+.reveal-left.visible{opacity:1;transform:translateX(0)}
+.reveal-scale{opacity:0;transform:scale(.95);transition:opacity .4s cubic-bezier(.25,.1,.25,1),transform .4s cubic-bezier(.25,.1,.25,1)}
+.reveal-scale.visible{opacity:1;transform:scale(1)}
+
+/* Stagger delays for children */
+.stagger>*:nth-child(1){transition-delay:0s}
+.stagger>*:nth-child(2){transition-delay:.06s}
+.stagger>*:nth-child(3){transition-delay:.12s}
+.stagger>*:nth-child(4){transition-delay:.18s}
+.stagger>*:nth-child(5){transition-delay:.24s}
+.stagger>*:nth-child(6){transition-delay:.3s}
+.stagger>*:nth-child(7){transition-delay:.36s}
+.stagger>*:nth-child(8){transition-delay:.42s}
+.stagger>*:nth-child(9){transition-delay:.48s}
+.stagger>*:nth-child(10){transition-delay:.54s}
+
+/* Card hover lift */
+.card-hover{transition:transform .2s ease,box-shadow .2s ease}
+.card-hover:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+
+/* KPI card hover */
+.dk-k,.kpi-card{transition:transform .2s ease,box-shadow .2s ease}
+.dk-k:hover,.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+
+/* Kanban card hover */
+.kanban-card,.kk-card{transition:transform .15s ease,box-shadow .15s ease}
+.kanban-card:hover,.kk-card:hover{transform:translateY(-1px);box-shadow:var(--shadow-md)}
+
+/* Table row hover */
+tbody tr{transition:background .15s ease}
+
+/* Button press effect */
+.btn,.qa-btn{transition:transform .12s ease,box-shadow .15s ease,background .15s ease,border-color .15s ease}
+.btn:active,.qa-btn:active{transform:scale(.97)}
+
+/* Nav item smooth transitions */
+.sf7-nav-item{transition:color .15s ease,background .15s ease}
+
+/* Progress bar animation */
+.bar-animate{animation:barGrow .8s cubic-bezier(.25,.1,.25,1) both}
+
+/* Smooth page entry */
+.page.anim{animation:fadeUp .4s cubic-bezier(.25,.1,.25,1) both}
+
+/* Reduced motion — accessibility */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .reveal,.reveal-left,.reveal-scale{opacity:1;transform:none}
+}
 
 /* ── Responsive ── */
 

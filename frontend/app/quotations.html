@@ -22,7 +22,7 @@
 <div id="nav"></div>
 <div class="page anim">
   <div class="page-header">
-    <div><div class="page-title">Quotations</div><div class="page-subtitle">Create and manage quotations — VAT 7% / WHT auto-calculated</div></div>
+    <div><div class="page-title reveal">Quotations</div><div class="page-subtitle reveal">Create and manage quotations — VAT 7% / WHT auto-calculated</div></div>
     <button class="btn btn-primary" onclick="openCreate()" id="create-btn">+ New Quotation</button>
   </div>
 
@@ -42,7 +42,7 @@
   <div id="form-view" style="display:none">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back</button>
-      <div class="page-title">New Quotation</div>
+      <div class="page-title reveal">New Quotation</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 300px;gap:16px">
       <div>
@@ -81,7 +81,7 @@
   </div>
 </div>
 
-<script src="../js/helpers.js"></script><script src="../js/i18n.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
+<script src="../js/motion.js"></script><script src="../js/helpers.js"></script><script src="../js/i18n.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('quotations');
 if(!requireAuth()) throw 'auth';

@@ -14,8 +14,8 @@
 <div class="page anim">
   <div class="page-header">
     <div>
-      <div class="page-title" data-i18n="task_title">Tasks & Activities</div>
-      <div class="page-subtitle" data-i18n="task_sub">Manage tasks, appointments and call logs</div>
+      <div class="page-title reveal" data-i18n="task_title">Tasks & Activities</div>
+      <div class="page-subtitle reveal" data-i18n="task_sub">Manage tasks, appointments and call logs</div>
     </div>
     <div class="page-actions">
       <a href="calendar.html" class="btn btn-secondary" data-i18n="task_calendar">Calendar</a>
@@ -53,7 +53,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         <span data-i18n="btn_back">Back</span>
       </button>
-      <div class="page-title" id="task-form-title">New Task</div>
+      <div class="page-title reveal" id="task-form-title">New Task</div>
     </div>
     <form onsubmit="saveTask(event)">
       <input type="hidden" id="ft-id"/>
@@ -83,7 +83,7 @@
   </div>
 </div>
 
-<script src="../js/helpers.js"></script>
+<script src="../js/motion.js"></script><script src="../js/helpers.js"></script>
 <script src="../js/i18n.js"></script>
 <script src="../js/nav.js"></script>
 <script src="../js/data.js"></script>

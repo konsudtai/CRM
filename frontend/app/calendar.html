@@ -4,7 +4,7 @@
 <div class="page anim">
   <!-- Calendar View -->
   <div id="cal-view">
-    <div class="page-header"><div><div class="page-title" data-i18n="cal_title">ปฏิทิน</div><div class="page-subtitle" data-i18n="cal_subtitle">ดูงาน นัดหมาย และการประชุม</div></div>
+    <div class="page-header"><div><div class="page-title reveal" data-i18n="cal_title">ปฏิทิน</div><div class="page-subtitle reveal" data-i18n="cal_subtitle">ดูงาน นัดหมาย และการประชุม</div></div>
       <div class="page-actions"><a href="tasks.html" class="btn btn-secondary">รายการงาน</a><button class="btn btn-primary" onclick="openTaskForm()">+ สร้างงาน</button></div></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <div style="display:flex;align-items:center;gap:12px">
@@ -24,7 +24,7 @@
 
   <!-- Create Task Form -->
   <div id="task-form" style="display:none">
-    <div class="page-header"><div><div class="page-title">สร้างงานใหม่</div><div class="page-subtitle">เพิ่มงานหรือนัดหมายลงปฏิทิน</div></div>
+    <div class="page-header"><div><div class="page-title reveal">สร้างงานใหม่</div><div class="page-subtitle reveal">เพิ่มงานหรือนัดหมายลงปฏิทิน</div></div>
       <div class="page-actions"><button class="btn btn-secondary" onclick="closeTaskForm()">ยกเลิก</button><button class="btn btn-primary" onclick="saveTask()" id="btn-save-cal">บันทึก</button></div>
     </div>
     <div class="card" style="padding:24px;max-width:640px">
@@ -44,7 +44,7 @@
     </div>
   </div>
 </div>
-<script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
+<script src="../js/motion.js"></script><script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
 <script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('calendar');

@@ -4,14 +4,14 @@
 <div class="page anim">
   <!-- List View -->
   <div id="list-view">
-    <div class="page-header"><div><div class="page-title" data-i18n="prod_title">แคตตาล็อกสินค้า</div><div class="page-subtitle" data-i18n="prod_subtitle">จัดการสินค้าและบริการ</div></div><button class="btn btn-primary" onclick="openCreate()">+ เพิ่มสินค้า</button></div>
+    <div class="page-header"><div><div class="page-title reveal" data-i18n="prod_title">แคตตาล็อกสินค้า</div><div class="page-subtitle reveal" data-i18n="prod_subtitle">จัดการสินค้าและบริการ</div></div><button class="btn btn-primary" onclick="openCreate()">+ เพิ่มสินค้า</button></div>
     <input class="search-input" id="search" placeholder="ค้นหาสินค้า / SKU..." style="margin-bottom:20px;max-width:360px" oninput="debounceSearch()"/>
     <div class="card"><div class="table-wrap"><table><thead><tr><th>ชื่อสินค้า</th><th>SKU</th><th>ราคาต่อหน่วย</th><th>หน่วย</th><th>WHT %</th><th>สถานะ</th><th style="width:120px">จัดการ</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
   </div>
 
   <!-- Create/Edit Form -->
   <div id="form-view" style="display:none">
-    <div class="page-header"><div><div class="page-title" id="form-title">เพิ่มสินค้าใหม่</div><div class="page-subtitle">กรอกข้อมูลสินค้าหรือบริการ</div></div>
+    <div class="page-header"><div><div class="page-title reveal" id="form-title">เพิ่มสินค้าใหม่</div><div class="page-subtitle reveal">กรอกข้อมูลสินค้าหรือบริการ</div></div>
       <div class="page-actions"><button class="btn btn-secondary" onclick="closeForm()">ยกเลิก</button><button class="btn btn-primary" onclick="saveProduct()" id="btn-save-prod">บันทึก</button></div>
     </div>
     <div class="card" style="padding:24px;max-width:640px">
@@ -41,7 +41,7 @@
     </div>
   </div>
 </div>
-<script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
+<script src="../js/motion.js"></script><script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
 <script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML=renderNav('products');

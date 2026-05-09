@@ -2,7 +2,7 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>SalesFAST 7 — Pipeline</title><link rel="stylesheet" href="../css/app.css"/></head><body>
 <div class="bg-pattern"></div><div id="nav"></div>
 <div class="page anim">
-  <div class="page-header"><div><div class="page-title" data-i18n="nav_pipeline">Pipeline</div><div class="page-subtitle">Manage leads and deals through every stage</div></div>
+  <div class="page-header"><div><div class="page-title reveal" data-i18n="nav_pipeline">Pipeline</div><div class="page-subtitle reveal">Manage leads and deals through every stage</div></div>
     <div class="page-actions"><select id="rep-filter" class="btn btn-secondary" style="font-size:12px;padding:8px 12px;min-width:160px" onchange="onRepFilter()"><option value="">All Sales Reps</option></select><button class="btn btn-primary" onclick="openCreate()">+ New Lead</button></div></div>
   <div class="kanban" id="kanban"><div style="text-align:center;padding:40px;color:var(--text3)">Loading...</div></div>
 
@@ -10,7 +10,7 @@
   <div id="lead-form" style="display:none">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <button class="btn btn-secondary" onclick="closeForm()" style="padding:6px 12px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back</button>
-      <div class="page-title">New Lead</div>
+      <div class="page-title reveal">New Lead</div>
     </div>
     <form onsubmit="saveLead(event)">
 
@@ -66,7 +66,7 @@
   </div>
 </div>
 </div>
-<script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
+<script src="../js/motion.js"></script><script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
 <script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script src="../js/customer-search.js"></script>
 
