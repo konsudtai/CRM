@@ -6,6 +6,7 @@ import { Card, Heading, Body, Button } from '@thai-smb-crm/ui-components';
 import { formatBaht } from '@thai-smb-crm/utils';
 import type { Quotation } from '@thai-smb-crm/shared-types';
 import { api } from '@/lib/api';
+import { FadeIn, PageTransition, AnimatedCard } from '@/components/motion';
 
 const STATUSES = [
   { key: 'all', label: 'ทั้งหมด' },
@@ -37,7 +38,9 @@ export default function QuotationsPage() {
   const quotations = data ?? [];
 
   return (
+    <PageTransition>
     <div className="apple-page">
+      <FadeIn direction="down" duration={0.4}>
       <div className="apple-page-header">
         <div>
           <Heading as="h1" size="section">ใบเสนอราคา</Heading>
@@ -49,6 +52,7 @@ export default function QuotationsPage() {
           <Button variant="primary">+ สร้างใบเสนอราคา</Button>
         </a>
       </div>
+      </FadeIn>
 
       <div className="apple-filter-bar mb-5">
         {STATUSES.map((s) => (
@@ -65,6 +69,7 @@ export default function QuotationsPage() {
       {isLoading ? (
         <Body size="small" className="py-12 text-center !text-[rgba(0,0,0,0.48)]">กำลังโหลด...</Body>
       ) : (
+        <AnimatedCard delay={0.15}>
         <Card>
           {quotations.length === 0 ? (
             <Body size="small" className="py-12 text-center !text-[rgba(0,0,0,0.48)]">ไม่พบใบเสนอราคา</Body>
@@ -109,7 +114,9 @@ export default function QuotationsPage() {
             </div>
           )}
         </Card>
+        </AnimatedCard>
       )}
     </div>
+    </PageTransition>
   );
 }

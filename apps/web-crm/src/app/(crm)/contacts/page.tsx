@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, Heading, Body, Button } from '@thai-smb-crm/ui-components';
 import type { Contact } from '@thai-smb-crm/shared-types';
 import { api } from '@/lib/api';
+import { FadeIn, PageTransition, AnimatedCard } from '@/components/motion';
 
 export default function ContactsPage() {
   const [search, setSearch] = useState('');
@@ -19,7 +20,9 @@ export default function ContactsPage() {
   const totalPages = Math.ceil(total / 20);
 
   return (
+    <PageTransition>
     <div className="apple-page">
+      <FadeIn direction="down" duration={0.4}>
       <div className="apple-page-header">
         <div>
           <Heading as="h1" size="section">ผู้ติดต่อ</Heading>
@@ -29,7 +32,9 @@ export default function ContactsPage() {
         </div>
         <Button variant="primary">+ เพิ่มผู้ติดต่อ</Button>
       </div>
+      </FadeIn>
 
+      <AnimatedCard delay={0.15}>
       <Card>
         <input
           type="text"
@@ -82,6 +87,8 @@ export default function ContactsPage() {
           </div>
         )}
       </Card>
+      </AnimatedCard>
     </div>
+    </PageTransition>
   );
 }

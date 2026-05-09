@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, Heading, Body } from '@thai-smb-crm/ui-components';
 import { formatBaht } from '@thai-smb-crm/utils';
 import { api } from '@/lib/api';
+import { FadeIn, PageTransition, AnimatedCard, StaggerChildren, StaggerItem } from '@/components/motion';
 
 interface StageSummary {
   name: string;
@@ -26,35 +27,38 @@ export default function PipelinePage() {
   const totalDeals = stages.reduce((s, st) => s + st.dealCount, 0);
 
   return (
+    <PageTransition>
     <div className="apple-page">
+      <FadeIn direction="down" duration={0.4}>
       <div className="mb-8">
         <Heading as="h1" size="section">สรุปไปป์ไลน์</Heading>
         <Body size="small" className="mt-1 !text-[rgba(0,0,0,0.48)]">
           ภาพรวมมูลค่าและจำนวนดีลตามขั้นตอน
         </Body>
       </div>
+      </FadeIn>
 
       {/* Summary cards */}
-      <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-3">
-        <Card>
+      <StaggerChildren className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-3" staggerDelay={0.1}>
+        <StaggerItem><Card>
           <Body size="caption" className="!text-[rgba(0,0,0,0.48)]">มูลค่ารวม</Body>
           <p className="mt-2 font-sf-pro-display text-[28px] font-semibold leading-[1.14] tracking-[0.196px] text-[#1d1d1f]">
             {formatBaht(grandTotal)}
           </p>
-        </Card>
-        <Card>
+        </Card></StaggerItem>
+        <StaggerItem><Card>
           <Body size="caption" className="!text-[rgba(0,0,0,0.48)]">มูลค่าถ่วงน้ำหนัก</Body>
           <p className="mt-2 font-sf-pro-display text-[28px] font-semibold leading-[1.14] tracking-[0.196px] text-[#1d1d1f]">
             {formatBaht(grandWeighted)}
           </p>
-        </Card>
-        <Card>
+        </Card></StaggerItem>
+        <StaggerItem><Card>
           <Body size="caption" className="!text-[rgba(0,0,0,0.48)]">จำนวนดีลทั้งหมด</Body>
           <p className="mt-2 font-sf-pro-display text-[28px] font-semibold leading-[1.14] tracking-[0.196px] text-[#1d1d1f]">
             {totalDeals}
           </p>
-        </Card>
-      </div>
+        </Card></StaggerItem>
+      </StaggerChildren>
 
       {isLoading ? (
         <Body size="small" className="py-12 text-center !text-[rgba(0,0,0,0.48)]">กำลังโหลด...</Body>
@@ -63,9 +67,10 @@ export default function PipelinePage() {
           <Body size="small" className="py-12 text-center !text-[rgba(0,0,0,0.48)]">ยังไม่มีข้อมูลไปป์ไลน์</Body>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <StaggerChildren className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" staggerDelay={0.08}>
           {stages.map((stage) => (
-            <Card key={stage.name}>
+            <StaggerItem key={stage.name}>
+            <Card>
               <div className="mb-4 flex items-center gap-2">
                 <div
                   className="h-3 w-3 rounded-full"
@@ -102,9 +107,11 @@ export default function PipelinePage() {
                 />
               </div>
             </Card>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerChildren>
       )}
     </div>
+    </PageTransition>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Heading, Body } from '@thai-smb-crm/ui-components';
+import { PageTransition, FadeIn } from '@/components/motion';
 import RolesSettings from './roles';
 import IntegrationsSettings from './integrations';
 import WebhooksSettings from './webhooks';
@@ -22,14 +23,17 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('roles');
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-[#f5f5f7]">
       {/* Header — white bar */}
+      <FadeIn direction="down" duration={0.35}>
       <div className="border-b border-black/[0.06] bg-white px-6 py-6 md:px-8 lg:px-12">
         <Heading as="h1" size="section">ตั้งค่า</Heading>
         <Body size="small" className="mt-1 !text-[rgba(0,0,0,0.48)]">
           จัดการการตั้งค่าระบบ
         </Body>
       </div>
+      </FadeIn>
 
       <div className="flex">
         {/* Sidebar */}
@@ -62,5 +66,6 @@ export default function SettingsPage() {
         </main>
       </div>
     </div>
+    </PageTransition>
   );
 }

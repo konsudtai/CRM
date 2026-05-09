@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, Heading, Body, Button } from '@thai-smb-crm/ui-components';
 import type { Lead } from '@thai-smb-crm/shared-types';
 import { api } from '@/lib/api';
+import { FadeIn, PageTransition, AnimatedCard, StaggerChildren, StaggerItem } from '@/components/motion';
 
 const STATUSES = ['ทั้งหมด', 'New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost'];
 
@@ -26,7 +27,9 @@ export default function LeadsPage() {
   }, {} as Record<string, Lead[]>);
 
   return (
+    <PageTransition>
     <div className="apple-page">
+      <FadeIn direction="down" duration={0.4}>
       <div className="apple-page-header">
         <div>
           <Heading as="h1" size="section">ลีด</Heading>
@@ -52,6 +55,7 @@ export default function LeadsPage() {
           <Button variant="primary">+ สร้างลีด</Button>
         </div>
       </div>
+      </FadeIn>
 
       {/* Status filter for list view */}
       {view === 'list' && (
@@ -72,9 +76,9 @@ export default function LeadsPage() {
         <Body size="small" className="py-12 text-center !text-[rgba(0,0,0,0.48)]">กำลังโหลด...</Body>
       ) : view === 'kanban' ? (
         /* Kanban Board */
-        <div className="grid auto-cols-[260px] grid-flow-col gap-4 overflow-x-auto pb-4">
+        <StaggerChildren className="grid auto-cols-[260px] grid-flow-col gap-4 overflow-x-auto pb-4" staggerDelay={0.08}>
           {kanbanStatuses.map((s) => (
-            <div key={s} className="rounded-[8px] bg-white/60 p-3">
+            <StaggerItem key={s}><div className="rounded-[8px] bg-white/60 p-3">
               <div className="mb-3 flex items-center justify-between">
                 <span className="font-sf-pro-text text-[14px] font-semibold tracking-[-0.224px] text-[#1d1d1f]">
                   {s}
@@ -114,12 +118,12 @@ export default function LeadsPage() {
                   <Body size="caption" className="py-4 text-center !text-[rgba(0,0,0,0.2)]">ว่าง</Body>
                 )}
               </div>
-            </div>
+            </div></StaggerItem>
           ))}
-        </div>
+        </StaggerChildren>
       ) : (
         /* List View */
-        <Card>
+        <AnimatedCard delay={0.15}><Card>
           {leads.length === 0 ? (
             <Body size="small" className="py-12 text-center !text-[rgba(0,0,0,0.48)]">ไม่พบลีด</Body>
           ) : (
@@ -146,8 +150,9 @@ export default function LeadsPage() {
               </tbody>
             </table>
           )}
-        </Card>
+        </Card></AnimatedCard>
       )}
     </div>
+    </PageTransition>
   );
 }

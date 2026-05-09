@@ -5,6 +5,7 @@ import { Card, Heading, Body, Button } from '@thai-smb-crm/ui-components';
 import { formatBaht } from '@thai-smb-crm/utils';
 import type { Opportunity, PipelineStage } from '@thai-smb-crm/shared-types';
 import { api } from '@/lib/api';
+import { FadeIn, PageTransition, StaggerChildren, StaggerItem } from '@/components/motion';
 
 export default function OpportunitiesPage() {
   const { data: stages } = useQuery<PipelineStage[]>({
@@ -25,7 +26,9 @@ export default function OpportunitiesPage() {
   }, {} as Record<string, Opportunity[]>);
 
   return (
+    <PageTransition>
     <div className="apple-page">
+      <FadeIn direction="down" duration={0.4}>
       <div className="apple-page-header">
         <div>
           <Heading as="h1" size="section">โอกาสการขาย</Heading>
@@ -35,6 +38,7 @@ export default function OpportunitiesPage() {
         </div>
         <Button variant="primary">+ สร้างโอกาส</Button>
       </div>
+      </FadeIn>
 
       {isLoading ? (
         <Body size="small" className="py-12 text-center !text-[rgba(0,0,0,0.48)]">กำลังโหลด...</Body>
@@ -43,12 +47,12 @@ export default function OpportunitiesPage() {
           <Body size="small" className="py-12 text-center !text-[rgba(0,0,0,0.48)]">ยังไม่มีขั้นตอน</Body>
         </Card>
       ) : (
-        <div className="grid auto-cols-[280px] grid-flow-col gap-4 overflow-x-auto pb-4">
+        <StaggerChildren className="grid auto-cols-[280px] grid-flow-col gap-4 overflow-x-auto pb-4" staggerDelay={0.08}>
           {safeStages.map((stage) => {
             const so = grouped[stage.name] ?? [];
             const tv = so.reduce((s, o) => s + o.estimatedValue, 0);
             return (
-              <div key={stage.id} className="rounded-[8px] bg-white/60 p-3">
+              <StaggerItem key={stage.id}><div className="rounded-[8px] bg-white/60 p-3">
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div
@@ -91,11 +95,12 @@ export default function OpportunitiesPage() {
                     <Body size="caption" className="py-4 text-center !text-[rgba(0,0,0,0.2)]">ว่าง</Body>
                   )}
                 </div>
-              </div>
+              </div></StaggerItem>
             );
           })}
-        </div>
+        </StaggerChildren>
       )}
     </div>
+    </PageTransition>
   );
 }

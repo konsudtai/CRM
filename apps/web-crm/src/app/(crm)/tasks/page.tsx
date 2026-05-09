@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, Heading, Body, Button } from '@thai-smb-crm/ui-components';
 import type { Task } from '@thai-smb-crm/shared-types';
 import { api } from '@/lib/api';
+import { FadeIn, PageTransition, AnimatedCard } from '@/components/motion';
 
 type SortField = 'dueDate' | 'priority' | 'status';
 type SortDir = 'asc' | 'desc';
@@ -74,7 +75,9 @@ export default function TasksPage() {
   }
 
   return (
+    <PageTransition>
     <div className="apple-page">
+      <FadeIn direction="down" duration={0.4}>
       <div className="apple-page-header">
         <div>
           <Heading as="h1" size="section">งานและกิจกรรม</Heading>
@@ -86,6 +89,7 @@ export default function TasksPage() {
           <a href="/tasks/new"><Button variant="primary">+ สร้างงาน</Button></a>
         </div>
       </div>
+      </FadeIn>
 
       {/* Status filter */}
       <div className="apple-filter-bar mb-5">
@@ -99,6 +103,7 @@ export default function TasksPage() {
       {isLoading ? (
         <Body size="small" className="py-12 text-center !text-[rgba(0,0,0,0.48)]">กำลังโหลด...</Body>
       ) : (
+        <AnimatedCard delay={0.15}>
         <Card>
           {tasks.length === 0 ? (
             <Body size="small" className="py-12 text-center !text-[rgba(0,0,0,0.48)]">ไม่พบงาน</Body>
@@ -150,6 +155,7 @@ export default function TasksPage() {
             </div>
           )}
         </Card>
+        </AnimatedCard>
       )}
 
       {/* Call Logging Modal — Apple glass style */}
@@ -196,5 +202,6 @@ export default function TasksPage() {
         </div>
       )}
     </div>
+    </PageTransition>
   );
 }
