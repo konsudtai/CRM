@@ -158,3 +158,15 @@
     @apply mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between;
   }
 }
+
+/* ── Reduced Motion — respect user accessibility preferences ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
