@@ -656,6 +656,7 @@ function renderUsers() {
       '</div>' +
       '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:' + color + '14;color:' + color + '">' + u.role + '</span>' +
       '<div class="user-actions">' +
+        '<button class="user-action-btn" onclick="openEditUser(\'' + u.id + '\')">Edit</button>' +
         '<button class="user-action-btn" onclick="changeRole(\'' + u.id + '\')">Role</button>' +
         '<button class="user-action-btn" onclick="resetPw(\'' + u.id + '\')">Reset PW</button>' +
         '<button class="user-action-btn danger" onclick="toggleActive(\'' + u.id + '\')">' + (u.active ? 'Deactivate' : 'Activate') + '</button>' +
@@ -663,6 +664,42 @@ function renderUsers() {
       '</div>' +
     '</div>';
   }).join('') || '<div class="empty-state">No users found</div>';
+}
+
+function openEditUser(id) {
+  var u = USERS.find(function(x){ return String(x.id) === String(id); });
+  if (!u) return;
+  document.getElementById('eu-id').value = u.id;
+  document.getElementById('eu-first').value = u.first || '';
+  document.getElementById('eu-last').value = u.last || '';
+  document.getElementById('eu-email').value = u.email || '';
+  document.getElementById('eu-phone').value = u.phone || '';
+  document.getElementById('eu-role').value = u.role || 'Sales Rep';
+  document.getElementById('edit-user-modal').classList.add('open');
+}
+function closeEditUser() { document.getElementById('edit-user-modal').classList.remove('open'); }
+function saveEditUser(e) {
+  e.preventDefault();
+  var id = document.getElementById('eu-id').value;
+  var btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  fetch((window.__SF7_API_BASE__||'') + '/dashboard/users/' + id, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sf7_token')||'')},
+    body: JSON.stringify({
+      first_name: document.getElementById('eu-first').value,
+      last_name: document.getElementById('eu-last').value,
+      email: document.getElementById('eu-email').value,
+      phone: document.getElementById('eu-phone').value,
+      role: document.getElementById('eu-role').value,
+    })
+  }).then(function(res){ return res.json().then(function(d){return{ok:res.ok,data:d}}); })
+  .then(function(r){
+    if(!r.ok) throw new Error(r.data.message||'Error');
+    closeEditUser();
+    loadSettingsData();
+  }).catch(function(err){ alert('Error: '+(err.message||'Unknown')); })
+  .finally(function(){ btn.disabled=false; btn.textContent='Save'; });
 }
 
 function openAddUser() {
@@ -911,5 +948,34 @@ setTimeout(function(){
   zone.addEventListener('drop',function(e){e.preventDefault();zone.style.borderColor='';zone.style.background='';handleKBUpload(e.dataTransfer.files)});
 },200);
 </script>
+
+<!-- Edit User Modal -->
+<div class="lm-modal-overlay" id="edit-user-modal" onclick="if(event.target===this)closeEditUser()">
+  <div style="background:var(--surface);border-radius:16px;padding:24px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <div style="font-size:17px;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+      <span>Edit User</span><button onclick="closeEditUser()" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--text3)">&times;</button>
+    </div>
+    <form onsubmit="saveEditUser(event)">
+      <input type="hidden" id="eu-id"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="sf7-form-group"><label class="sf7-form-label">First Name</label><input class="sf7-form-input" id="eu-first" required/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Last Name</label><input class="sf7-form-input" id="eu-last"/></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div class="sf7-form-group"><label class="sf7-form-label">Email</label><input class="sf7-form-input" id="eu-email" type="email" required/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Phone</label><input class="sf7-form-input" id="eu-phone"/></div>
+      </div>
+      <div class="sf7-form-group" style="margin-top:12px"><label class="sf7-form-label">Role</label>
+        <select class="sf7-form-input" id="eu-role"><option>Admin</option><option>Sales Manager</option><option>Sales Rep</option><option>Viewer</option></select>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+        <button type="button" class="btn btn-secondary" onclick="closeEditUser()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+<style>.lm-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:none;align-items:center;justify-content:center}.lm-modal-overlay.open{display:flex}</style>
+
 </body>
 </html>

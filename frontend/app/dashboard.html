@@ -77,19 +77,19 @@
   <!-- KPI Summary -->
   <div class="dk-kpi" id="kpis"></div>
 
-  <!-- Row 1: Pipeline by Stage + Deal Amount by Source -->
+  <!-- Row 1: Won Amount vs Won Deals (2 Line Chart) + Sales Pipeline by Stage (Bar Chart) -->
   <div class="dk-g2">
+    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Won Amount vs Won Deals</span></div><div id="won-chart"></div></div>
     <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Sales Pipeline by Stage</span><span class="dk-card-badge" id="pipe-badge"></span></div><div id="pipeline"></div></div>
-    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Deal Amount by Source</span></div><div id="by-source"></div></div>
   </div>
 
-  <!-- Row 2: Opportunity Pipeline Kanban -->
-  <div class="dk-card" style="margin-bottom:14px"><div class="dk-card-hd"><span class="dk-card-title">Opportunity Pipeline</span><a href="leads.html" style="font-size:11px;color:var(--sf-blue);text-decoration:none">View Kanban</a></div><div class="kk-wrap" id="kanban"></div></div>
+  <!-- Row 2: Pipeline Summary (numbers per stage) -->
+  <div class="dk-card" style="margin-bottom:14px"><div class="dk-card-hd"><span class="dk-card-title">Pipeline Summary</span><a href="leads.html" style="font-size:11px;color:var(--sf-blue);text-decoration:none">View Kanban →</a></div><div id="kanban"></div></div>
 
-  <!-- Row 3: Top Open Deals + Deal Stages Breakdown -->
+  <!-- Row 3: Top Open Deals + Deal Stages Breakdown (Pie Chart) -->
   <div class="dk-g2">
     <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Top Open Deals</span></div><div id="top-open"></div></div>
-    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Deal Stages Breakdown</span></div><div id="stage-breakdown"></div></div>
+    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Deal Register Breakdown</span></div><div id="stage-breakdown"></div></div>
   </div>
 
   <!-- Row 3: Agents Comparison + Pipeline by Agents -->
@@ -173,7 +173,7 @@ function renderKPIs(){
   }).join('');
 }
 
-/* ── Sales Pipeline by Stage ── */
+/* ── Sales Pipeline by Stage (Bar Chart) ── */
 function renderPipeline(){
   var stageMap={};
   var leadToStage={New:'New Lead',Contacted:'Qualification',Qualified:'Needs Analysis',Proposal:'Proposal',Negotiation:'Negotiation',Won:'Closed Won',Lost:'Closed Lost'};
@@ -183,29 +183,144 @@ function renderPipeline(){
     if(!stageMap[sn])stageMap[sn]={name:sn,color:stageColors[st]||'#0176D3',count:0,value:0};
     LEADS_DATA[st].forEach(function(l){stageMap[sn].count++;stageMap[sn].value+=l.value||0});
   }
-  var stages=Object.values(stageMap);
+  var stages=Object.values(stageMap).filter(function(s){return s.count>0});
   var order=['New Lead','Qualification','Needs Analysis','Proposal','Negotiation','Closed Won','Closed Lost'];
   stages.sort(function(a,b){var ai=order.indexOf(a.name);var bi=order.indexOf(b.name);if(ai<0)ai=99;if(bi<0)bi=99;return ai-bi});
+  if(stages.length===0){document.getElementById('pipeline').innerHTML='<div class="dk-empty">No pipeline data</div>';return}
   var maxVal=Math.max.apply(null,stages.map(function(s){return s.value}).concat([1]));
   var totalVal=stages.reduce(function(s,st){return s+st.value},0);
   document.getElementById('pipe-badge').textContent=fmt(totalVal)+' total';
-  document.getElementById('pipeline').innerHTML=stages.map(function(s){
-    var pct=s.value>0?(s.value/maxVal)*100:0;
-    return '<div class="dk-bar-row"><div class="dk-bar-label">'+esc(s.name)+'</div><div class="dk-bar-track">'+(s.count>0?'<div class="dk-bar-fill" style="width:'+Math.max(pct,8)+'%;background:'+s.color+'">'+s.count+'</div>':'')+'</div><div class="dk-bar-val">'+fmt(s.value)+'</div></div>';
-  }).join('')||'<div class="dk-empty">No pipeline data</div>';
+
+  // SVG Bar Chart
+  var W=440,H=180,padL=50,padR=10,padT=15,padB=40;
+  var chartW=W-padL-padR,chartH=H-padT-padB;
+  var n=stages.length,barW=Math.min(chartW/n*0.6,40),gap=(chartW-barW*n)/(n+1);
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;font-family:inherit">';
+  // Grid
+  for(var g=0;g<=4;g++){var gy=padT+chartH*(1-g/4);svg+='<line x1="'+padL+'" y1="'+gy+'" x2="'+(W-padR)+'" y2="'+gy+'" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/>';svg+='<text x="'+(padL-4)+'" y="'+(gy+3)+'" text-anchor="end" font-size="8" fill="var(--text3)">'+fmt(maxVal*g/4)+'</text>';}
+  // Bars
+  stages.forEach(function(s,i){
+    var x=padL+gap+(barW+gap)*i;
+    var h=s.value>0?(s.value/maxVal)*chartH:2;
+    var y=padT+chartH-h;
+    svg+='<rect x="'+x+'" y="'+y+'" width="'+barW+'" height="'+h+'" rx="3" fill="'+s.color+'" opacity="0.85"/>';
+    svg+='<text x="'+(x+barW/2)+'" y="'+(y-4)+'" text-anchor="middle" font-size="8" font-weight="600" fill="'+s.color+'">'+s.count+'</text>';
+    svg+='<text x="'+(x+barW/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="8" fill="var(--text2)">'+esc(s.name.replace('Closed ','').replace('New ',''))+'</text>';
+  });
+  svg+='</svg>';
+  document.getElementById('pipeline').innerHTML=svg;
 }
 
-/* ── Deal Amount by Source ── */
-function renderBySource(){
-  var sources={};
-  allLeadsRaw.forEach(function(l){var s=l.source||'Unknown';if(!sources[s])sources[s]={count:0,value:0};sources[s].count++;sources[s].value+=l.value});
-  var arr=Object.entries(sources).map(function(e){return{name:e[0],count:e[1].count,value:e[1].value}}).sort(function(a,b){return b.value-a.value});
-  var maxVal=arr.length>0?arr[0].value:1;
-  var colors=['#0176D3','#2E844A','#D97706','#7F56D9','#DC2626','#0B827C','#64748B'];
-  document.getElementById('by-source').innerHTML=arr.length>0?arr.map(function(s,i){
-    var c=colors[i%colors.length];var pct=maxVal>0?(s.value/maxVal)*100:0;
-    return '<div class="dk-bar-row"><div class="dk-bar-label">'+esc(s.name)+'</div><div class="dk-bar-track"><div class="dk-bar-fill" style="width:'+Math.max(pct,8)+'%;background:'+c+'">'+s.count+'</div></div><div class="dk-bar-val">'+fmt(s.value)+'</div></div>';
-  }).join(''):'<div class="dk-empty">No data</div>';
+/* ── Won Amount vs Won Deals (2 Line Chart — overlapping, dual axis) ── */
+function renderWonChart(){
+  var won=allLeadsRaw.filter(function(l){return l.status==='Won'});
+  var months={};
+  won.forEach(function(l){
+    var d=l.createdAt?l.createdAt.substring(0,7):'unknown';
+    if(!months[d])months[d]={month:d,amount:0,count:0};
+    months[d].amount+=l.value;months[d].count++;
+  });
+  var data=Object.values(months).sort(function(a,b){return a.month.localeCompare(b.month)});
+  if(data.length===0){document.getElementById('won-chart').innerHTML='<div class="dk-empty">No won deals yet</div>';return}
+  if(data.length===1) data=[{month:'',amount:0,count:0},data[0]];
+
+  var maxAmt=Math.max.apply(null,data.map(function(d){return d.amount}).concat([1]));
+  var maxCnt=Math.max.apply(null,data.map(function(d){return d.count}).concat([1]));
+  var monthNames={'01':'ม.ค.','02':'ก.พ.','03':'มี.ค.','04':'เม.ย.','05':'พ.ค.','06':'มิ.ย.','07':'ก.ค.','08':'ส.ค.','09':'ก.ย.','10':'ต.ค.','11':'พ.ย.','12':'ธ.ค.'};
+
+  // Use canvas-style div with interactive tooltip
+  var W=480,H=220,padL=50,padR=35,padT=40,padB=35;
+  var chartW=W-padL-padR,chartH=H-padT-padB;
+  var n=data.length,stepX=n>1?chartW/(n-1):chartW/2;
+
+  var amtPts=data.map(function(d,i){return{x:padL+i*stepX,y:padT+chartH-(d.amount/maxAmt)*chartH}});
+  var cntPts=data.map(function(d,i){return{x:padL+i*stepX,y:padT+chartH-(d.count/maxCnt)*chartH}});
+
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;font-family:inherit" id="won-svg">';
+
+  // Subtle grid (only horizontal, very light)
+  for(var g=1;g<=4;g++){var gy=padT+chartH*(1-g/4);svg+='<line x1="'+padL+'" y1="'+gy+'" x2="'+(W-padR)+'" y2="'+gy+'" stroke="var(--border)" stroke-width="0.3" opacity="0.5"/>';}
+
+  // Left axis labels (amount)
+  for(var g=0;g<=4;g++){var gy=padT+chartH*(1-g/4);svg+='<text x="'+(padL-6)+'" y="'+(gy+3)+'" text-anchor="end" font-size="8" fill="var(--text3)" opacity="0.7">'+fmt(maxAmt*g/4)+'</text>';}
+  // Right axis labels (count)
+  for(var g=0;g<=4;g++){var gy=padT+chartH*(1-g/4);svg+='<text x="'+(W-padR+6)+'" y="'+(gy+3)+'" font-size="8" fill="#D97706" opacity="0.7">'+Math.round(maxCnt*g/4)+'</text>';}
+
+  // Amount area gradient
+  svg+='<defs><linearGradient id="amtGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2E844A" stop-opacity="0.15"/><stop offset="100%" stop-color="#2E844A" stop-opacity="0.01"/></linearGradient>';
+  svg+='<linearGradient id="cntGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D97706" stop-opacity="0.1"/><stop offset="100%" stop-color="#D97706" stop-opacity="0.01"/></linearGradient></defs>';
+
+  // Amount area fill
+  svg+='<path d="M'+amtPts[0].x+','+(padT+chartH);
+  amtPts.forEach(function(p){svg+=' L'+p.x+','+p.y});
+  svg+=' L'+amtPts[amtPts.length-1].x+','+(padT+chartH)+' Z" fill="url(#amtGrad)"/>';
+
+  // Amount line (smooth, rounded)
+  svg+='<path d="M'+amtPts.map(function(p){return p.x+','+p.y}).join(' L')+'" fill="none" stroke="#2E844A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+
+  // Count area fill
+  svg+='<path d="M'+cntPts[0].x+','+(padT+chartH);
+  cntPts.forEach(function(p){svg+=' L'+p.x+','+p.y});
+  svg+=' L'+cntPts[cntPts.length-1].x+','+(padT+chartH)+' Z" fill="url(#cntGrad)"/>';
+
+  // Count line (dashed)
+  svg+='<path d="M'+cntPts.map(function(p){return p.x+','+p.y}).join(' L')+'" fill="none" stroke="#D97706" stroke-width="2" stroke-dasharray="6,4" stroke-linecap="round" stroke-linejoin="round"/>';
+
+  // Small dots (visible on hover via CSS)
+  amtPts.forEach(function(p){svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="3.5" fill="#2E844A" stroke="#fff" stroke-width="2" class="won-dot"/>';});
+  cntPts.forEach(function(p){svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="3" fill="#D97706" stroke="#fff" stroke-width="1.5" class="won-dot"/>';});
+
+  // Invisible hover zones (wider hit area for tooltip)
+  data.forEach(function(d,i){
+    var x=padL+i*stepX;
+    var mm=d.month?d.month.split('-')[1]:'';
+    var yr=d.month?d.month.split('-')[0]:'';
+    var label=monthNames[mm]||mm;
+    if(yr&&yr!=='2025') label+=yr.slice(2);
+    svg+='<rect x="'+(x-stepX/2)+'" y="'+padT+'" width="'+stepX+'" height="'+chartH+'" fill="transparent" class="won-hover" data-idx="'+i+'" data-month="'+esc(label)+'" data-amount="'+fmt(d.amount)+'" data-count="'+d.count+'"/>';
+  });
+
+  // X-axis labels
+  data.forEach(function(d,i){
+    var x=padL+i*stepX;
+    var mm=d.month?d.month.split('-')[1]:'';
+    var yr=d.month?d.month.split('-')[0]:'';
+    var label=monthNames[mm]||mm;
+    // Show year suffix for 2026
+    if(yr==='2026') label+="'69";
+    // Skip some labels if too many
+    if(n>12 && i%2!==0 && i!==n-1) return;
+    svg+='<text x="'+x+'" y="'+(H-8)+'" text-anchor="middle" font-size="8" fill="var(--text3)">'+esc(label)+'</text>';
+  });
+
+  // Legend (top right, minimal)
+  svg+='<circle cx="'+(W-padR-100)+'" cy="16" r="4" fill="#2E844A"/>';
+  svg+='<text x="'+(W-padR-93)+'" y="19" font-size="9" fill="var(--text2)">Won Amount</text>';
+  svg+='<circle cx="'+(W-padR-30)+'" cy="16" r="3.5" fill="#D97706"/>';
+  svg+='<text x="'+(W-padR-23)+'" y="19" font-size="9" fill="var(--text2)">Deals</text>';
+
+  svg+='</svg>';
+
+  // Tooltip div
+  var tooltip='<div id="won-tooltip" style="position:absolute;display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;box-shadow:0 4px 16px rgba(0,0,0,.12);font-size:11px;pointer-events:none;z-index:10;white-space:nowrap"><div id="won-tt-month" style="font-weight:700;margin-bottom:4px"></div><div style="color:#2E844A">Amount: <span id="won-tt-amt"></span></div><div style="color:#D97706">Deals: <span id="won-tt-cnt"></span></div></div>';
+
+  document.getElementById('won-chart').innerHTML='<div style="position:relative">'+svg+tooltip+'</div>';
+
+  // Hover events
+  document.querySelectorAll('.won-hover').forEach(function(el){
+    el.addEventListener('mouseenter',function(e){
+      var tt=document.getElementById('won-tooltip');
+      document.getElementById('won-tt-month').textContent=el.dataset.month;
+      document.getElementById('won-tt-amt').textContent=el.dataset.amount;
+      document.getElementById('won-tt-cnt').textContent=el.dataset.count;
+      tt.style.display='block';
+      var rect=el.closest('svg').getBoundingClientRect();
+      var x=parseFloat(el.getAttribute('x'))+parseFloat(el.getAttribute('width'))/2;
+      var pct=x/480*100;
+      tt.style.left=pct+'%';tt.style.top='10px';tt.style.transform='translateX(-50%)';
+    });
+    el.addEventListener('mouseleave',function(){document.getElementById('won-tooltip').style.display='none';});
+  });
 }
 
 /* ── Top Open Deals ── */
@@ -218,17 +333,39 @@ function renderTopOpen(){
   }).join('')+'</tbody></table>';
 }
 
-/* ── Deal Stages Breakdown (donut-style list) ── */
+/* ── Deal Register Breakdown (Pie Chart) ── */
 function renderStageBreakdown(){
   var counts={};var total=allLeadsRaw.length||1;
   allLeadsRaw.forEach(function(l){counts[l.status]=(counts[l.status]||0)+1});
-  var html='';
-  STAGES_ORDER.forEach(function(s){
-    var c=counts[s]||0;if(c===0)return;
-    var pct=Math.round(c/total*100);
-    html+='<div class="dk-legend-row"><div class="dk-legend-dot" style="background:'+(stageColors[s]||'#94A3B8')+'"></div><div class="dk-legend-name">'+esc(s)+'</div><div class="dk-legend-val">'+c+' ('+pct+'%)</div></div>';
+  var slices=[];
+  STAGES_ORDER.forEach(function(s){var c=counts[s]||0;if(c>0)slices.push({name:s,count:c,color:stageColors[s]||'#94A3B8'})});
+  if(slices.length===0){document.getElementById('stage-breakdown').innerHTML='<div class="dk-empty">No data</div>';return}
+
+  // SVG Pie Chart
+  var size=140,cx=size/2,cy=size/2,r=55;
+  var svg='<svg viewBox="0 0 '+size+' '+size+'" style="width:'+size+'px;height:'+size+'px">';
+  var startAngle=-Math.PI/2;
+  slices.forEach(function(s){
+    var angle=(s.count/total)*2*Math.PI;
+    var endAngle=startAngle+angle;
+    var x1=cx+r*Math.cos(startAngle),y1=cy+r*Math.sin(startAngle);
+    var x2=cx+r*Math.cos(endAngle),y2=cy+r*Math.sin(endAngle);
+    var large=angle>Math.PI?1:0;
+    svg+='<path d="M'+cx+','+cy+' L'+x1+','+y1+' A'+r+','+r+' 0 '+large+',1 '+x2+','+y2+' Z" fill="'+s.color+'" stroke="#fff" stroke-width="1.5"/>';
+    startAngle=endAngle;
   });
-  document.getElementById('stage-breakdown').innerHTML=html||'<div class="dk-empty">No data</div>';
+  svg+='<circle cx="'+cx+'" cy="'+cy+'" r="28" fill="var(--surface)"/>';
+  svg+='<text x="'+cx+'" y="'+(cy+1)+'" text-anchor="middle" font-size="16" font-weight="800" fill="var(--text)">'+total+'</text>';
+  svg+='<text x="'+cx+'" y="'+(cy+12)+'" text-anchor="middle" font-size="8" fill="var(--text3)">Total</text>';
+  svg+='</svg>';
+
+  // Legend
+  var legend=slices.map(function(s){
+    var pct=Math.round(s.count/total*100);
+    return '<div class="dk-legend-row"><div class="dk-legend-dot" style="background:'+s.color+'"></div><div class="dk-legend-name">'+esc(s.name)+'</div><div class="dk-legend-val">'+s.count+' ('+pct+'%)</div></div>';
+  }).join('');
+
+  document.getElementById('stage-breakdown').innerHTML='<div class="dk-donut-wrap">'+svg+'<div class="dk-donut-legend">'+legend+'</div></div>';
 }
 
 /* ── Sales Rep Comparison ── */
@@ -292,28 +429,30 @@ function renderTasks(){
   document.getElementById('tasks-ov').innerHTML=html;
 }
 
-/* ── Opportunity Pipeline Kanban ── */
+/* ── Pipeline Summary (numbers per stage) ── */
 function renderKanban(){
   var stageData=[];
   var leadToStage={New:'New Lead',Contacted:'Qualification',Qualified:'Needs Analysis',Proposal:'Proposal',Negotiation:'Negotiation',Won:'Closed Won',Lost:'Closed Lost'};
   STAGES.forEach(function(s){
-    var cards=[];
+    var count=0,value=0;
     for(var status in leadToStage){
       if(leadToStage[status]===s.name){
-        (LEADS_DATA[status]||[]).forEach(function(l){
-          cards.push({n:l.name,c:l.company||'',a:l.value||0,d:l.projectName||''});
-        });
+        (LEADS_DATA[status]||[]).forEach(function(l){count++;value+=l.value||0});
       }
     }
-    stageData.push({name:s.name,color:s.color||'#0176D3',count:cards.length,value:cards.reduce(function(s,c){return s+c.a},0),cards:cards});
+    stageData.push({name:s.name,color:s.color||'#0176D3',count:count,value:value});
   });
   if(stageData.length===0){document.getElementById('kanban').innerHTML='<div class="dk-empty">No pipeline stages</div>';return}
-  document.getElementById('kanban').innerHTML=stageData.filter(function(s){return s.name!=='Closed Lost'}).map(function(s){
-    return '<div class="kk-col"><div class="kk-head"><div class="kk-title"><span style="width:6px;height:6px;border-radius:50%;background:'+s.color+'"></span>'+esc(s.name)+'</div><span class="kk-cnt">'+s.count+'</span></div><div class="kk-total">'+fmt(s.value)+'</div>'+s.cards.map(function(c){return '<div class="kk-card"><div class="kk-name">'+esc(c.n)+'</div><div class="kk-company">'+esc(c.c)+'</div><div class="kk-foot"><span class="kk-amt">'+fmt(c.a)+'</span><span class="kk-date">'+esc(c.d)+'</span></div></div>'}).join('')+(s.cards.length===0?'<div style="text-align:center;padding:12px;color:var(--text3);font-size:11px">Empty</div>':'')+'</div>';
-  }).join('');
+  document.getElementById('kanban').innerHTML='<div style="display:flex;gap:10px;flex-wrap:wrap">'+stageData.map(function(s){
+    return '<div style="flex:1;min-width:120px;background:var(--surface2);border-radius:10px;padding:12px 14px;text-align:center;border-left:3px solid '+s.color+'">'+
+      '<div style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:4px">'+esc(s.name)+'</div>'+
+      '<div style="font-size:22px;font-weight:800;color:'+s.color+'">'+s.count+'</div>'+
+      '<div style="font-size:10px;color:var(--text2);margin-top:2px">'+fmt(s.value)+'</div>'+
+    '</div>';
+  }).join('')+'</div>';
 }
 
-function renderAll(){renderQA();renderKPIs();renderPipeline();renderBySource();renderKanban();renderTopOpen();renderStageBreakdown();renderAgentsCompare();renderPipeAgents();renderCustomers();renderTasks();initAnalyticsAgent()}
+function renderAll(){renderQA();renderKPIs();renderWonChart();renderPipeline();renderKanban();renderTopOpen();renderStageBreakdown();renderAgentsCompare();renderPipeAgents();renderCustomers();renderTasks();initAnalyticsAgent()}
 </script>
 <script>
 /* ── Analytics Agent (น้องวิ) ── */

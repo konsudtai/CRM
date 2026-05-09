@@ -69,6 +69,53 @@
 <script src="../js/helpers.js"></script><script src="../js/i18n.js"></script>
 <script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script src="../js/customer-search.js"></script>
+
+<!-- Lead Detail/Edit Modal -->
+<div class="lm-modal-overlay" id="lead-detail-modal">
+  <div style="background:var(--surface);border-radius:16px;padding:24px;width:90%;max-width:640px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <div style="font-size:17px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <span>📋 Lead Detail</span>
+      <button style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text3);padding:4px" onclick="closeLeadDetail()">&times;</button>
+    </div>
+    <form onsubmit="saveLeadDetail(event)">
+      <input type="hidden" id="ld-id"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="sf7-form-group"><label class="sf7-form-label">Contact Name *</label><input class="sf7-form-input" id="ld-name" required/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Company</label><input class="sf7-form-input" id="ld-company"/></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div class="sf7-form-group"><label class="sf7-form-label">Email</label><input class="sf7-form-input" id="ld-email" type="email"/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Phone</label><input class="sf7-form-input" id="ld-phone"/></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+        <div class="sf7-form-group"><label class="sf7-form-label">Status</label>
+          <select class="sf7-form-input" id="ld-status"><option>New</option><option>Contacted</option><option>Qualified</option><option>Proposal</option><option>Negotiation</option><option>Won</option><option>Lost</option></select></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Priority</label>
+          <select class="sf7-form-input" id="ld-priority"><option>High</option><option>Medium</option><option>Low</option></select></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Source</label>
+          <select class="sf7-form-input" id="ld-source"><option>Website</option><option>Referral</option><option>Facebook</option><option>LINE</option><option>Event</option><option>Walk-in</option><option>Cold Call</option><option>Existing Customer</option><option>ai_chat</option></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div class="sf7-form-group"><label class="sf7-form-label">Estimated Value (THB)</label><input class="sf7-form-input" id="ld-value" type="number" min="0"/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">Project Name</label><input class="sf7-form-input" id="ld-project"/></div>
+      </div>
+      <div class="sf7-form-group" style="margin-top:12px">
+        <label class="sf7-form-label">👤 Assigned Sales Rep</label>
+        <select class="sf7-form-input" id="ld-assigned"><option value="">-- ยังไม่ assign --</option></select>
+      </div>
+      <div class="sf7-form-group" style="margin-top:12px"><label class="sf7-form-label">Notes</label><textarea class="sf7-form-input" id="ld-notes" rows="3"></textarea></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+        <button type="button" class="btn btn-secondary" onclick="closeLeadDetail()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="ld-save-btn">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.lm-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:none;align-items:center;justify-content:center}
+.lm-modal-overlay.open{display:flex}
+</style>
 <script>
 document.getElementById('nav').innerHTML=renderNav('leads');
 if(!requireAuth()) throw 'auth';
@@ -90,7 +137,8 @@ function renderKanban(){
     }else{
       cards=leads.map(function(l,idx){
         var priColor = l.priority==='High'?'var(--red)':l.priority==='Low'?'var(--text3)':'var(--orange)';
-        return '<div class="kanban-card" data-col="'+colIdx+'" data-idx="'+idx+'" data-id="'+l.id+'">'+
+        var ownerName = l.ownerName || '';
+        return '<div class="kanban-card" data-col="'+colIdx+'" data-idx="'+idx+'" data-id="'+l.id+'" onclick="openLeadDetail(\''+l.id+'\')" style="cursor:pointer">'+
           '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
             '<div class="kanban-card-name">'+esc(l.projectName||l.name)+'</div>'+
             '<button onclick="event.stopPropagation();deleteLead(\''+l.id+'\')" style="border:none;background:none;color:var(--text3);cursor:pointer;padding:2px;font-size:14px;line-height:1" title="Delete">&times;</button>'+
@@ -102,6 +150,7 @@ function renderKanban(){
             (l.priority?'<span style="font-size:9px;font-weight:600;color:'+priColor+'">'+esc(l.priority)+'</span>':'')+
           '</div>'+
           (l.value?'<div style="font-size:11px;font-weight:600;color:var(--sf-blue);margin-top:4px">'+fmt(l.value)+'</div>':'')+
+          (ownerName?'<div style="font-size:10px;color:var(--text2);margin-top:4px;display:flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'+esc(ownerName)+'</div>':'<div style="font-size:10px;color:var(--orange);margin-top:4px">⚠️ ยังไม่ assign</div>')+
           (l.customerCode?'<div style="font-size:9px;color:var(--text3);font-family:monospace;margin-top:2px">'+esc(l.customerCode)+'</div>':'')+
         '</div>';
       }).join('');
@@ -257,8 +306,9 @@ async function deleteLead(id){
 
 async function loadAndRender(){
   var repId=document.getElementById('rep-filter').value;
-  // loadLeads uses apiFetch('/leads?...') which auto-filters for Sales Rep on backend
-  // For Admin/Manager, pass assignedTo filter if selected
+  // Load users for owner name mapping
+  if(Object.keys(usersMap).length===0) await loadUsersMap();
+
   if(repId){
     var res=await apiFetch('/leads?limit=100&assignedTo='+repId).catch(function(){return null});
     var leads=(res&&res.data)||res||[];
@@ -266,12 +316,25 @@ async function loadAndRender(){
     leads.forEach(function(l){
       var s=l.status||'New';
       var meta=(typeof l.metadata==='string'?JSON.parse(l.metadata):l.metadata)||{};
-      if(LEADS_DATA[s])LEADS_DATA[s].push({id:l.id,name:l.name,company:l.company_name,email:l.email,phone:l.phone,source:l.source,value:meta.estimatedValue||0,assignedTo:l.assigned_to,aiScore:l.ai_score,projectName:meta.projectName||'',priority:meta.priority||'',accountId:meta.accountId||null,customerCode:meta.customerCode||''});
+      if(LEADS_DATA[s])LEADS_DATA[s].push({id:l.id,name:l.name,company:l.company_name,email:l.email,phone:l.phone,source:l.source,value:meta.estimatedValue||0,assignedTo:l.assigned_to,ownerName:usersMap[l.assigned_to]||'',aiScore:l.ai_score,projectName:meta.projectName||'',priority:meta.priority||'',accountId:meta.accountId||null,customerCode:meta.customerCode||'',notes:meta.notes||''});
     });
   } else {
     await loadLeads();
+    // Enrich with owner names
+    STAGES_ORDER.forEach(function(stage){
+      (LEADS_DATA[stage]||[]).forEach(function(l){ l.ownerName=usersMap[l.assignedTo]||''; });
+    });
   }
   renderKanban();
+}
+
+// Users map for owner names
+var usersMap={};
+async function loadUsersMap(){
+  try{
+    var res=await apiFetch('/users');
+    (res||[]).forEach(function(u){ usersMap[u.id]=((u.first_name||'')+' '+(u.last_name||'')).trim(); });
+  }catch(e){console.error('loadUsersMap:',e)}
 }
 
 // ── Sales Rep filter ──
@@ -308,4 +371,70 @@ loadAndRender();
   if(accountId){ openCreate(accountId); }
   if(params.get('newLead')==='1'){ openCreate(); }
 })();
+
+// ══════════════════════════════════════════════════════════
+// Lead Detail / Edit Modal
+// ══════════════════════════════════════════════════════════
+
+function openLeadDetail(id){
+  // Find lead across all stages
+  var lead=null;
+  STAGES_ORDER.forEach(function(stage){
+    (LEADS_DATA[stage]||[]).forEach(function(l){ if(l.id===id) lead=l; });
+  });
+  if(!lead) return;
+
+  document.getElementById('ld-id').value=lead.id;
+  document.getElementById('ld-name').value=lead.name||'';
+  document.getElementById('ld-company').value=lead.company||'';
+  document.getElementById('ld-email').value=lead.email||'';
+  document.getElementById('ld-phone').value=lead.phone||'';
+  document.getElementById('ld-status').value=lead.status||'New';
+  document.getElementById('ld-priority').value=lead.priority||'Medium';
+  document.getElementById('ld-source').value=lead.source||'Website';
+  document.getElementById('ld-value').value=lead.value||0;
+  document.getElementById('ld-project').value=lead.projectName||'';
+  document.getElementById('ld-notes').value=lead.notes||'';
+
+  // Populate assign dropdown
+  var assignSel=document.getElementById('ld-assigned');
+  assignSel.innerHTML='<option value="">-- ยังไม่ assign --</option>';
+  Object.keys(usersMap).forEach(function(uid){
+    assignSel.innerHTML+='<option value="'+uid+'"'+(lead.assignedTo===uid?' selected':'')+'>'+esc(usersMap[uid])+'</option>';
+  });
+
+  document.getElementById('lead-detail-modal').classList.add('open');
+}
+
+function closeLeadDetail(){ document.getElementById('lead-detail-modal').classList.remove('open'); }
+
+async function saveLeadDetail(e){
+  e.preventDefault();
+  var btn=document.getElementById('ld-save-btn');
+  btn.disabled=true; btn.textContent='Saving...';
+  try{
+    var id=document.getElementById('ld-id').value;
+    var body={
+      name:document.getElementById('ld-name').value,
+      companyName:document.getElementById('ld-company').value,
+      email:document.getElementById('ld-email').value,
+      phone:document.getElementById('ld-phone').value,
+      status:document.getElementById('ld-status').value,
+      source:document.getElementById('ld-source').value,
+      assigned_to:document.getElementById('ld-assigned').value||null,
+      metadata:{
+        estimatedValue:parseFloat(document.getElementById('ld-value').value)||0,
+        projectName:document.getElementById('ld-project').value,
+        priority:document.getElementById('ld-priority').value,
+        notes:document.getElementById('ld-notes').value
+      }
+    };
+    await apiFetch('/leads/'+id,{method:'PATCH',body:JSON.stringify(body)});
+    closeLeadDetail();
+    await loadAndRender();
+  }catch(err){alert('Error: '+err.message)}
+  finally{btn.disabled=false;btn.textContent='Save Changes'}
+}
+
+document.getElementById('lead-detail-modal').addEventListener('click',function(e){if(e.target===this)closeLeadDetail()});
 </script></body></html>

@@ -3,22 +3,77 @@
  */
 import { Hono } from 'hono';
 import { query } from '../lib/db.js';
-import { authMiddleware } from '../lib/auth.js';
+import { authMiddleware, requireRole, type TokenPayload } from '../lib/auth.js';
 
 const dashboard = new Hono();
 dashboard.use('*', authMiddleware);
 
-// ── DELETE /dashboard/users/:id ──
-// Hard delete a user from the database
+// ── DELETE /dashboard/users/:id ── (Admin only)
 dashboard.delete('/users/:id', async (c) => {
+  const user = c.get('user') as TokenPayload;
+  if (!user.roles.includes('Admin')) return c.json({ message: 'Only Admin can delete users' }, 403);
+
   const t = c.get('tenantId');
   const id = c.req.param('id');
-  // Delete user_roles first (foreign key)
-  await query(t, 'DELETE FROM user_roles WHERE user_id = $1', [id]);
-  // Delete the user
-  const r = await query(t, 'DELETE FROM users WHERE id = $1 AND tenant_id = $2 RETURNING id, email, first_name, last_name', [id, t]);
+
+  // Prevent self-delete
+  if (id === user.sub) return c.json({ message: 'Cannot delete yourself' }, 400);
+
+  try {
+    // Unassign leads and tasks before deleting
+    await query(t, 'UPDATE leads SET assigned_to = NULL WHERE assigned_to = $1 AND tenant_id = $2', [id, t]);
+    await query(t, 'UPDATE tasks SET assigned_to = NULL WHERE assigned_to = $1 AND tenant_id = $2', [id, t]);
+    await query(t, 'UPDATE accounts SET account_owner = NULL WHERE account_owner = $1 AND tenant_id = $2', [id, t]);
+    // Delete user_roles (foreign key)
+    await query(t, 'DELETE FROM user_roles WHERE user_id = $1', [id]);
+    // Delete the user
+    const r = await query(t, 'DELETE FROM users WHERE id = $1 AND tenant_id = $2 RETURNING id, email, first_name, last_name', [id, t]);
+    if (r.rows.length === 0) return c.json({ message: 'User not found' }, 404);
+    return c.json({ message: 'User deleted successfully', user: r.rows[0] });
+  } catch (err: any) {
+    console.error('Delete user error:', err.message);
+    return c.json({ message: 'Failed to delete user: ' + (err.message || '').slice(0, 100) }, 500);
+  }
+});
+
+// ── PATCH /dashboard/users/:id ── (Admin only — edit user)
+dashboard.patch('/users/:id', async (c) => {
+  const user = c.get('user') as TokenPayload;
+  if (!user.roles.includes('Admin')) return c.json({ message: 'Only Admin can edit users' }, 403);
+
+  const t = c.get('tenantId');
+  const id = c.req.param('id');
+  const body = await c.req.json().catch(() => ({})) as any;
+
+  const sets: string[] = [];
+  const vals: any[] = [];
+  let idx = 1;
+
+  if (body.first_name !== undefined) { sets.push(`first_name=$${idx}`); vals.push(body.first_name); idx++; }
+  if (body.last_name !== undefined) { sets.push(`last_name=$${idx}`); vals.push(body.last_name); idx++; }
+  if (body.email !== undefined) { sets.push(`email=$${idx}`); vals.push(body.email); idx++; }
+  if (body.phone !== undefined) { sets.push(`phone=$${idx}`); vals.push(body.phone); idx++; }
+  if (body.is_active !== undefined) { sets.push(`is_active=$${idx}`); vals.push(body.is_active); idx++; }
+
+  if (sets.length === 0) return c.json({ message: 'No fields to update' }, 400);
+
+  sets.push('updated_at=NOW()');
+  vals.push(id);
+  vals.push(t);
+
+  const r = await query(t, `UPDATE users SET ${sets.join(',')} WHERE id=$${idx} AND tenant_id=$${idx+1} RETURNING id, email, first_name, last_name, phone, is_active`, vals);
   if (r.rows.length === 0) return c.json({ message: 'User not found' }, 404);
-  return c.json({ message: 'User deleted successfully', user: r.rows[0] });
+
+  // Update role if provided
+  if (body.role) {
+    const roleR = await query(t, `SELECT id FROM roles WHERE name=$1 AND tenant_id=$2`, [body.role, t]);
+    if (roleR.rows.length > 0) {
+      await query(t, `DELETE FROM user_roles WHERE user_id=$1`, [id]);
+      await query(t, `INSERT INTO user_roles(user_id, role_id) VALUES($1, $2)`, [id, roleR.rows[0].id]);
+    }
+  }
+
+  return c.json({ message: 'User updated', user: r.rows[0] });
 });
 
 // ── PUT /dashboard/users/:id/deactivate ──
