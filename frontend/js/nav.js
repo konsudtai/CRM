@@ -52,6 +52,7 @@ function getNavMenus() {
     { key:'sales', label:t('nav_sales'), items:[{page:'leads',name:t('nav_pipeline'),desc:t('nav_pipeline_desc')},{page:'lead-management',name:'Lead Management',desc:'Search, view & edit all leads'}] },
     { key:'activity', label:t('nav_activities'), items:[{page:'tasks',name:t('nav_tasks'),desc:t('nav_tasks_desc')},{page:'calendar',name:t('nav_calendar'),desc:t('nav_calendar_desc')}] },
     { key:'docs', label:t('nav_documents'), items:[{page:'quotations',name:t('nav_quotations'),desc:t('nav_quotations_desc')},{page:'products',name:t('nav_products'),desc:t('nav_products_desc')},{page:'manual',name:'User Manual',desc:'คู่มือการใช้งาน / User Guide'}] },
+    { key:'marketing', label:t('nav_marketing')||'Marketing', items:[{page:'marketing',name:'Landing Page CMS',desc:'จัดการเนื้อหา Landing Page + Logo'}] },
   ].concat(getUserProfile().role==='Admin'?[{ key:'system', label:t('nav_settings'), items:[{page:'settings',name:t('nav_settings_page'),desc:t('nav_settings_desc')}] }]:[]);
 }
 
@@ -89,7 +90,7 @@ function renderNav(activePage) {
       <button class="sf7-hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <a href="dashboard.html" class="sf7-brand" id="sf7-brand-link"><img src="${(window.BrandLogo&&window.BrandLogo.get('../logo.png'))||'../logo.png'}" alt="Logo" class="sf7-brand-logo" data-brand-logo style="height:28px;width:auto;vertical-align:middle;margin-right:8px;border-radius:6px;object-fit:contain"/><span class="sf7-brand-text">SalesFAST <span style="color:#4BCA81">7</span></span></a>
+      <a href="dashboard.html" class="sf7-brand">SalesFAST <span style="color:#4BCA81">7</span></a>
       <div class="sf7-nav-items">${menuHtml}</div>
     </div>
     <div class="sf7-nav-right">

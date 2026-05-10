@@ -62,14 +62,6 @@
   <div class="tab-bar">
     <button class="tab-btn active" onclick="showTab('users',this)">Users</button>
     <button class="tab-btn" onclick="showTab('roles',this)">Roles & Permissions</button>
-    <button class="tab-btn" onclick="showTab('branding',this)">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
-      Branding
-    </button>
-    <button class="tab-btn" onclick="showTab('landing',this)">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
-      Landing Page CMS
-    </button>
     <button class="tab-btn" onclick="showTab('addons',this)">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
       Add-ons
@@ -130,64 +122,6 @@
       <div style="margin-top:16px;padding:10px 14px;border-radius:8px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1);font-size:11px;color:var(--text2)">
         <strong style="color:var(--sf-blue)">Note:</strong> Sales Manager has the highest approval authority for quotations. Accounting can view and update quotation status. Support can manage customer tasks. Marketing has read-only access to leads and dashboard. Only Admin can manage users and settings.
       </div>
-    </div>
-  </div>
-
-  <!-- Tab: Branding (Logo) -->
-  <div class="tab-content" id="tab-branding">
-    <div class="card" style="max-width:720px">
-      <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:4px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
-        Company Logo
-      </div>
-      <p style="font-size:12px;color:var(--text2);margin:12px 0 16px">อัปโหลด Logo ของบริษัท — จะแสดงในทุกหน้าของ CRM และหน้า Landing Page<br/>รองรับไฟล์ PNG, JPG, SVG · แนะนำขนาดสี่เหลี่ยมจัตุรัส 512x512 px</p>
-
-      <div style="display:grid;grid-template-columns:160px 1fr;gap:24px;align-items:center">
-        <!-- Preview -->
-        <div style="width:140px;height:140px;border-radius:16px;background:var(--surface2);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative">
-          <img id="logo-preview" src="" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain;padding:12px"/>
-          <div id="logo-placeholder" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text3);font-size:11px">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-            <span>ไม่มี Logo</span>
-          </div>
-        </div>
-
-        <!-- Controls -->
-        <div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <input type="file" id="logo-file-input" accept="image/png,image/jpeg,image/svg+xml" style="display:none" onchange="uploadLogo(event)"/>
-            <button class="btn btn-primary" onclick="document.getElementById('logo-file-input').click()" style="display:flex;align-items:center;gap:6px">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Upload Logo
-            </button>
-            <button class="btn btn-secondary" onclick="resetLogo()" style="color:var(--red)" id="logo-reset-btn">Reset to Default</button>
-          </div>
-          <div style="margin-top:10px;font-size:11px;color:var(--text3)">
-            <div id="logo-status">
-              <span style="color:var(--text2)">Using default logo</span>
-            </div>
-          </div>
-          <div style="margin-top:16px;padding:10px 14px;border-radius:8px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1);font-size:11px;color:var(--text2)">
-            <strong style="color:var(--sf-blue)">Note:</strong> Logo ถูกเก็บใน browser (localStorage) — หากต้องการใช้ใน browser อื่นต้องอัปโหลดใหม่ หรือ Export/Import ในส่วน Landing CMS
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tab: Landing Page CMS (iframe to admin) -->
-  <div class="tab-content" id="tab-landing">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="font-size:13px;color:var(--text2)">
-        จัดการเนื้อหาหน้า Landing Page ของบริษัท — แก้ไขข้อความ เพิ่มสินค้า และดู leads จากฟอร์มติดต่อ
-      </div>
-      <a href="../landing.html" target="_blank" class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;font-size:12px">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        Open Landing Page
-      </a>
-    </div>
-    <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface2)">
-      <iframe id="landing-cms-frame" src="" style="width:100%;height:800px;border:none;display:block;background:#F8FAFC" title="Landing Page CMS"></iframe>
     </div>
   </div>
 
@@ -637,7 +571,7 @@
 
 <script src="../js/motion.js"></script><script src="../js/helpers.js"></script>
 <script src="../js/i18n.js"></script>
-<script src="../js/logo-manager.js"></script><script src="../js/nav.js"></script>
+<script src="../js/nav.js"></script>
 <script src="../js/data.js"></script>
 <script>
 document.getElementById('nav').innerHTML = renderNav('settings');
@@ -702,73 +636,6 @@ function showTab(id, btn) {
   document.querySelectorAll('.tab-btn').forEach(function(el){ el.classList.remove('active'); });
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
-
-  // Lazy-load CMS iframe
-  if (id === 'landing') {
-    var frame = document.getElementById('landing-cms-frame');
-    if (frame && !frame.src) frame.src = '../admin/index.html?embed=1';
-  }
-  // Refresh logo preview
-  if (id === 'branding') { refreshLogoPreview(); }
-}
-
-// ── Logo management ──
-function refreshLogoPreview() {
-  var preview = document.getElementById('logo-preview');
-  var placeholder = document.getElementById('logo-placeholder');
-  var status = document.getElementById('logo-status');
-  var resetBtn = document.getElementById('logo-reset-btn');
-  if (!preview) return;
-
-  if (window.BrandLogo && window.BrandLogo.hasCustom()) {
-    preview.src = window.BrandLogo.get();
-    preview.style.display = 'block';
-    if (placeholder) placeholder.style.display = 'none';
-    if (status) status.innerHTML = '<span style="color:#2E844A;font-weight:600">&#10003; Using custom uploaded logo</span>';
-    if (resetBtn) resetBtn.style.display = '';
-  } else {
-    // Check if default logo.png exists
-    preview.src = '../logo.png';
-    preview.onerror = function() {
-      preview.style.display = 'none';
-      if (placeholder) placeholder.style.display = 'flex';
-    };
-    preview.onload = function() {
-      preview.style.display = 'block';
-      if (placeholder) placeholder.style.display = 'none';
-    };
-    if (status) status.innerHTML = '<span style="color:var(--text2)">Using default logo</span>';
-    if (resetBtn) resetBtn.style.display = 'none';
-  }
-}
-
-function uploadLogo(event) {
-  var file = event.target.files[0];
-  if (!file) return;
-  if (file.size > 2 * 1024 * 1024) {
-    alert('ไฟล์ใหญ่เกินไป — กรุณาใช้ไฟล์ขนาดไม่เกิน 2MB');
-    event.target.value = '';
-    return;
-  }
-  if (!window.BrandLogo) {
-    alert('Logo manager not loaded');
-    return;
-  }
-  window.BrandLogo.save(file).then(function() {
-    refreshLogoPreview();
-    event.target.value = '';
-    if (window.toast) window.toast('อัปโหลด Logo เรียบร้อย — แสดงในทุกหน้าทันที');
-    else alert('Logo uploaded successfully');
-  }).catch(function(err) {
-    alert('Upload failed: ' + (err.message || 'Unknown error'));
-  });
-}
-
-function resetLogo() {
-  if (!confirm('ต้องการ reset logo กลับเป็นค่าเริ่มต้นใช่หรือไม่?')) return;
-  if (window.BrandLogo && window.BrandLogo.reset()) {
-    refreshLogoPreview();
-  }
 }
 
 function renderUsers() {

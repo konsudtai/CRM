@@ -3,7 +3,7 @@
 const LANG = {
 th: {
   // Nav menus
-  nav_dashboard:'แดชบอร์ด', nav_crm:'CRM', nav_sales:'การขาย', nav_activities:'กิจกรรม', nav_documents:'เอกสาร', nav_settings:'ตั้งค่า',
+  nav_dashboard:'แดชบอร์ด', nav_crm:'CRM', nav_sales:'การขาย', nav_activities:'กิจกรรม', nav_documents:'เอกสาร', nav_marketing:'การตลาด', nav_settings:'ตั้งค่า',
   nav_accounts:'ลูกค้า', nav_contacts:'ผู้ติดต่อ', nav_leads:'ลีด', nav_opportunities:'โอกาสขาย',
   nav_pipeline:'ไปป์ไลน์', nav_pipeline_desc:'จัดการลีดและดีล',
   nav_tasks:'งาน', nav_calendar:'ปฏิทิน', nav_quotations:'ใบเสนอราคา', nav_products:'สินค้า',
@@ -81,7 +81,7 @@ th: {
   pw_current:'รหัสผ่านปัจจุบัน', pw_new:'รหัสผ่านใหม่', pw_confirm:'ยืนยันรหัสผ่านใหม่', pw_update:'อัปเดตรหัสผ่าน',
 },
 en: {
-  nav_dashboard:'Dashboard', nav_crm:'CRM', nav_sales:'Sales', nav_activities:'Activities', nav_documents:'Documents', nav_settings:'Settings',
+  nav_dashboard:'Dashboard', nav_crm:'CRM', nav_sales:'Sales', nav_activities:'Activities', nav_documents:'Documents', nav_marketing:'Marketing', nav_settings:'Settings',
   nav_accounts:'Customers', nav_contacts:'Contacts', nav_leads:'Leads', nav_opportunities:'Opportunities',
   nav_pipeline:'Pipeline', nav_pipeline_desc:'Manage leads and deals',
   nav_tasks:'Tasks', nav_calendar:'Calendar', nav_quotations:'Quotations', nav_products:'Products',
