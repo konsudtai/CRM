@@ -1,5 +1,5 @@
 import { motion, type HTMLMotionProps } from 'framer-motion';
-import { type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 
 // ── Page Transition ──
 export function PageTransition({ children, className }: { children: ReactNode; className?: string }) {
@@ -124,4 +124,4 @@ function CountUp({ target, suffix }: { target: number; suffix: string }) {
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 }
 
-import React from 'react';
+// CountUp helper already uses React from top import
