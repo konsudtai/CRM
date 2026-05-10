@@ -341,31 +341,96 @@ function renderStageBreakdown(){
   STAGES_ORDER.forEach(function(s){var c=counts[s]||0;if(c>0)slices.push({name:s,count:c,color:stageColors[s]||'#94A3B8'})});
   if(slices.length===0){document.getElementById('stage-breakdown').innerHTML='<div class="dk-empty">No data</div>';return}
 
-  // SVG Pie Chart
-  var size=140,cx=size/2,cy=size/2,r=55;
-  var svg='<svg viewBox="0 0 '+size+' '+size+'" style="width:'+size+'px;height:'+size+'px">';
+  // Large interactive SVG Donut Chart with labels inside
+  var size=280,cx=size/2,cy=size/2,outerR=120,innerR=65;
+  var svg='<svg viewBox="0 0 '+size+' '+size+'" style="width:100%;max-width:'+size+'px;height:auto;margin:0 auto;display:block;cursor:pointer" id="pie-svg">';
+
+  // Gradient defs for modern look
+  svg+='<defs>';
+  slices.forEach(function(s,i){
+    svg+='<filter id="shadow'+i+'"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.15"/></filter>';
+  });
+  svg+='</defs>';
+
   var startAngle=-Math.PI/2;
-  slices.forEach(function(s){
+  slices.forEach(function(s,i){
     var angle=(s.count/total)*2*Math.PI;
     var endAngle=startAngle+angle;
-    var x1=cx+r*Math.cos(startAngle),y1=cy+r*Math.sin(startAngle);
-    var x2=cx+r*Math.cos(endAngle),y2=cy+r*Math.sin(endAngle);
+    var midAngle=startAngle+angle/2;
+
+    // Donut arc path (outer arc - inner arc)
+    var ox1=cx+outerR*Math.cos(startAngle),oy1=cy+outerR*Math.sin(startAngle);
+    var ox2=cx+outerR*Math.cos(endAngle),oy2=cy+outerR*Math.sin(endAngle);
+    var ix1=cx+innerR*Math.cos(endAngle),iy1=cy+innerR*Math.sin(endAngle);
+    var ix2=cx+innerR*Math.cos(startAngle),iy2=cy+innerR*Math.sin(startAngle);
     var large=angle>Math.PI?1:0;
-    svg+='<path d="M'+cx+','+cy+' L'+x1+','+y1+' A'+r+','+r+' 0 '+large+',1 '+x2+','+y2+' Z" fill="'+s.color+'" stroke="#fff" stroke-width="1.5"/>';
+
+    var path='M'+ox1+','+oy1+' A'+outerR+','+outerR+' 0 '+large+',1 '+ox2+','+oy2+' L'+ix1+','+iy1+' A'+innerR+','+innerR+' 0 '+large+',0 '+ix2+','+iy2+' Z';
+
+    svg+='<path d="'+path+'" fill="'+s.color+'" stroke="var(--surface)" stroke-width="2" style="transition:transform .2s,filter .2s;transform-origin:'+cx+'px '+cy+'px" data-idx="'+i+'" class="pie-slice" onmouseenter="hoverSlice('+i+',true)" onmouseleave="hoverSlice('+i+',false)"/>';
+
+    // Label inside the slice (only if slice is big enough)
+    var pct=Math.round(s.count/total*100);
+    if(pct>=8){
+      var labelR=(outerR+innerR)/2+5;
+      var lx=cx+labelR*Math.cos(midAngle);
+      var ly=cy+labelR*Math.sin(midAngle);
+      svg+='<text x="'+lx+'" y="'+(ly-2)+'" text-anchor="middle" font-size="9" font-weight="700" fill="#fff" pointer-events="none" style="text-shadow:0 1px 2px rgba(0,0,0,.3)">'+esc(s.name)+'</text>';
+      svg+='<text x="'+lx+'" y="'+(ly+9)+'" text-anchor="middle" font-size="8" font-weight="600" fill="rgba(255,255,255,.8)" pointer-events="none">'+pct+'%</text>';
+    }
+
     startAngle=endAngle;
   });
-  svg+='<circle cx="'+cx+'" cy="'+cy+'" r="28" fill="var(--surface)"/>';
-  svg+='<text x="'+cx+'" y="'+(cy+1)+'" text-anchor="middle" font-size="16" font-weight="800" fill="var(--text)">'+total+'</text>';
-  svg+='<text x="'+cx+'" y="'+(cy+12)+'" text-anchor="middle" font-size="8" fill="var(--text3)">Total</text>';
+
+  // Center circle with total
+  svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+innerR+'" fill="var(--surface)" style="filter:drop-shadow(0 2px 8px rgba(0,0,0,.06))"/>';
+  svg+='<text x="'+cx+'" y="'+(cy-4)+'" text-anchor="middle" font-size="28" font-weight="900" fill="var(--text)" id="pie-center-num">'+total+'</text>';
+  svg+='<text x="'+cx+'" y="'+(cy+14)+'" text-anchor="middle" font-size="10" font-weight="600" fill="var(--text3)" id="pie-center-label">Total Deals</text>';
   svg+='</svg>';
 
-  // Legend
-  var legend=slices.map(function(s){
-    var pct=Math.round(s.count/total*100);
-    return '<div class="dk-legend-row"><div class="dk-legend-dot" style="background:'+s.color+'"></div><div class="dk-legend-name">'+esc(s.name)+'</div><div class="dk-legend-val">'+s.count+' ('+pct+'%)</div></div>';
-  }).join('');
+  // Tooltip
+  var tooltip='<div id="pie-tooltip" style="position:absolute;display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;box-shadow:0 8px 24px rgba(0,0,0,.12);font-size:12px;pointer-events:none;z-index:10;white-space:nowrap;min-width:140px"><div id="pie-tt-name" style="font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px"><span id="pie-tt-dot" style="width:8px;height:8px;border-radius:50%;flex-shrink:0"></span><span id="pie-tt-text"></span></div><div style="display:flex;justify-content:space-between;gap:16px"><span style="color:var(--text2)">จำนวน</span><span id="pie-tt-count" style="font-weight:700"></span></div><div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px"><span style="color:var(--text2)">สัดส่วน</span><span id="pie-tt-pct" style="font-weight:700;color:var(--sf-blue)"></span></div></div>';
 
-  document.getElementById('stage-breakdown').innerHTML='<div class="dk-donut-wrap">'+svg+'<div class="dk-donut-legend">'+legend+'</div></div>';
+  document.getElementById('stage-breakdown').innerHTML='<div style="position:relative">'+svg+tooltip+'</div>';
+
+  // Store slices data for hover
+  window._pieSlices=slices;
+  window._pieTotal=total;
+}
+
+// Pie chart hover interaction
+function hoverSlice(idx,enter){
+  var slices=window._pieSlices;var total=window._pieTotal;
+  var paths=document.querySelectorAll('.pie-slice');
+  var centerNum=document.getElementById('pie-center-num');
+  var centerLabel=document.getElementById('pie-center-label');
+  var tooltip=document.getElementById('pie-tooltip');
+
+  if(enter&&slices[idx]){
+    var s=slices[idx];
+    var pct=Math.round(s.count/total*100);
+    // Highlight slice
+    paths.forEach(function(p,i){
+      if(i===idx){p.style.transform='scale(1.06)';p.style.filter='drop-shadow(0 4px 12px rgba(0,0,0,.2))';}
+      else{p.style.opacity='0.5';p.style.transform='scale(1)';p.style.filter='none';}
+    });
+    // Update center
+    if(centerNum)centerNum.textContent=s.count;
+    if(centerLabel)centerLabel.textContent=s.name;
+    // Show tooltip
+    document.getElementById('pie-tt-dot').style.background=s.color;
+    document.getElementById('pie-tt-text').textContent=s.name;
+    document.getElementById('pie-tt-count').textContent=s.count+' deals';
+    document.getElementById('pie-tt-pct').textContent=pct+'%';
+    tooltip.style.display='block';
+    tooltip.style.top='8px';tooltip.style.right='8px';
+  } else {
+    // Reset
+    paths.forEach(function(p){p.style.opacity='1';p.style.transform='scale(1)';p.style.filter='none';});
+    if(centerNum)centerNum.textContent=total;
+    if(centerLabel)centerLabel.textContent='Total Deals';
+    if(tooltip)tooltip.style.display='none';
+  }
 }
 
 /* ── Sales Rep Comparison ── */
