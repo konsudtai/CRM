@@ -3,7 +3,7 @@ import { FadeIn, StaggerContainer, StaggerItem, AnimatedNumber } from '@/compone
 
 export function LandingPage() {
   return (
-    <div className="font-jakarta bg-white text-slate-900">
+    <div style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif", background: '#fff', color: '#0C4A6E' }}>
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 h-[72px] flex items-center justify-between px-6 bg-white/90 backdrop-blur-xl border-b border-slate-200/50">
         <a href="/" className="text-lg font-black text-sf-navy tracking-tight">

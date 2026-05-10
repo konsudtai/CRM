@@ -5,6 +5,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import './index.css';
 
+// Set initial theme
+const savedTheme = localStorage.getItem('sf7-theme') || 'light';
+document.documentElement.setAttribute('data-theme', savedTheme);
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

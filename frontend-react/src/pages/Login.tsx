@@ -31,48 +31,48 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-sky-50 px-4">
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '16px' }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm"
+        style={{ width: '100%', maxWidth: 380 }}
       >
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-black text-sf-navy tracking-tight">
-            SalesFAST <span className="text-brand-green">7</span>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--sf-navy)', letterSpacing: '-0.5px' }}>
+            SalesFAST <span style={{ color: '#2E844A' }}>7</span>
           </h1>
-          <p className="text-sm text-slate-500 mt-2">IT Solutions & CRM Platform</p>
+          <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 8 }}>IT Solutions & CRM Platform</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-8 shadow-lg border border-slate-200/60">
-          <h2 className="text-lg font-bold text-slate-900 mb-6">เข้าสู่ระบบ</h2>
+        <form onSubmit={handleSubmit} style={{ background: 'var(--surface)', borderRadius: 16, padding: 32, boxShadow: 'var(--shadow-md)', border: '1px solid var(--border)' }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>เข้าสู่ระบบ</h2>
 
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            <div style={{ marginBottom: 16, padding: 12, borderRadius: 10, background: 'rgba(194,57,52,.08)', border: '1px solid rgba(194,57,52,.2)', color: '#C23934', fontSize: 13 }}>
               {error}
             </div>
           )}
 
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">อีเมล</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>อีเมล</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sf-blue focus:ring-2 focus:ring-sf-blue/10 outline-none transition"
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 13, color: 'var(--text)', background: 'var(--surface2)', outline: 'none', fontFamily: 'inherit' }}
                 placeholder="you@company.com"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">รหัสผ่าน</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>รหัสผ่าน</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sf-blue focus:ring-2 focus:ring-sf-blue/10 outline-none transition"
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 13, color: 'var(--text)', background: 'var(--surface2)', outline: 'none', fontFamily: 'inherit' }}
                 placeholder="••••••••"
               />
             </div>
@@ -81,7 +81,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-6 py-2.5 rounded-xl bg-sf-blue text-white font-semibold text-sm hover:bg-sf-blue-d transition disabled:opacity-50 shadow-md shadow-sf-blue/20"
+            style={{ width: '100%', marginTop: 24, padding: '10px 24px', borderRadius: 10, background: 'var(--sf-blue)', color: '#fff', fontWeight: 600, fontSize: 13, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, fontFamily: 'inherit', boxShadow: '0 4px 12px rgba(1,118,211,.25)' }}
           >
             {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
           </button>
