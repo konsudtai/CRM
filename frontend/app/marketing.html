@@ -8,137 +8,157 @@
 <link rel="stylesheet" href="../css/app.css"/>
 <style>
 /* ── Page Builder Layout ── */
-.pb-wrap { display:grid; grid-template-columns:260px 1fr 380px; height:calc(100vh - 52px); overflow:hidden }
+.pb-wrap { display:grid; grid-template-columns:240px 1fr; height:calc(100vh - 52px); overflow:hidden }
+
+/* Left: Section list */
 .pb-sidebar { background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden }
-.pb-sidebar-head { padding:14px 16px; border-bottom:1px solid var(--border); font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; justify-content:space-between }
-.pb-sidebar-body { flex:1; overflow-y:auto; padding:8px }
+.pb-sidebar-head { padding:14px 16px; border-bottom:1px solid var(--border) }
+.pb-sidebar-head h2 { font-size:14px; font-weight:700; color:var(--text); margin:0 0 4px }
+.pb-sidebar-head p { font-size:11px; color:var(--text3); margin:0 }
+.pb-sidebar-body { flex:1; overflow-y:auto; padding:10px }
+.pb-sidebar-footer { padding:10px; border-top:1px solid var(--border); display:flex; gap:6px; flex-wrap:wrap }
 
-/* Component list (draggable) */
-.pb-comp { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; background:var(--surface2); border:1px solid var(--border); margin-bottom:6px; cursor:grab; transition:all .15s; user-select:none; position:relative }
-.pb-comp:hover { border-color:var(--sf-blue); background:rgba(1,118,211,.04) }
-.pb-comp:active { cursor:grabbing; box-shadow:0 4px 12px rgba(0,0,0,.1) }
-.pb-comp-icon { width:28px; height:28px; border-radius:6px; background:rgba(1,118,211,.08); color:var(--sf-blue); display:flex; align-items:center; justify-content:center; flex-shrink:0 }
-.pb-comp-icon svg { width:14px; height:14px }
-.pb-comp-info { flex:1; min-width:0 }
-.pb-comp-name { font-size:12px; font-weight:600; color:var(--text) }
-.pb-comp-desc { font-size:10px; color:var(--text3); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-.pb-comp-handle { color:var(--text3); opacity:.5 }
-.pb-comp.active { border-color:var(--sf-blue); background:rgba(1,118,211,.08); box-shadow:0 0 0 2px rgba(1,118,211,.2) }
-.pb-comp .pb-comp-actions { position:absolute; right:8px; top:50%; transform:translateY(-50%); display:flex; gap:2px; opacity:0; transition:opacity .15s }
-.pb-comp:hover .pb-comp-actions { opacity:1 }
-.pb-comp-btn { width:22px; height:22px; border-radius:4px; border:none; background:transparent; color:var(--text3); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .12s }
-.pb-comp-btn:hover { background:var(--border); color:var(--text) }
-.pb-comp-btn.del:hover { background:rgba(194,57,52,.1); color:#C23934 }
+/* Section items */
+.pb-sec { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; border:1.5px solid transparent; margin-bottom:4px; cursor:pointer; transition:all .15s }
+.pb-sec:hover { background:var(--surface2); border-color:var(--border) }
+.pb-sec.active { background:rgba(1,118,211,.06); border-color:var(--sf-blue); box-shadow:0 0 0 2px rgba(1,118,211,.12) }
+.pb-sec-icon { width:32px; height:32px; border-radius:8px; background:var(--surface2); color:var(--sf-blue); display:flex; align-items:center; justify-content:center; flex-shrink:0 }
+.pb-sec.active .pb-sec-icon { background:rgba(1,118,211,.12) }
+.pb-sec-icon svg { width:16px; height:16px }
+.pb-sec-info { flex:1; min-width:0 }
+.pb-sec-name { font-size:12px; font-weight:600; color:var(--text); line-height:1.3 }
+.pb-sec-meta { font-size:10px; color:var(--text3); margin-top:2px }
+.pb-sec-actions { display:flex; gap:2px; opacity:0; transition:opacity .15s }
+.pb-sec:hover .pb-sec-actions { opacity:1 }
+.pb-sec-btn { width:22px; height:22px; border-radius:5px; border:none; background:transparent; color:var(--text3); cursor:pointer; display:flex; align-items:center; justify-content:center }
+.pb-sec-btn:hover { background:var(--surface3); color:var(--text) }
 
-/* Add component button */
-.pb-add-comp { padding:10px; border-radius:8px; border:2px dashed var(--border); background:transparent; color:var(--sf-blue); font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; margin-top:8px }
-.pb-add-comp:hover { border-color:var(--sf-blue); background:rgba(1,118,211,.04) }
+/* Right: Editor */
+.pb-editor { display:flex; flex-direction:column; overflow:hidden }
+.pb-editor-head { padding:16px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; background:var(--surface) }
+.pb-editor-title { font-size:16px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:10px }
+.pb-editor-title svg { color:var(--sf-blue) }
+.pb-editor-actions { display:flex; gap:6px; align-items:center }
+.pb-saved { padding:4px 10px; border-radius:16px; font-size:11px; font-weight:600 }
+.pb-saved.ok { background:rgba(46,132,74,.08); color:#2E844A }
+.pb-saved.dirty { background:rgba(221,122,1,.08); color:#DD7A01 }
+.pb-editor-body { flex:1; overflow-y:auto; padding:24px }
 
-/* Preview area */
-.pb-preview { position:relative; overflow:hidden; background:#f0f9ff }
-.pb-preview iframe { width:100%; height:100%; border:none; display:block }
-.pb-preview-toolbar { position:absolute; top:8px; left:50%; transform:translateX(-50%); display:flex; gap:4px; background:rgba(0,0,0,.7); backdrop-filter:blur(8px); padding:4px; border-radius:8px; z-index:5 }
-.pb-preview-btn { padding:4px 10px; border-radius:5px; border:none; background:transparent; color:rgba(255,255,255,.7); font-size:11px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .12s }
-.pb-preview-btn:hover { color:#fff }
-.pb-preview-btn.active { background:rgba(255,255,255,.15); color:#fff }
+/* ── Form Styles (clean, readable) ── */
+.ed-form { display:flex; flex-direction:column; gap:16px; max-width:680px }
+.ed-form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px }
+.ed-group { display:flex; flex-direction:column; gap:6px }
+.ed-label { font-size:12px; font-weight:600; color:var(--text); letter-spacing:-.1px }
+.ed-help { font-size:10px; color:var(--text3); font-weight:400; margin-left:4px }
+.ed-input, .ed-textarea, .ed-select {
+  width:100%; padding:10px 14px;
+  border:1.5px solid var(--border); border-radius:10px;
+  font-family:inherit; font-size:13px; color:var(--text);
+  background:var(--surface); outline:none; transition:all .15s;
+  line-height:1.5
+}
+.ed-input:focus, .ed-textarea:focus, .ed-select:focus {
+  border-color:var(--sf-blue); box-shadow:0 0 0 3px rgba(1,118,211,.08);
+  background:var(--surface)
+}
+.ed-textarea { resize:vertical; min-height:80px }
+.ed-input::placeholder, .ed-textarea::placeholder { color:var(--text3) }
 
-/* Editor panel */
-.pb-editor { background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden }
-.pb-editor-head { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:8px; flex-shrink:0 }
-.pb-editor-title { font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px }
-.pb-editor-body { flex:1; overflow-y:auto; padding:16px }
-.pb-editor-footer { padding:10px 16px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:8px; flex-shrink:0 }
+/* Item cards */
+.ed-items { display:flex; flex-direction:column; gap:10px }
+.ed-item { background:var(--surface2); border:1.5px solid var(--border); border-radius:12px; padding:16px; transition:all .15s }
+.ed-item:hover { border-color:var(--sf-blue); box-shadow:0 2px 8px rgba(1,118,211,.06) }
+.ed-item-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px }
+.ed-item-title { font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px }
+.ed-item-num { width:22px; height:22px; border-radius:50%; background:var(--sf-blue); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700 }
+.ed-item-btns { display:flex; gap:4px }
+.ed-item-btn { width:26px; height:26px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text3); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .12s }
+.ed-item-btn:hover { border-color:var(--sf-blue); color:var(--sf-blue); background:rgba(1,118,211,.04) }
+.ed-item-btn.del:hover { border-color:#C23934; color:#C23934; background:rgba(194,57,52,.04) }
+.ed-item-btn:disabled { opacity:.3; cursor:not-allowed }
 
-/* Status bar */
-.pb-status { display:flex; align-items:center; gap:8px }
-.pb-saved { padding:3px 8px; border-radius:12px; font-size:10px; font-weight:600 }
-.pb-saved.ok { background:rgba(46,132,74,.1); color:#2E844A }
-.pb-saved.dirty { background:rgba(221,122,1,.1); color:#DD7A01 }
+.ed-add-btn { padding:12px; border-radius:10px; border:2px dashed var(--border); background:transparent; color:var(--sf-blue); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-top:10px }
+.ed-add-btn:hover { border-color:var(--sf-blue); background:rgba(1,118,211,.03) }
 
-/* Form elements */
-.pb-form { display:flex; flex-direction:column; gap:12px }
-.pb-form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px }
-.pb-form-group { display:flex; flex-direction:column; gap:4px }
-.pb-form-label { font-size:11px; font-weight:600; color:var(--text2) }
-.pb-input, .pb-textarea, .pb-select { width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:7px; font-family:inherit; font-size:12px; color:var(--text); background:var(--input-bg,var(--surface2)); outline:none; transition:all .15s }
-.pb-input:focus, .pb-textarea:focus, .pb-select:focus { border-color:var(--sf-blue); box-shadow:0 0 0 3px rgba(1,118,211,.08) }
-.pb-textarea { resize:vertical; min-height:60px }
+/* Logo upload */
+.ed-logo-box { display:flex; align-items:center; gap:20px; padding:20px; background:var(--surface2); border-radius:12px; border:1px solid var(--border) }
+.ed-logo-preview { width:80px; height:80px; border-radius:12px; background:var(--surface); border:2px dashed var(--border); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0 }
+.ed-logo-preview img { max-width:100%; max-height:100%; object-fit:contain; padding:6px }
 
-/* Item list in editor */
-.pb-items { display:flex; flex-direction:column; gap:6px }
-.pb-item { background:var(--surface2); border:1px solid var(--border); border-radius:7px; padding:10px; transition:all .12s }
-.pb-item:hover { border-color:var(--text3) }
-.pb-item-head { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:8px }
-.pb-item-title { font-size:11px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px }
-.pb-item-num { width:18px; height:18px; border-radius:50%; background:var(--sf-blue); color:#fff; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700 }
-.pb-item-btns { display:flex; gap:2px }
-.pb-item-btn { width:22px; height:22px; border-radius:4px; border:none; background:transparent; color:var(--text3); cursor:pointer; display:flex; align-items:center; justify-content:center }
-.pb-item-btn:hover { background:var(--border); color:var(--text) }
-.pb-item-btn.del:hover { background:rgba(194,57,52,.1); color:#C23934 }
-.pb-item-btn:disabled { opacity:.3; cursor:not-allowed }
-
-.pb-add-item { padding:8px; border-radius:7px; border:1.5px dashed var(--border); background:transparent; color:var(--sf-blue); font-family:inherit; font-size:11px; font-weight:600; cursor:pointer; width:100%; margin-top:6px; transition:all .12s }
-.pb-add-item:hover { border-color:var(--sf-blue); background:rgba(1,118,211,.03) }
+/* Section header in editor */
+.ed-section-header { margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--border) }
+.ed-section-header h3 { font-size:15px; font-weight:700; color:var(--text); margin:0 0 4px }
+.ed-section-header p { font-size:12px; color:var(--text2); margin:0; line-height:1.5 }
 
 /* Empty state */
-.pb-empty { padding:32px 16px; text-align:center; color:var(--text3); font-size:12px }
+.ed-empty { padding:48px 24px; text-align:center; color:var(--text3) }
+.ed-empty svg { margin:0 auto 12px; display:block; opacity:.4 }
+.ed-empty p { font-size:13px; margin:0 0 4px }
+.ed-empty small { font-size:11px }
+
+/* Leads table */
+.ed-table { width:100%; border-collapse:separate; border-spacing:0; font-size:12px }
+.ed-table th { text-align:left; padding:10px 12px; background:var(--surface2); font-size:10px; font-weight:700; letter-spacing:.3px; color:var(--text2); text-transform:uppercase; border-bottom:1.5px solid var(--border) }
+.ed-table td { padding:12px; border-bottom:1px solid var(--border); vertical-align:top }
+.ed-table tbody tr:hover { background:var(--surface2) }
+
+/* Preview link */
+.pb-preview-link { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:8px; background:rgba(1,118,211,.06); color:var(--sf-blue); font-size:12px; font-weight:600; text-decoration:none; transition:all .15s; margin-bottom:20px }
+.pb-preview-link:hover { background:rgba(1,118,211,.12); text-decoration:none }
 
 /* Responsive */
-@media (max-width:1100px) { .pb-wrap { grid-template-columns:200px 1fr 320px } }
-@media (max-width:900px) { .pb-wrap { grid-template-columns:1fr; height:auto } .pb-preview { height:300px } .pb-sidebar { max-height:200px } }
+@media (max-width:768px) {
+  .pb-wrap { grid-template-columns:1fr; height:auto }
+  .pb-sidebar { max-height:200px }
+  .ed-form-row { grid-template-columns:1fr }
+  .pb-editor-body { padding:16px }
+}
 </style>
 </head>
 <body>
 <div class="bg-pattern"></div>
 <div id="nav"></div>
 
-<!-- Page Builder -->
 <div class="pb-wrap">
-  <!-- Left: Component List -->
+  <!-- Left: Section List -->
   <div class="pb-sidebar">
     <div class="pb-sidebar-head">
-      <span>Sections</span>
-      <div class="pb-status">
-        <span class="pb-saved ok" id="pb-saved">Saved</span>
-      </div>
+      <h2>Landing Page</h2>
+      <p>คลิก section เพื่อแก้ไข</p>
     </div>
-    <div class="pb-sidebar-body" id="pb-sections">
-      <!-- Rendered by JS -->
-    </div>
-    <div style="padding:8px">
-      <button class="pb-add-comp" id="pb-add-section">+ เพิ่ม Section</button>
+    <div class="pb-sidebar-body" id="pb-sections"></div>
+    <div class="pb-sidebar-footer">
+      <button class="btn btn-secondary" onclick="PB.exportJSON()" style="font-size:11px;padding:6px 10px">Export</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('mk-import-file').click()" style="font-size:11px;padding:6px 10px">Import</button>
+      <input type="file" id="mk-import-file" accept=".json" style="display:none" onchange="importContent(event)"/>
+      <a href="../landing.html" target="_blank" class="btn btn-secondary" style="font-size:11px;padding:6px 10px;text-decoration:none;display:inline-flex;align-items:center;gap:4px">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Preview
+      </a>
     </div>
   </div>
 
-  <!-- Center: Live Preview -->
-  <div class="pb-preview">
-    <div class="pb-preview-toolbar">
-      <button class="pb-preview-btn active" onclick="setPreviewMode('desktop')">Desktop</button>
-      <button class="pb-preview-btn" onclick="setPreviewMode('tablet')">Tablet</button>
-      <button class="pb-preview-btn" onclick="setPreviewMode('mobile')">Mobile</button>
-    </div>
-    <iframe id="pb-iframe" src="../landing.html"></iframe>
-  </div>
-
-  <!-- Right: Editor Panel -->
+  <!-- Right: Editor -->
   <div class="pb-editor">
     <div class="pb-editor-head">
-      <div class="pb-editor-title" id="pb-editor-title">เลือก Section เพื่อแก้ไข</div>
-      <div style="display:flex;gap:4px">
-        <button class="btn btn-secondary" onclick="PB.exportJSON()" style="padding:4px 8px;font-size:10px">Export</button>
-        <button class="btn btn-primary" onclick="PB.save()" style="padding:4px 10px;font-size:10px">Save</button>
+      <div class="pb-editor-title" id="pb-editor-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+        เลือก Section
+      </div>
+      <div class="pb-editor-actions">
+        <span class="pb-saved ok" id="pb-saved">Saved</span>
+        <button class="btn btn-primary" onclick="PB.save()" style="padding:7px 16px;font-size:12px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>
+          บันทึก
+        </button>
       </div>
     </div>
     <div class="pb-editor-body" id="pb-editor-body">
-      <div class="pb-empty">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;display:block;opacity:.4"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-        คลิกที่ Section ด้านซ้ายเพื่อแก้ไขเนื้อหา<br/><br/>
-        <span style="font-size:11px;color:var(--text3)">แก้ไข → กด Save → Preview อัพเดตทันที</span>
+      <div class="ed-empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        <p>เลือก Section ด้านซ้ายเพื่อแก้ไข</p>
+        <small>แก้ไข → กด บันทึก → เปิด Preview เพื่อดูผลลัพธ์</small>
       </div>
-    </div>
-    <div class="pb-editor-footer">
-      <span style="font-size:10px;color:var(--text3)" id="pb-last-saved"></span>
-      <button class="btn btn-secondary" onclick="PB.reset()" style="padding:4px 8px;font-size:10px;color:#C23934">Reset All</button>
     </div>
   </div>
 </div>
@@ -153,18 +173,6 @@
 <script>
 document.getElementById('nav').innerHTML = renderNav('marketing');
 if (!requireAuth()) throw 'auth';
-
-// Preview mode (responsive)
-function setPreviewMode(mode) {
-  var iframe = document.getElementById('pb-iframe');
-  document.querySelectorAll('.pb-preview-btn').forEach(function(b) { b.classList.remove('active'); });
-  event.target.classList.add('active');
-  switch(mode) {
-    case 'desktop': iframe.style.width = '100%'; iframe.style.margin = '0'; break;
-    case 'tablet': iframe.style.width = '768px'; iframe.style.margin = '0 auto'; break;
-    case 'mobile': iframe.style.width = '375px'; iframe.style.margin = '0 auto'; break;
-  }
-}
 </script>
 </body>
 </html>

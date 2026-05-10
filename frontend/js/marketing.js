@@ -235,7 +235,7 @@
         '<div class="mk-panel-title">ข้อมูลบริษัท</div>' +
         '<div class="mk-panel-desc">ข้อมูลที่จะแสดงใน header, footer และหน้า contact</div>' +
       '</div></div>' +
-      '<div class="mk-form">' +
+      '<div class="ed-form">' +
         field('company.name', 'ชื่อบริษัท', c.name) +
         field('company.tagline', 'Tagline', c.tagline) +
         textareaField('company.description', 'คำอธิบาย', c.description) +
@@ -257,7 +257,7 @@
         '<div class="mk-panel-title">Hero Section</div>' +
         '<div class="mk-panel-desc">ส่วนหัวของหน้า Landing page — แสดงเป็นอย่างแรกเมื่อผู้เข้าชมเปิดหน้า</div>' +
       '</div></div>' +
-      '<div class="mk-form">' +
+      '<div class="ed-form">' +
         field('hero.badge', 'Badge (แถบเล็กด้านบน)', h.badge) +
         textareaField('hero.title', 'หัวข้อหลัก (รองรับ HTML: <br/>, <span class="ln-gradient">)', h.title) +
         textareaField('hero.subtitle', 'คำอธิบาย', h.subtitle) +
@@ -277,8 +277,8 @@
         '<div class="mk-panel-title">สถิติ</div>' +
         '<div class="mk-panel-desc">ตัวเลขแสดงผลงาน (แนะนำ 4 รายการ)</div>' +
       '</div></div>' +
-      '<div class="mk-list" id="stats-list"></div>' +
-      '<button class="mk-add-btn" onclick="MK.addStat()">+ เพิ่มสถิติ</button>' +
+      '<div class="ed-items" id="stats-list"></div>' +
+      '<button class="ed-add-btn" onclick="MK.addStat()">+ เพิ่มสถิติ</button>' +
     '</div>';
     renderStatsList();
   }
@@ -304,8 +304,8 @@
         '<div class="mk-panel-title">หมวดหมู่สินค้า</div>' +
         '<div class="mk-panel-desc">กลุ่มสินค้าและบริการ — ใช้ใน Solutions section + filter ของ Products</div>' +
       '</div></div>' +
-      '<div class="mk-list" id="categories-list"></div>' +
-      '<button class="mk-add-btn" onclick="MK.addCategory()">+ เพิ่มหมวดหมู่</button>' +
+      '<div class="ed-items" id="categories-list"></div>' +
+      '<button class="ed-add-btn" onclick="MK.addCategory()">+ เพิ่มหมวดหมู่</button>' +
     '</div>';
     renderCategoriesList();
   }
@@ -332,8 +332,8 @@
         '<div class="mk-panel-title">สินค้า</div>' +
         '<div class="mk-panel-desc">สินค้าที่แสดงในหน้า Landing — filter ตามหมวดหมู่ได้</div>' +
       '</div></div>' +
-      '<div class="mk-list" id="products-list"></div>' +
-      '<button class="mk-add-btn" onclick="MK.addProduct()">+ เพิ่มสินค้า</button>' +
+      '<div class="ed-items" id="products-list"></div>' +
+      '<button class="ed-add-btn" onclick="MK.addProduct()">+ เพิ่มสินค้า</button>' +
     '</div>';
     renderProductsList();
   }
@@ -349,9 +349,9 @@
         'value="' + escHtml(p.category) + '"',
         'value="' + escHtml(p.category) + '" selected'
       );
-      var catSelect = '<div class="mk-form-group">' +
-        '<label class="mk-form-label">หมวดหมู่</label>' +
-        '<select class="mk-select" data-path="products[' + i + '].category">' +
+      var catSelect = '<div class="ed-group">' +
+        '<label class="ed-label">หมวดหมู่</label>' +
+        '<select class="ed-select" data-path="products[' + i + '].category">' +
           '<option value="">-- เลือก --</option>' + optsWithSelected +
         '</select></div>';
       return itemCard(i, p.name || 'สินค้าใหม่', [
@@ -371,8 +371,8 @@
         '<div class="mk-panel-title">อุตสาหกรรม</div>' +
         '<div class="mk-panel-desc">อุตสาหกรรมที่ให้บริการ — แสดงเป็นตาราง 3 คอลัมน์</div>' +
       '</div></div>' +
-      '<div class="mk-list" id="industries-list"></div>' +
-      '<button class="mk-add-btn" onclick="MK.addIndustry()">+ เพิ่มอุตสาหกรรม</button>' +
+      '<div class="ed-items" id="industries-list"></div>' +
+      '<button class="ed-add-btn" onclick="MK.addIndustry()">+ เพิ่มอุตสาหกรรม</button>' +
     '</div>';
     renderIndustriesList();
   }
@@ -397,8 +397,8 @@
         '<div class="mk-panel-title">จุดเด่น (Why Us)</div>' +
         '<div class="mk-panel-desc">เหตุผลที่ควรเลือกบริษัท</div>' +
       '</div></div>' +
-      '<div class="mk-list" id="features-list"></div>' +
-      '<button class="mk-add-btn" onclick="MK.addFeature()">+ เพิ่มจุดเด่น</button>' +
+      '<div class="ed-items" id="features-list"></div>' +
+      '<button class="ed-add-btn" onclick="MK.addFeature()">+ เพิ่มจุดเด่น</button>' +
     '</div>';
     renderFeaturesList();
   }
@@ -421,8 +421,8 @@
         '<div class="mk-panel-title">Testimonials</div>' +
         '<div class="mk-panel-desc">ความคิดเห็นจากลูกค้า — สร้างความน่าเชื่อถือ</div>' +
       '</div></div>' +
-      '<div class="mk-list" id="testimonials-list"></div>' +
-      '<button class="mk-add-btn" onclick="MK.addTestimonial()">+ เพิ่ม Testimonial</button>' +
+      '<div class="ed-items" id="testimonials-list"></div>' +
+      '<button class="ed-add-btn" onclick="MK.addTestimonial()">+ เพิ่ม Testimonial</button>' +
     '</div>';
     renderTestimonialsList();
   }
@@ -449,8 +449,8 @@
         '<div class="mk-panel-title">ลูกค้าองค์กร</div>' +
         '<div class="mk-panel-desc">ชื่อลูกค้าที่ไว้วางใจเรา (แสดงเป็นแถบ)</div>' +
       '</div></div>' +
-      '<div class="mk-list" id="clients-list"></div>' +
-      '<button class="mk-add-btn" onclick="MK.addClient()">+ เพิ่มลูกค้า</button>' +
+      '<div class="ed-items" id="clients-list"></div>' +
+      '<button class="ed-add-btn" onclick="MK.addClient()">+ เพิ่มลูกค้า</button>' +
     '</div>';
     renderClientsList();
   }
@@ -510,48 +510,48 @@
   // ── Field helpers ──
   function field(path, label, value, type) {
     type = type || 'text';
-    return '<div class="mk-form-group">' +
-      '<label class="mk-form-label">' + label + '</label>' +
-      '<input type="' + type + '" class="mk-input" data-path="' + escHtml(path) + '" value="' + escHtml(value) + '"/>' +
+    return '<div class="ed-group">' +
+      '<label class="ed-label">' + label + '</label>' +
+      '<input type="' + type + '" class="ed-input" data-path="' + escHtml(path) + '" value="' + escHtml(value) + '"/>' +
     '</div>';
   }
   function textareaField(path, label, value) {
-    return '<div class="mk-form-group">' +
-      '<label class="mk-form-label">' + label + '</label>' +
-      '<textarea class="mk-textarea" data-path="' + escHtml(path) + '" rows="3">' + escHtml(value) + '</textarea>' +
+    return '<div class="ed-group">' +
+      '<label class="ed-label">' + label + '</label>' +
+      '<textarea class="ed-textarea" data-path="' + escHtml(path) + '" rows="3">' + escHtml(value) + '</textarea>' +
     '</div>';
   }
   function iconSelectField(path, label, value) {
     var opts = ICON_OPTIONS.map(function (n) {
       return '<option value="' + n + '"' + (n === value ? ' selected' : '') + '>' + n + '</option>';
     }).join('');
-    return '<div class="mk-form-group">' +
-      '<label class="mk-form-label">' + label + '</label>' +
-      '<select class="mk-select" data-path="' + escHtml(path) + '">' + opts + '</select>' +
+    return '<div class="ed-group">' +
+      '<label class="ed-label">' + label + '</label>' +
+      '<select class="ed-select" data-path="' + escHtml(path) + '">' + opts + '</select>' +
     '</div>';
   }
-  function rowFields(fields) { return '<div class="mk-form-row">' + fields.join('') + '</div>'; }
+  function rowFields(fields) { return '<div class="ed-form-row">' + fields.join('') + '</div>'; }
 
   function itemCard(index, title, bodyParts, listName, idx, total) {
-    return '<div class="mk-item">' +
-      '<div class="mk-item-head">' +
-        '<div class="mk-item-title">' +
-          '<span class="mk-item-num">' + (index + 1) + '</span>' +
+    return '<div class="ed-item">' +
+      '<div class="ed-item-head">' +
+        '<div class="ed-item-title">' +
+          '<span class="ed-item-num">' + (index + 1) + '</span>' +
           '<span>' + escHtml(title) + '</span>' +
         '</div>' +
-        '<div class="mk-item-actions">' +
-          '<button class="mk-icon-btn" onclick="MK.move(\'' + listName + '\',' + idx + ',-1)" ' + (idx === 0 ? 'disabled' : '') + ' title="เลื่อนขึ้น">' +
+        '<div class="ed-item-btns">' +
+          '<button class="ed-item-btn" onclick="MK.move(\'' + listName + '\',' + idx + ',-1)" ' + (idx === 0 ? 'disabled' : '') + ' title="เลื่อนขึ้น">' +
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>' +
           '</button>' +
-          '<button class="mk-icon-btn" onclick="MK.move(\'' + listName + '\',' + idx + ',1)" ' + (idx === total - 1 ? 'disabled' : '') + ' title="เลื่อนลง">' +
+          '<button class="ed-item-btn" onclick="MK.move(\'' + listName + '\',' + idx + ',1)" ' + (idx === total - 1 ? 'disabled' : '') + ' title="เลื่อนลง">' +
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
           '</button>' +
-          '<button class="mk-icon-btn mk-del" onclick="MK.remove(\'' + listName + '\',' + idx + ')" title="ลบ">' +
+          '<button class="ed-item-btn del" onclick="MK.remove(\'' + listName + '\',' + idx + ')" title="ลบ">' +
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>' +
           '</button>' +
         '</div>' +
       '</div>' +
-      '<div class="mk-form">' + bodyParts.join('') + '</div>' +
+      '<div class="ed-form">' + bodyParts.join('') + '</div>' +
     '</div>';
   }
 
