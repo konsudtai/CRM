@@ -313,3 +313,17 @@ body {
   .adm-panel { padding: 20px; }
   .adm-form-row { grid-template-columns: 1fr; }
 }
+
+/* ── Embed mode (when shown inside Settings iframe) ── */
+.adm-embed .adm-top {
+  background: transparent; border-bottom: none; box-shadow: none;
+}
+.adm-embed .adm-top-wrap { padding: 12px 16px; }
+.adm-embed .adm-brand { display: none; }
+.adm-embed .adm-layout {
+  padding: 0 16px 16px;
+  grid-template-columns: 200px 1fr; gap: 16px;
+}
+.adm-embed .adm-sidebar { position: static; }
+.adm-embed .adm-main { border-radius: 10px; }
+.adm-embed body { background: #F8FAFC; }

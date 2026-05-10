@@ -89,7 +89,7 @@ function renderNav(activePage) {
       <button class="sf7-hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <a href="dashboard.html" class="sf7-brand">SalesFAST <span style="color:#4BCA81">7</span></a>
+      <a href="dashboard.html" class="sf7-brand" id="sf7-brand-link"><img src="${(window.BrandLogo&&window.BrandLogo.get('../logo.png'))||'../logo.png'}" alt="Logo" class="sf7-brand-logo" data-brand-logo style="height:28px;width:auto;vertical-align:middle;margin-right:8px;border-radius:6px;object-fit:contain"/><span class="sf7-brand-text">SalesFAST <span style="color:#4BCA81">7</span></span></a>
       <div class="sf7-nav-items">${menuHtml}</div>
     </div>
     <div class="sf7-nav-right">

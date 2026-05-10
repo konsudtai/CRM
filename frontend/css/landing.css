@@ -107,6 +107,12 @@ a:hover { color: var(--ln-primary-dark); }
   font-size: 15px; font-weight: 800; letter-spacing: -.5px;
   box-shadow: 0 4px 12px rgba(14,165,233,.3);
 }
+.ln-logo-img {
+  width: 40px; height: 40px; border-radius: 10px;
+  object-fit: contain; background: var(--ln-white);
+  box-shadow: 0 4px 12px rgba(14,165,233,.15);
+  padding: 4px;
+}
 .ln-logo-text { display: flex; flex-direction: column; gap: 1px; }
 .ln-logo-name { font-size: 17px; font-weight: 800; color: var(--ln-navy); letter-spacing: -.3px; }
 .ln-logo-tag { font-size: 10px; color: var(--ln-text-2); font-weight: 500; }
