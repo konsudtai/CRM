@@ -1,13 +1,14 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/stores/auth';
 import { useTheme } from '@/stores/theme';
+import { ChatWidget } from '@/components/ChatWidget';
 import { useState } from 'react';
 
 const NAV_MENUS = [
   { key: 'dashboard', label: 'แดชบอร์ด', items: [{ to: '/dashboard', name: 'แดชบอร์ด' }] },
   { key: 'crm', label: 'CRM', items: [{ to: '/accounts', name: 'ลูกค้า' }] },
   { key: 'sales', label: 'การขาย', items: [{ to: '/leads', name: 'ไปป์ไลน์' }] },
-  { key: 'activity', label: 'กิจกรรม', items: [{ to: '/tasks', name: 'งาน' }, { to: '/calendar', name: 'ปฏิทิน' }] },
+  { key: 'activity', label: 'กิจกรรม', items: [{ to: '/tasks', name: 'งาน' }, { to: '/calendar', name: 'ปฏิทิน' }, { to: '/notifications', name: 'แจ้งเตือน' }] },
   { key: 'docs', label: 'เอกสาร', items: [{ to: '/quotations', name: 'ใบเสนอราคา' }, { to: '/products', name: 'สินค้า' }] },
   { key: 'marketing', label: 'Marketing', items: [{ to: '/marketing', name: 'Landing Page' }] },
 ];
@@ -172,6 +173,9 @@ export function AppLayout() {
       <main>
         <Outlet />
       </main>
+
+      {/* Chat Widget */}
+      <ChatWidget />
     </div>
   );
 }

@@ -14,6 +14,8 @@ import { QuotationsPage } from '@/pages/Quotations';
 import { ProductsPage } from '@/pages/Products';
 import { SettingsPage } from '@/pages/Settings';
 import { MarketingPage } from '@/pages/Marketing';
+import { CalendarPage } from '@/pages/Calendar';
+import { NotificationsPage } from '@/pages/Notifications';
 
 export default function App() {
   const location = useLocation();
@@ -36,6 +38,8 @@ export default function App() {
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/marketing" element={<MarketingPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
         </Route>
 
         {/* Fallback */}
