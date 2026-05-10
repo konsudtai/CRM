@@ -4,163 +4,167 @@
 <meta charset="UTF-8"/>
 <link rel="icon" type="image/svg+xml" href="../favicon.svg"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>SalesFAST 7 — Landing Page Builder</title>
+<title>SalesFAST 7 — Landing Page Setup</title>
 <link rel="stylesheet" href="../css/app.css"/>
 <style>
-/* ── Page Builder Layout ── */
-.pb-wrap { display:grid; grid-template-columns:240px 1fr; height:calc(100vh - 52px); overflow:hidden }
-
-/* Left: Section list */
-.pb-sidebar { background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden }
-.pb-sidebar-head { padding:14px 16px; border-bottom:1px solid var(--border) }
-.pb-sidebar-head h2 { font-size:14px; font-weight:700; color:var(--text); margin:0 0 4px }
-.pb-sidebar-head p { font-size:11px; color:var(--text3); margin:0 }
-.pb-sidebar-body { flex:1; overflow-y:auto; padding:10px }
-.pb-sidebar-footer { padding:10px; border-top:1px solid var(--border); display:flex; gap:6px; flex-wrap:wrap }
-
-/* Section items */
-.pb-sec { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; border:1.5px solid transparent; margin-bottom:4px; cursor:pointer; transition:all .15s }
-.pb-sec:hover { background:var(--surface2); border-color:var(--border) }
-.pb-sec.active { background:rgba(1,118,211,.06); border-color:var(--sf-blue); box-shadow:0 0 0 2px rgba(1,118,211,.12) }
-.pb-sec-icon { width:32px; height:32px; border-radius:8px; background:var(--surface2); color:var(--sf-blue); display:flex; align-items:center; justify-content:center; flex-shrink:0 }
-.pb-sec.active .pb-sec-icon { background:rgba(1,118,211,.12) }
-.pb-sec-icon svg { width:16px; height:16px }
-.pb-sec-info { flex:1; min-width:0 }
-.pb-sec-name { font-size:12px; font-weight:600; color:var(--text); line-height:1.3 }
-.pb-sec-meta { font-size:10px; color:var(--text3); margin-top:2px }
-
-/* Right: Editor */
-.pb-editor { display:flex; flex-direction:column; overflow:hidden }
-.pb-editor-head { padding:16px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; background:var(--surface) }
-.pb-editor-title { font-size:16px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:10px }
-.pb-editor-title svg { color:var(--sf-blue) }
-.pb-editor-actions { display:flex; gap:6px; align-items:center }
-.pb-saved { padding:4px 10px; border-radius:16px; font-size:11px; font-weight:600 }
-.pb-saved.ok { background:rgba(46,132,74,.08); color:#2E844A }
-.pb-saved.dirty { background:rgba(221,122,1,.08); color:#DD7A01 }
-.pb-editor-body { flex:1; overflow-y:auto; padding:24px }
-
-/* ── mk-* classes used by marketing.js ── */
-.mk-panel { }
-.mk-panel-head { margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border) }
-.mk-panel-title { font-size:16px; font-weight:700; color:var(--text); margin-bottom:6px }
-.mk-panel-desc { font-size:13px; color:var(--text2); line-height:1.6 }
-
-.mk-form { display:flex; flex-direction:column; gap:16px }
-.mk-form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px }
-.mk-form-group { display:flex; flex-direction:column; gap:6px }
-.mk-form-label { font-size:12px; font-weight:600; color:var(--text); display:block }
-.mk-input, .mk-textarea, .mk-select {
-  width:100%; padding:10px 14px;
-  border:1.5px solid var(--border); border-radius:10px;
-  font-family:'Inter',sans-serif; font-size:13px; color:var(--text);
-  background:var(--surface2); outline:none; transition:all .15s;
-  line-height:1.5
-}
-.mk-input:focus, .mk-textarea:focus, .mk-select:focus {
-  border-color:var(--sf-blue); box-shadow:0 0 0 3px rgba(1,118,211,.1);
-  background:var(--surface)
-}
-.mk-textarea { resize:vertical; min-height:80px }
-.mk-input::placeholder, .mk-textarea::placeholder { color:var(--text3) }
-
-/* Item cards */
-.mk-list { display:flex; flex-direction:column; gap:10px }
-.mk-item { background:var(--surface2); border:1.5px solid var(--border); border-radius:12px; padding:16px; transition:all .15s }
-.mk-item:hover { border-color:var(--sf-blue); box-shadow:0 2px 8px rgba(1,118,211,.06) }
-.mk-item-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px }
-.mk-item-title { font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px }
-.mk-item-num { width:22px; height:22px; border-radius:50%; background:var(--sf-blue); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700 }
-.mk-item-actions { display:flex; gap:4px }
-.mk-icon-btn { width:26px; height:26px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text3); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .12s }
-.mk-icon-btn:hover { border-color:var(--sf-blue); color:var(--sf-blue); background:rgba(1,118,211,.04) }
-.mk-icon-btn.mk-del:hover { border-color:#C23934; color:#C23934; background:rgba(194,57,52,.04) }
-.mk-icon-btn:disabled { opacity:.3; cursor:not-allowed }
-
-.mk-add-btn { padding:12px; border-radius:10px; border:2px dashed var(--border); background:transparent; color:var(--sf-blue); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-top:10px }
-.mk-add-btn:hover { border-color:var(--sf-blue); background:rgba(1,118,211,.03) }
-
-/* Logo upload */
-.mk-logo-box { display:flex; align-items:center; gap:20px; padding:20px; background:var(--surface2); border-radius:12px; border:1px solid var(--border) }
-.mk-logo-preview { width:80px; height:80px; border-radius:12px; background:var(--surface); border:2px dashed var(--border); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0 }
-.mk-logo-preview img { max-width:100%; max-height:100%; object-fit:contain; padding:6px }
-
-/* Leads table */
-.mk-leads-table { width:100%; border-collapse:separate; border-spacing:0; font-size:12px }
-.mk-leads-table th { text-align:left; padding:10px 12px; background:var(--surface2); font-size:10px; font-weight:700; letter-spacing:.3px; color:var(--text2); text-transform:uppercase; border-bottom:1.5px solid var(--border) }
-.mk-leads-table td { padding:12px; border-bottom:1px solid var(--border); vertical-align:top }
-.mk-leads-table tbody tr:hover { background:var(--surface2) }
-
-/* Empty state */
-.mk-empty { padding:48px 24px; text-align:center; color:var(--text3); font-size:13px }
-
-/* Responsive */
-@media (max-width:768px) {
-  .pb-wrap { grid-template-columns:1fr; height:auto }
-  .pb-sidebar { max-height:200px }
-  .mk-form-row { grid-template-columns:1fr }
-  .pb-editor-body { padding:16px }
-}
+.lp-wrap{display:grid;grid-template-columns:260px 1fr;height:calc(100vh - 52px);overflow:hidden}
+.lp-side{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.lp-side-head{padding:16px;border-bottom:1px solid var(--border)}
+.lp-side-head h2{font-size:15px;font-weight:700;color:var(--text);margin:0 0 2px}
+.lp-side-head p{font-size:11px;color:var(--text3);margin:0}
+.lp-side-body{flex:1;overflow-y:auto;padding:8px}
+.lp-side-foot{padding:10px;border-top:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.lp-sec{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid transparent;margin-bottom:3px;cursor:pointer;transition:all .15s}
+.lp-sec:hover{background:var(--surface2);border-color:var(--border)}
+.lp-sec.active{background:rgba(1,118,211,.06);border-color:var(--sf-blue)}
+.lp-sec-icon{width:30px;height:30px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.lp-sec.active .lp-sec-icon{background:rgba(1,118,211,.12)}
+.lp-sec-name{font-size:12px;font-weight:600;color:var(--text)}
+.lp-sec-meta{font-size:10px;color:var(--text3);margin-top:1px}
+.lp-editor{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.lp-editor-head{padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.lp-editor-title{font-size:15px;font-weight:700;color:var(--text)}
+.lp-editor-body{flex:1;overflow-y:auto;padding:24px}
+.lp-form{display:flex;flex-direction:column;gap:16px;max-width:700px}
+.lp-form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.lp-field{display:flex;flex-direction:column;gap:5px}
+.lp-label{font-size:12px;font-weight:600;color:var(--text)}
+.lp-input,.lp-textarea,.lp-select{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s}
+.lp-input:focus,.lp-textarea:focus,.lp-select:focus{border-color:var(--sf-blue);box-shadow:0 0 0 3px rgba(1,118,211,.1)}
+.lp-textarea{resize:vertical;min-height:80px}
+.lp-items{display:flex;flex-direction:column;gap:10px}
+.lp-item{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;transition:border-color .15s}
+.lp-item:hover{border-color:var(--sf-blue)}
+.lp-item-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.lp-item-title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+.lp-item-num{width:22px;height:22px;border-radius:50%;background:var(--sf-blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.lp-item-btns{display:flex;gap:4px}
+.lp-item-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.lp-item-btn:hover{border-color:var(--sf-blue);color:var(--sf-blue)}
+.lp-item-btn.del:hover{border-color:var(--red);color:var(--red)}
+.lp-item-btn:disabled{opacity:.3;cursor:not-allowed}
+.lp-add-btn{padding:12px;border-radius:10px;border:2px dashed var(--border);background:transparent;color:var(--sf-blue);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;width:100%;margin-top:10px;transition:all .15s}
+.lp-add-btn:hover{border-color:var(--sf-blue);background:rgba(1,118,211,.03)}
+.lp-status{font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px}
+.lp-status.saved{background:rgba(46,132,74,.08);color:#2E844A}
+.lp-status.unsaved{background:rgba(221,122,1,.08);color:#DD7A01}
+.lp-logo-box{display:flex;align-items:center;gap:20px;padding:20px;background:var(--surface);border-radius:12px;border:1px solid var(--border)}
+.lp-logo-preview{width:80px;height:80px;border-radius:12px;background:var(--surface2);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+.lp-logo-preview img{max-width:100%;max-height:100%;object-fit:contain;padding:6px}
+.lp-empty{text-align:center;padding:60px 20px;color:var(--text3)}
+@media(max-width:768px){.lp-wrap{grid-template-columns:1fr;height:auto}.lp-side{max-height:180px}.lp-form-row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="bg-pattern"></div>
 <div id="nav"></div>
-
-<div class="pb-wrap">
-  <!-- Left: Section List -->
-  <div class="pb-sidebar">
-    <div class="pb-sidebar-head">
-      <h2>Landing Page</h2>
-      <p>คลิก section เพื่อแก้ไข</p>
-    </div>
-    <div class="pb-sidebar-body" id="pb-sections"></div>
-    <div class="pb-sidebar-footer">
-      <button class="btn btn-secondary" onclick="PB.exportJSON()" style="font-size:11px;padding:6px 10px">Export</button>
-      <button class="btn btn-secondary" onclick="document.getElementById('mk-import-file').click()" style="font-size:11px;padding:6px 10px">Import</button>
-      <input type="file" id="mk-import-file" accept=".json" style="display:none" onchange="importContent(event)"/>
-      <a href="../landing.html" target="_blank" class="btn btn-secondary" style="font-size:11px;padding:6px 10px;text-decoration:none;display:inline-flex;align-items:center;gap:4px">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        Preview
-      </a>
+<div class="lp-wrap">
+  <div class="lp-side">
+    <div class="lp-side-head"><h2>Landing Page</h2><p>คลิก section เพื่อแก้ไขเนื้อหา</p></div>
+    <div class="lp-side-body" id="lp-sections"></div>
+    <div class="lp-side-foot">
+      <button class="btn btn-secondary" onclick="LPE.exportJSON()" style="font-size:11px;padding:5px 10px">Export</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('lp-import').click()" style="font-size:11px;padding:5px 10px">Import</button>
+      <input type="file" id="lp-import" accept=".json" style="display:none" onchange="LPE.importJSON(event)"/>
+      <a href="../landing.html" target="_blank" class="btn btn-primary" style="font-size:11px;padding:5px 10px;text-decoration:none;margin-left:auto">Preview ↗</a>
     </div>
   </div>
-
-  <!-- Right: Editor -->
-  <div class="pb-editor">
-    <div class="pb-editor-head">
-      <div class="pb-editor-title" id="pb-editor-title">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
-        เลือก Section
-      </div>
-      <div class="pb-editor-actions">
-        <span class="pb-saved ok" id="pb-saved">Saved</span>
-        <button class="btn btn-primary" onclick="PB.save()" style="padding:7px 16px;font-size:12px">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>
-          บันทึก
-        </button>
+  <div class="lp-editor">
+    <div class="lp-editor-head">
+      <div class="lp-editor-title" id="lp-title">เลือก Section</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="lp-status saved" id="lp-status">Saved</span>
+        <button class="btn btn-primary" onclick="LPE.save()" style="padding:6px 14px;font-size:12px">บันทึก</button>
       </div>
     </div>
-    <div class="pb-editor-body" id="pb-editor-body">
-      <div class="ed-empty">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-        <p>เลือก Section ด้านซ้ายเพื่อแก้ไข</p>
-        <small>แก้ไข → กด บันทึก → เปิด Preview เพื่อดูผลลัพธ์</small>
-      </div>
+    <div class="lp-editor-body" id="lp-body">
+      <div class="lp-empty"><p style="font-size:14px;font-weight:600;margin-bottom:4px">เลือก Section ด้านซ้าย</p><p style="font-size:12px">คลิกที่ section → แก้ไข → กดบันทึก → เปิด Preview ดูผลลัพธ์</p></div>
     </div>
   </div>
 </div>
-
-<script src="../js/helpers.js"></script>
-<script src="../js/i18n.js"></script>
-<script src="../js/nav.js"></script>
-<script src="../js/icons.js"></script>
-<script src="../js/landing-data.js"></script>
-<script src="../js/logo-manager.js"></script>
-<script src="../js/marketing.js"></script>
+<script src="../js/helpers.js"></script><script src="../js/i18n.js"></script><script src="../js/nav.js"></script>
+<script src="../js/landing-data.js"></script><script src="../js/logo-manager.js"></script>
 <script>
-document.getElementById('nav').innerHTML = renderNav('marketing');
-if (!requireAuth()) throw 'auth';
+document.getElementById('nav').innerHTML=renderNav('marketing');
+if(!requireAuth())throw'auth';
+
+var S={content:LandingData.load(),active:null,dirty:false};
+var SECS=[
+  {id:'logo',name:'Logo บริษัท',icon:'🎨'},
+  {id:'company',name:'ข้อมูลบริษัท',icon:'🏢'},
+  {id:'hero',name:'Hero Section',icon:'📰'},
+  {id:'stats',name:'สถิติ',icon:'📊'},
+  {id:'categories',name:'หมวดหมู่สินค้า',icon:'📦'},
+  {id:'products',name:'สินค้า',icon:'🛒'},
+  {id:'industries',name:'อุตสาหกรรม',icon:'🏭'},
+  {id:'features',name:'จุดเด่น',icon:'⭐'},
+  {id:'testimonials',name:'Testimonials',icon:'💬'},
+  {id:'clients',name:'ลูกค้า',icon:'👥'}
+];
+
+function renderSidebar(){
+  document.getElementById('lp-sections').innerHTML=SECS.map(function(s){
+    var meta=getMeta(s.id);
+    return '<div class="lp-sec'+(S.active===s.id?' active':'')+'" onclick="sel(\''+s.id+'\')"><div class="lp-sec-icon">'+s.icon+'</div><div><div class="lp-sec-name">'+esc(s.name)+'</div><div class="lp-sec-meta">'+esc(meta)+'</div></div></div>';
+  }).join('');
+}
+function getMeta(id){var c=S.content;switch(id){case'logo':return BrandLogo.hasCustom()?'Custom logo':'Text only';case'company':return c.company.name;case'hero':return(c.hero.badge||'').substring(0,25);case'stats':return c.stats.length+' items';case'categories':return c.categories.length+' items';case'products':return c.products.length+' items';case'industries':return c.industries.length+' items';case'features':return c.features.length+' items';case'testimonials':return c.testimonials.length+' items';case'clients':return c.clients.length+' items';default:return''}}
+function sel(id){S.active=id;renderSidebar();renderEditor()}
+function markDirty(){S.dirty=true;var e=document.getElementById('lp-status');e.textContent='Unsaved';e.className='lp-status unsaved'}
+function markClean(){S.dirty=false;var e=document.getElementById('lp-status');e.textContent='Saved';e.className='lp-status saved'}
+
+function renderEditor(){
+  var body=document.getElementById('lp-body');
+  var sec=SECS.find(function(s){return s.id===S.active});
+  if(!sec){body.innerHTML='<div class="lp-empty"><p>เลือก Section ด้านซ้าย</p></div>';return}
+  document.getElementById('lp-title').textContent=sec.icon+' '+sec.name;
+  switch(S.active){
+    case'logo':renderLogo(body);break;
+    case'company':renderCompany(body);break;
+    case'hero':renderHero(body);break;
+    case'stats':renderList(body,'stats',['value:ตัวเลข:number','suffix:Suffix (%, +, x)','label:คำอธิบาย']);break;
+    case'categories':renderList(body,'categories',['name:ชื่อหมวดหมู่','description:คำอธิบาย']);break;
+    case'products':renderList(body,'products',['name:ชื่อสินค้า','price:ราคา (บาท):number','description:รายละเอียด','badge:Badge (เช่น Best Seller)']);break;
+    case'industries':renderList(body,'industries',['name:ชื่ออุตสาหกรรม']);break;
+    case'features':renderList(body,'features',['title:หัวข้อ','description:คำอธิบาย']);break;
+    case'testimonials':renderList(body,'testimonials',['name:ชื่อ','role:ตำแหน่ง','company:บริษัท','quote:ข้อความ']);break;
+    case'clients':renderList(body,'clients',['name:ชื่อลูกค้า']);break;
+  }
+}
+function renderLogo(b){var has=BrandLogo.hasCustom();b.innerHTML='<div class="lp-form"><p style="font-size:13px;color:var(--text2)">อัปโหลด Logo สำหรับ Landing Page — CRM ใช้ text "SalesFAST 7 IT Solutions"</p><div class="lp-logo-box"><div class="lp-logo-preview">'+(has?'<img src="'+BrandLogo.get()+'"/>':'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3-3a2 2 0 0 0-3 0L6 21"/></svg>')+'</div><div><div style="display:flex;gap:8px;margin-bottom:8px"><input type="file" id="logo-f" accept="image/*" style="display:none" onchange="upLogo(event)"/><button class="btn btn-primary" onclick="document.getElementById(\'logo-f\').click()" style="font-size:12px;padding:6px 14px">Upload Logo</button>'+(has?'<button class="btn btn-secondary" onclick="rstLogo()" style="font-size:12px;padding:6px 14px;color:var(--red)">Reset</button>':'')+'</div><div style="font-size:11px;color:var(--text3)">'+(has?'✓ กำลังใช้ logo ที่อัปโหลด':'ใช้ text เริ่มต้น "SalesFAST 7"')+'</div><div style="font-size:10px;color:var(--text3);margin-top:6px">PNG, JPG, SVG (≤ 2MB) · แนะนำ 512×512 px</div></div></div></div>'}
+function renderCompany(b){var c=S.content.company;b.innerHTML='<div class="lp-form">'+F('company.name','ชื่อบริษัท',c.name)+F('company.tagline','Tagline',c.tagline)+T('company.description','คำอธิบาย',c.description)+'<div class="lp-form-row">'+F('company.phone','โทรศัพท์',c.phone)+F('company.email','อีเมล',c.email)+'</div>'+F('company.address','ที่อยู่',c.address)+'</div>';bind()}
+function renderHero(b){var h=S.content.hero;b.innerHTML='<div class="lp-form">'+F('hero.badge','Badge',h.badge)+T('hero.title','หัวข้อหลัก (รองรับ HTML)',h.title)+T('hero.subtitle','คำอธิบาย',h.subtitle)+'<div class="lp-form-row">'+F('hero.ctaPrimary','ปุ่ม CTA หลัก',h.ctaPrimary)+F('hero.ctaSecondary','ปุ่ม CTA รอง',h.ctaSecondary)+'</div></div>';bind()}
+
+function renderList(b,key,fields){
+  var items=S.content[key]||[];
+  var h='<div class="lp-items">';
+  items.forEach(function(item,i){
+    h+='<div class="lp-item"><div class="lp-item-head"><div class="lp-item-title"><span class="lp-item-num">'+(i+1)+'</span>'+esc(item.name||item.title||item.label||'#'+(i+1))+'</div><div class="lp-item-btns"><button class="lp-item-btn" onclick="mv(\''+key+'\','+i+',-1)"'+(i===0?' disabled':'')+' title="ขึ้น"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg></button><button class="lp-item-btn" onclick="mv(\''+key+'\','+i+',1)"'+(i===items.length-1?' disabled':'')+' title="ลง"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button><button class="lp-item-btn del" onclick="rm(\''+key+'\','+i+')" title="ลบ"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button></div></div><div class="lp-form" style="gap:10px">';
+    fields.forEach(function(f){var p=f.split(':'),k=p[0],l=p[1],t=p[2]||'text';var v=item[k]||'';h+=(l.length>15?T(key+'['+i+'].'+k,l,v):F(key+'['+i+'].'+k,l,v,t))});
+    h+='</div></div>';
+  });
+  h+='</div><button class="lp-add-btn" onclick="add(\''+key+'\')">+ เพิ่มรายการ</button>';
+  b.innerHTML=h;bind();
+}
+
+function F(p,l,v,t){t=t||'text';return'<div class="lp-field"><label class="lp-label">'+esc(l)+'</label><input class="lp-input" type="'+t+'" data-path="'+esc(p)+'" value="'+esc(v)+'" placeholder="'+esc(l)+'"/></div>'}
+function T(p,l,v){return'<div class="lp-field"><label class="lp-label">'+esc(l)+'</label><textarea class="lp-textarea" data-path="'+esc(p)+'" rows="3" placeholder="'+esc(l)+'">'+esc(v)+'</textarea></div>'}
+function bind(){document.querySelectorAll('[data-path]').forEach(function(el){el.addEventListener('input',function(){setP(S.content,el.dataset.path,el.type==='number'?parseFloat(el.value)||0:el.value);markDirty()})})}
+function setP(o,p,v){var parts=p.replace(/\[(\d+)\]/g,'.$1').split('.');var c=o;for(var i=0;i<parts.length-1;i++){if(c[parts[i]]==null)c[parts[i]]=isNaN(parts[i+1])?{}:[];c=c[parts[i]]}c[parts[parts.length-1]]=v}
+
+function add(k){var d={stats:{label:'สถิติใหม่',value:0,suffix:''},categories:{id:'cat_'+Date.now(),name:'หมวดหมู่ใหม่',description:''},products:{id:'p_'+Date.now(),name:'สินค้าใหม่',price:0,description:'',badge:''},industries:{id:'ind_'+Date.now(),name:'อุตสาหกรรมใหม่'},features:{id:'f_'+Date.now(),title:'จุดเด่นใหม่',description:''},testimonials:{id:'t_'+Date.now(),name:'ชื่อ',role:'ตำแหน่ง',company:'บริษัท',quote:''},clients:{id:'c_'+Date.now(),name:'ชื่อลูกค้า'}};S.content[k].push(d[k]||{});markDirty();renderEditor();renderSidebar()}
+function rm(k,i){if(!confirm('ลบรายการนี้?'))return;S.content[k].splice(i,1);markDirty();renderEditor();renderSidebar()}
+function mv(k,i,d){var l=S.content[k],n=i+d;if(n<0||n>=l.length)return;var t=l[i];l[i]=l[n];l[n]=t;markDirty();renderEditor()}
+function upLogo(e){var f=e.target.files[0];if(!f)return;if(f.size>2*1024*1024){alert('ไฟล์ใหญ่เกิน 2MB');return}BrandLogo.save(f).then(function(){renderEditor();renderSidebar()})}
+function rstLogo(){if(!confirm('Reset logo?'))return;BrandLogo.reset();renderEditor();renderSidebar()}
+
+var LPE={
+  save:function(){LandingData.save(S.content);markClean();renderSidebar();if(window.toast)toast('บันทึกเรียบร้อย — เปิด Preview ดูผลลัพธ์');else alert('บันทึกเรียบร้อย')},
+  exportJSON:function(){LandingData.export()},
+  importJSON:function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){if(LandingData.import(ev.target.result)){S.content=LandingData.load();markClean();renderSidebar();renderEditor()}else{alert('ไฟล์ไม่ถูกต้อง')}};r.readAsText(f);e.target.value=''}
+};
+window.addEventListener('beforeunload',function(e){if(S.dirty){e.preventDefault();e.returnValue=''}});
+renderSidebar();
 </script>
 </body>
 </html>
