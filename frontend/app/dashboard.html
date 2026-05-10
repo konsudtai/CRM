@@ -508,11 +508,17 @@ function renderKanban(){
     stageData.push({name:s.name,color:s.color||'#0176D3',count:count,value:value});
   });
   if(stageData.length===0){document.getElementById('kanban').innerHTML='<div class="dk-empty">No pipeline stages</div>';return}
+  var totalPipeVal=stageData.reduce(function(s,d){return s+d.value},0);
   document.getElementById('kanban').innerHTML='<div style="display:flex;gap:10px;flex-wrap:wrap">'+stageData.map(function(s){
-    return '<div style="flex:1;min-width:120px;background:var(--surface2);border-radius:10px;padding:12px 14px;text-align:center;border-left:3px solid '+s.color+'">'+
-      '<div style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:4px">'+esc(s.name)+'</div>'+
-      '<div style="font-size:22px;font-weight:800;color:'+s.color+'">'+s.count+'</div>'+
-      '<div style="font-size:10px;color:var(--text2);margin-top:2px">'+fmt(s.value)+'</div>'+
+    var pct=totalPipeVal>0?Math.round(s.value/totalPipeVal*100):0;
+    return '<div style="flex:1;min-width:140px;background:var(--surface2);border-radius:12px;padding:14px 16px;border-left:3px solid '+s.color+';transition:all .15s;cursor:default" onmouseenter="this.style.boxShadow=\'0 4px 16px rgba(0,0,0,.06)\';this.style.transform=\'translateY(-1px)\'" onmouseleave="this.style.boxShadow=\'none\';this.style.transform=\'none\'">'+
+      '<div style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px">'+esc(s.name)+'</div>'+
+      '<div style="font-size:20px;font-weight:800;color:'+s.color+';letter-spacing:-.5px">'+fmt(s.value)+'</div>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">'+
+        '<span style="font-size:11px;color:var(--text2);font-weight:500">'+s.count+' deals</span>'+
+        '<span style="font-size:10px;font-weight:700;color:'+s.color+';background:'+s.color+'12;padding:2px 6px;border-radius:10px">'+pct+'%</span>'+
+      '</div>'+
+      '<div style="height:3px;background:var(--surface3);border-radius:2px;margin-top:8px;overflow:hidden"><div style="height:100%;border-radius:2px;background:'+s.color+';width:'+pct+'%;transition:width .8s ease"></div></div>'+
     '</div>';
   }).join('')+'</div>';
 }
