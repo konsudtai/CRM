@@ -63,13 +63,28 @@
   }
 
   // ── Apply to all img.brand-logo elements ──
+  // If custom logo exists → show img + hide text-only fallback
+  // If no custom logo → hide img (text-only like default CRM)
   function apply(fallbackPath) {
+    var hasCustom = hasCustomLogo();
     var url = getLogoUrl(fallbackPath);
     document.querySelectorAll('[data-brand-logo]').forEach(function (el) {
       if (el.tagName === 'IMG') {
-        el.src = url;
+        if (hasCustom) {
+          el.src = url;
+          el.style.display = '';
+        } else {
+          el.removeAttribute('src');
+          el.style.display = 'none';
+        }
       } else {
-        el.style.backgroundImage = 'url(' + url + ')';
+        if (hasCustom) {
+          el.style.backgroundImage = 'url(' + url + ')';
+          el.style.display = '';
+        } else {
+          el.style.backgroundImage = 'none';
+          el.style.display = 'none';
+        }
       }
     });
   }

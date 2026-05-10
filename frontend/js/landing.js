@@ -15,7 +15,10 @@
     var content = window.LandingData.load();
 
     // ── Company info ──
-    setText('company-name', content.company.name);
+    // Keep default "SalesFAST 7" text styling if user didn't customize
+    if (content.company.name && content.company.name !== window.LandingData.DEFAULTS.company.name) {
+      setText('company-name', content.company.name);
+    }
     setText('company-tag', content.company.tagline);
     setText('company-desc', content.company.description);
     setText('contact-phone', content.company.phone);
@@ -26,7 +29,11 @@
     var footerYear = document.getElementById('footer-year');
     if (footerYear) footerYear.textContent = new Date().getFullYear();
     var footerNames = document.querySelectorAll('.ln-footer-name');
-    footerNames.forEach(function (el) { el.textContent = content.company.name; });
+    footerNames.forEach(function (el) {
+      if (content.company.name !== window.LandingData.DEFAULTS.company.name) {
+        el.textContent = content.company.name;
+      }
+    });
     document.title = content.company.name + ' — ' + content.company.tagline;
 
     // ── Hero ──
