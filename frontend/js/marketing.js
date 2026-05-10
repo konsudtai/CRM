@@ -47,54 +47,91 @@
   ];
 
   function initTabs() {
-    // Render section buttons
-    var sectionsEl = document.getElementById('ve-sections');
-    if (sectionsEl) {
-      sectionsEl.innerHTML = SECTIONS.map(function (s) {
-        return '<button class="ve-section-btn' + (s.id === state.activeTab ? ' active' : '') + '" data-tab="' + s.id + '">' +
-          (window.Icons ? window.Icons.get(s.icon, 14) : '') +
-          '<span>' + escHtml(s.label) + '</span>' +
-          (s.id === 'leads' ? '<span class="mk-cms-nav-count" id="leads-count" style="margin-left:auto">0</span>' : '') +
-        '</button>';
-      }).join('');
+    renderSectionsList();
 
-      sectionsEl.querySelectorAll('.ve-section-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          sectionsEl.querySelectorAll('.ve-section-btn').forEach(function (b) { b.classList.remove('active'); });
-          btn.classList.add('active');
-          state.activeTab = btn.dataset.tab;
+    // Add section button
+    var addBtn = document.getElementById('pb-add-section');
+    if (addBtn) {
+      addBtn.addEventListener('click', function () {
+        var options = SECTIONS.filter(function (s) { return s.id !== 'leads'; }).map(function (s) { return s.label; });
+        var choice = prompt('เพิ่ม Section:\n\n' + options.map(function (o, i) { return (i + 1) + '. ' + o; }).join('\n') + '\n\nพิมพ์ชื่อ section:');
+        if (!choice) return;
+        var found = SECTIONS.find(function (s) { return s.label.toLowerCase().indexOf(choice.toLowerCase()) >= 0; });
+        if (found) {
+          state.activeTab = found.id;
+          renderSectionsList();
           renderTab();
-        });
+        }
       });
     }
+  }
 
-    // Fallback: old sidebar nav (if exists)
-    document.querySelectorAll('.mk-cms-nav-item').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        document.querySelectorAll('.mk-cms-nav-item').forEach(function (b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        state.activeTab = btn.dataset.tab;
+  function renderSectionsList() {
+    var container = document.getElementById('pb-sections') || document.getElementById('ve-sections');
+    if (!container) return;
+
+    container.innerHTML = SECTIONS.map(function (s, i) {
+      var isActive = s.id === state.activeTab;
+      var canDelete = s.id !== 'hero' && s.id !== 'company' && s.id !== 'leads';
+      return '<div class="pb-comp' + (isActive ? ' active' : '') + '" data-tab="' + s.id + '" draggable="true">' +
+        '<div class="pb-comp-handle"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></div>' +
+        '<div class="pb-comp-icon">' + (window.Icons ? window.Icons.get(s.icon, 14) : '') + '</div>' +
+        '<div class="pb-comp-info">' +
+          '<div class="pb-comp-name">' + escHtml(s.label) + '</div>' +
+          '<div class="pb-comp-desc">' + getSectionPreview(s.id) + '</div>' +
+        '</div>' +
+        '<div class="pb-comp-actions">' +
+          (i > 0 ? '<button class="pb-comp-btn" onclick="PB.moveSection(' + i + ',-1)" title="เลื่อนขึ้น"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg></button>' : '') +
+          (i < SECTIONS.length - 1 ? '<button class="pb-comp-btn" onclick="PB.moveSection(' + i + ',1)" title="เลื่อนลง"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    // Bind click
+    container.querySelectorAll('.pb-comp').forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        if (e.target.closest('.pb-comp-btn')) return;
+        container.querySelectorAll('.pb-comp').forEach(function (c) { c.classList.remove('active'); });
+        el.classList.add('active');
+        state.activeTab = el.dataset.tab;
         renderTab();
       });
     });
   }
 
+  function getSectionPreview(id) {
+    if (!state.content) return '';
+    switch (id) {
+      case 'logo': return window.BrandLogo && window.BrandLogo.hasCustom() ? 'Custom logo' : 'Text only';
+      case 'company': return escHtml((state.content.company.name || '').substring(0, 25));
+      case 'hero': return escHtml((state.content.hero.badge || '').substring(0, 25));
+      case 'stats': return state.content.stats.length + ' items';
+      case 'categories': return state.content.categories.length + ' items';
+      case 'products': return state.content.products.length + ' items';
+      case 'industries': return state.content.industries.length + ' items';
+      case 'features': return state.content.features.length + ' items';
+      case 'testimonials': return state.content.testimonials.length + ' items';
+      case 'clients': return state.content.clients.length + ' items';
+      case 'leads': var l = []; try { l = JSON.parse(localStorage.getItem('sf7-landing-leads') || '[]'); } catch (e) {} return l.length + ' leads';
+      default: return '';
+    }
+  }
+
   // ── Refresh live preview iframe ──
   function refreshPreview() {
-    var iframe = document.getElementById('ve-iframe');
-    if (iframe && iframe.contentWindow) {
-      // Trigger re-render in iframe (landing.js listens to storage events)
-      try { iframe.contentWindow.dispatchEvent(new Event('storage')); } catch (e) {}
+    var iframe = document.getElementById('pb-iframe') || document.getElementById('ve-iframe');
+    if (iframe) {
+      try { iframe.contentWindow.location.reload(); } catch (e) {}
     }
   }
 
   // ── Render current tab ──
   function renderTab() {
-    var main = document.getElementById('panel-body') || document.getElementById('mk-cms-main');
+    var main = document.getElementById('pb-editor-body') || document.getElementById('panel-body') || document.getElementById('mk-cms-main');
     if (!main) return;
 
-    // Update panel title
-    var titleEl = document.getElementById('panel-title');
+    // Update editor title
+    var titleEl = document.getElementById('pb-editor-title') || document.getElementById('panel-title');
     var section = SECTIONS.find(function (s) { return s.id === state.activeTab; });
     if (titleEl && section) {
       titleEl.innerHTML = (window.Icons ? window.Icons.get(section.icon, 14) : '') + ' ' + escHtml(section.label);
@@ -610,6 +647,20 @@
     }
   };
   window.MK = MK;
+
+  // ── PB (Page Builder) global API ──
+  window.PB = {
+    save: function () { window.saveAll(); renderSectionsList(); },
+    exportJSON: function () { window.exportContent(); },
+    reset: function () { window.resetAll(); },
+    moveSection: function (idx, dir) {
+      // Sections order is visual only (content structure stays same)
+      var newIdx = idx + dir;
+      if (newIdx < 0 || newIdx >= SECTIONS.length) return;
+      var tmp = SECTIONS[idx]; SECTIONS[idx] = SECTIONS[newIdx]; SECTIONS[newIdx] = tmp;
+      renderSectionsList();
+    }
+  };
 
   // ── Global actions ──
   window.saveAll = function () {

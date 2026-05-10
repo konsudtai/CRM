@@ -52,7 +52,7 @@ function getNavMenus() {
     { key:'sales', label:t('nav_sales'), items:[{page:'leads',name:t('nav_pipeline'),desc:t('nav_pipeline_desc')},{page:'lead-management',name:'Lead Management',desc:'Search, view & edit all leads'}] },
     { key:'activity', label:t('nav_activities'), items:[{page:'tasks',name:t('nav_tasks'),desc:t('nav_tasks_desc')},{page:'calendar',name:t('nav_calendar'),desc:t('nav_calendar_desc')}] },
     { key:'docs', label:t('nav_documents'), items:[{page:'quotations',name:t('nav_quotations'),desc:t('nav_quotations_desc')},{page:'products',name:t('nav_products'),desc:t('nav_products_desc')},{page:'manual',name:'User Manual',desc:'คู่มือการใช้งาน / User Guide'}] },
-    { key:'marketing', label:'Marketing', items:[{page:'marketing',name:'Landing Page',desc:'จัดการเนื้อหา Landing Page + Logo'}] },
+    { key:'marketing', label:'Marketing', items:[{page:'marketing',name:'Landing Page',desc:'Visual Editor จัดการเนื้อหา Landing Page'},{page:'marketing',name:'Logo & Branding',desc:'อัปโหลด Logo สำหรับ Landing Page'}] },
   ].concat(getUserProfile().role==='Admin'?[{ key:'system', label:t('nav_settings'), items:[{page:'settings',name:t('nav_settings_page'),desc:t('nav_settings_desc')}] }]:[]);
 }
 
