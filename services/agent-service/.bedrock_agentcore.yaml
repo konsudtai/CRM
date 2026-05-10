@@ -1,0 +1,20 @@
+# SalesFAST 7 — AgentCore Configuration
+default_agent: sf7_agents
+
+agents:
+  sf7_agents:
+    name: sf7_agents
+    language: python
+    entrypoint: agent_handler.py
+    deployment_type: direct_code_deploy
+    runtime_type: PYTHON_3_13
+    source_path: ./python_agent
+    aws:
+      account: "364478544994"
+      region: ap-southeast-1
+      execution_role: auto
+    bedrock_agentcore:
+      agent_runtime_id: sf7_agents-4r6zsaHvkw
+      status: READY
+    memory:
+      enabled: true
