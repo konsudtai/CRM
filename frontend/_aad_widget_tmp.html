@@ -1,0 +1,128 @@
+
+<!-- ══════════════════════════════════════════════════════════
+     น้องแอ๊ด — Floating Chat Widget (landing page)
+     ══════════════════════════════════════════════════════════ -->
+<style>
+.aad-fab{position:fixed;bottom:24px;right:24px;z-index:900;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#0176D3,#032D60);box-shadow:0 4px 20px rgba(1,118,211,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;border:3px solid #fff;padding:0;overflow:hidden}
+.aad-fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(1,118,211,.5)}
+.aad-fab:active{transform:scale(.95)}
+.aad-fab img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:#fff}
+.aad-badge{position:absolute;top:-2px;right:-2px;width:20px;height:20px;border-radius:50%;background:#C23934;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;animation:aad-pulse 2s ease infinite}
+@keyframes aad-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.aad-panel{position:fixed;bottom:92px;right:24px;z-index:901;width:380px;max-height:520px;background:#fff;border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.18);border:1px solid #D4DAE3;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateY(12px) scale(.95);transition:all .2s;overflow:hidden;font-family:Inter,sans-serif}
+.aad-panel.open{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
+.aad-header{background:linear-gradient(135deg,#032D60,#0176D3);padding:16px;display:flex;align-items:center;gap:12px}
+.aad-avatar{width:40px;height:40px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;border:2px solid rgba(255,255,255,.2)}
+.aad-avatar img{width:100%;height:100%;object-fit:cover}
+.aad-header-info{flex:1}
+.aad-header-name{font-size:14px;font-weight:700;color:#fff}
+.aad-header-status{font-size:11px;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:4px}
+.aad-header-dot{width:6px;height:6px;border-radius:50%;background:#4BCA81}
+.aad-close{width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .15s}
+.aad-close:hover{background:rgba(255,255,255,.25)}
+.aad-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:220px;max-height:320px}
+.aad-msg{max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;animation:aad-fade .3s ease;word-wrap:break-word}
+@keyframes aad-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.aad-msg.agent{background:#F7F9FB;color:#16171A;align-self:flex-start;border-bottom-left-radius:4px}
+.aad-msg.user{background:#0176D3;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.aad-typing{display:flex;gap:4px;padding:8px 14px;align-self:flex-start}
+.aad-typing span{width:6px;height:6px;border-radius:50%;background:#8E9BAE;animation:aad-dot .6s ease infinite}
+.aad-typing span:nth-child(2){animation-delay:.1s}
+.aad-typing span:nth-child(3){animation-delay:.2s}
+@keyframes aad-dot{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.aad-quick{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 8px}
+.aad-quick-btn{padding:5px 12px;border-radius:20px;border:1px solid #D4DAE3;background:#fff;font-size:11px;font-weight:500;color:#0176D3;cursor:pointer;font-family:inherit;transition:all .15s}
+.aad-quick-btn:hover{background:rgba(1,118,211,.06);border-color:#0176D3}
+.aad-input-wrap{padding:12px 16px;border-top:1px solid #D4DAE3;display:flex;gap:8px}
+.aad-input{flex:1;padding:10px 14px;border-radius:24px;border:1.5px solid #D4DAE3;background:#F7F9FB;font-size:13px;font-family:inherit;color:#16171A;outline:none;transition:border-color .2s}
+.aad-input:focus{border-color:#0176D3}
+.aad-input::placeholder{color:#8E9BAE}
+.aad-send{width:36px;height:36px;border-radius:50%;border:none;background:#0176D3;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.aad-send:hover{background:#014486}
+@media(max-width:480px){.aad-panel{width:calc(100vw - 24px);right:12px;bottom:80px;max-height:70vh}.aad-fab{bottom:16px;right:16px;width:50px;height:50px}}
+</style>
+
+<button class="aad-fab" id="aad-fab" onclick="toggleAad()" aria-label="เปิดแชทน้องแอ๊ด">
+  <img src="img/admin-ai-avatar.svg" alt="น้องแอ๊ด"/>
+  <span class="aad-badge" id="aad-badge">1</span>
+</button>
+<div class="aad-panel" id="aad-panel" role="dialog" aria-label="แชทน้องแอ๊ด">
+  <div class="aad-header">
+    <div class="aad-avatar"><img src="img/admin-ai-avatar.svg" alt="AD"/></div>
+    <div class="aad-header-info">
+      <div class="aad-header-name">น้องแอ๊ด</div>
+      <div class="aad-header-status"><span class="aad-header-dot"></span> Online</div>
+    </div>
+    <button class="aad-close" onclick="toggleAad()" aria-label="ปิด">&times;</button>
+  </div>
+  <div class="aad-messages" id="aad-messages"></div>
+  <div class="aad-quick" id="aad-quick"></div>
+  <div class="aad-input-wrap">
+    <input class="aad-input" id="aad-input" placeholder="ถามอะไรก็ได้..." onkeydown="if(event.key==='Enter')sendAadMsg()"/>
+    <button class="aad-send" onclick="sendAadMsg()" aria-label="ส่ง"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var aadOpen=false;
+  window.toggleAad=function(){
+    aadOpen=!aadOpen;
+    document.getElementById('aad-panel').classList.toggle('open',aadOpen);
+    if(aadOpen){
+      document.getElementById('aad-badge').style.display='none';
+      var m=document.getElementById('aad-messages');m.scrollTop=m.scrollHeight;
+      setTimeout(function(){document.getElementById('aad-input').focus()},200);
+    }
+  };
+  function addAadMsg(type,text){
+    var m=document.getElementById('aad-messages');
+    var d=document.createElement('div');d.className='aad-msg '+type;d.innerHTML=text;
+    m.appendChild(d);m.scrollTop=m.scrollHeight;
+  }
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  window.sendAadMsg=function(){
+    var inp=document.getElementById('aad-input'),t=inp.value.trim();
+    if(!t)return;
+    inp.value='';
+    addAadMsg('user',esc(t));
+    var ty=document.createElement('div');ty.className='aad-typing';ty.id='aad-typing';
+    ty.innerHTML='<span></span><span></span><span></span>';
+    document.getElementById('aad-messages').appendChild(ty);
+    var msgs=document.getElementById('aad-messages');msgs.scrollTop=msgs.scrollHeight;
+    var api=(window.__SF7_API_BASE__||'')+'/agents/chat';
+    fetch(api,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:t,agentType:'admin-ai',tenantId:'default'})
+    }).then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+    .then(function(r){
+      var e=document.getElementById('aad-typing');if(e)e.remove();
+      var reply=(r.data&&(r.data.reply||r.data.error||r.data.message))||'ขออภัยค่ะ ไม่ได้รับข้อมูลจาก AI';
+      addAadMsg('agent',String(reply).replace(/\n/g,'<br>'));
+    }).catch(function(err){
+      var e=document.getElementById('aad-typing');if(e)e.remove();
+      addAadMsg('agent','ขออภัยค่ะ ไม่สามารถเชื่อมต่อได้: '+(err&&err.message?err.message:'network error'));
+    });
+  };
+  window.sendAadQuick=function(t){document.getElementById('aad-input').value=t;sendAadMsg()};
+
+  function initAadMessages(){
+    addAadMsg('agent','สวัสดีค่ะ! น้องแอ๊ดเองนะคะ 🤖 ผู้ช่วย Admin ของ SalesFAST 7 ค่ะ');
+    setTimeout(function(){
+      addAadMsg('agent','สนใจสินค้า/บริการไหน หรืออยากถามเรื่องอะไร บอกน้องได้เลยค่ะ ✨');
+    },400);
+    var quick=['โซลูชัน IT ที่มี','ขอใบเสนอราคา','ติดต่อฝ่ายขาย','บริการหลังการขาย'];
+    document.getElementById('aad-quick').innerHTML=quick.map(function(t){
+      return '<button class="aad-quick-btn" onclick="sendAadQuick(this.textContent)">'+t+'</button>'
+    }).join('');
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',initAadMessages);
+  } else {
+    initAadMessages();
+  }
+})();
+</script>
+</body>
+</html>

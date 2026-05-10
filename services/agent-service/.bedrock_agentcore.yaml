@@ -1,20 +1,122 @@
-# SalesFAST 7 — AgentCore Configuration
 default_agent: sf7_agents
-
 agents:
   sf7_agents:
-    name: sf7_agents
+    name: sf7_agents_v2
     language: python
+    node_version: null
     entrypoint: agent_handler.py
-    deployment_type: direct_code_deploy
-    runtime_type: PYTHON_3_13
+    deployment_type: container
+    runtime_type: null
+    platform: linux/arm64
+    container_runtime: null
     source_path: ./python_agent
     aws:
-      account: "364478544994"
+      execution_role: arn:aws:iam::364478544994:role/sf7-agentcore-role
+      execution_role_auto_create: false
+      account: '364478544994'
       region: ap-southeast-1
-      execution_role: auto
+      ecr_repository: 364478544994.dkr.ecr.ap-southeast-1.amazonaws.com/sf7-agent
+      ecr_auto_create: false
+      s3_path: null
+      s3_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config: null
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+      lifecycle_configuration:
+        idle_runtime_session_timeout: null
+        max_lifetime: null
     bedrock_agentcore:
-      agent_runtime_id: sf7_agents-4r6zsaHvkw
-      status: READY
+      agent_id: sf7_agents_v2-HGDCxK46cL
+      agent_arn: arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_agents_v2-HGDCxK46cL
+      agent_session_id: 58b482e2-b70b-47c5-b4ef-9dceecde3719
+    codebuild:
+      project_name: bedrock-agentcore-sf7_agents_v2-builder
+      execution_role: arn:aws:iam::364478544994:role/AmazonBedrockAgentCoreSDKCodeBuild-ap-southeast-1-90a61ef872
+      source_bucket: bedrock-agentcore-codebuild-sources-364478544994-ap-southeast-1
     memory:
-      enabled: true
+      mode: NO_MEMORY
+      memory_id: null
+      memory_arn: null
+      memory_name: null
+      event_expiry_days: 30
+      first_invoke_memory_check_done: false
+      was_created_by_toolkit: false
+    identity:
+      credential_providers: []
+      workload: null
+    aws_jwt:
+      enabled: false
+      audiences: []
+      signing_algorithm: ES384
+      issuer_url: null
+      duration_seconds: 300
+    authorizer_configuration: null
+    request_header_configuration: null
+    oauth_configuration: null
+    api_key_env_var_name: null
+    api_key_credential_provider_name: null
+    is_generated_by_agentcore_create: false
+  sf7_agents_v2:
+    name: sf7_agents_v2
+    language: python
+    node_version: null
+    entrypoint: agent_handler.py
+    deployment_type: container
+    runtime_type: null
+    platform: linux/arm64
+    container_runtime: null
+    source_path: ./python_agent
+    aws:
+      execution_role: arn:aws:iam::364478544994:role/sf7-agentcore-role
+      execution_role_auto_create: false
+      account: '364478544994'
+      region: ap-southeast-1
+      ecr_repository: 364478544994.dkr.ecr.ap-southeast-1.amazonaws.com/sf7-agent
+      ecr_auto_create: false
+      s3_path: null
+      s3_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config: null
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+      lifecycle_configuration:
+        idle_runtime_session_timeout: null
+        max_lifetime: null
+    bedrock_agentcore:
+      agent_id: sf7_agents_v2-HGDCxK46cL
+      agent_arn: arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_agents_v2-HGDCxK46cL
+      agent_session_id: 58b482e2-b70b-47c5-b4ef-9dceecde3719
+    codebuild:
+      project_name: bedrock-agentcore-sf7_agents_v2-builder
+      execution_role: arn:aws:iam::364478544994:role/AmazonBedrockAgentCoreSDKCodeBuild-ap-southeast-1-90a61ef872
+      source_bucket: bedrock-agentcore-codebuild-sources-364478544994-ap-southeast-1
+    memory:
+      mode: NO_MEMORY
+      memory_id: null
+      memory_arn: null
+      memory_name: null
+      event_expiry_days: 30
+      first_invoke_memory_check_done: false
+      was_created_by_toolkit: false
+    identity:
+      credential_providers: []
+      workload: null
+    aws_jwt:
+      enabled: false
+      audiences: []
+      signing_algorithm: ES384
+      issuer_url: null
+      duration_seconds: 300
+    authorizer_configuration: null
+    request_header_configuration: null
+    oauth_configuration: null
+    api_key_env_var_name: null
+    api_key_credential_provider_name: null
+    is_generated_by_agentcore_create: false

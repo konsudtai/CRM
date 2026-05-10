@@ -960,7 +960,9 @@ Resources:
           CHAT_TABLE: !Ref ChatHistoryTable
           AI_STATE_TABLE: !Ref AIStateTable
           BEDROCK_REGION: ap-southeast-1
-          BEDROCK_MODEL_ID: 'amazon.nova-2-lite-v1:0'
+          BEDROCK_MODEL_ID: 'apac.amazon.nova-lite-v1:0'
+          AGENTCORE_RUNTIME_ARN: 'arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_agents_v2-HGDCxK46cL'
+          USE_AGENTCORE: 'true'
 
   SalesFunction:
     Type: AWS::Lambda::Function
@@ -1081,7 +1083,9 @@ Resources:
           DB_NAME: salesfast7
           DB_SSL: 'true'
           BEDROCK_REGION: ap-southeast-1
-          BEDROCK_MODEL_ID: 'amazon.nova-2-lite-v1:0'
+          BEDROCK_MODEL_ID: 'apac.amazon.nova-lite-v1:0'
+          AGENTCORE_RUNTIME_ARN: 'arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_agents_v2-HGDCxK46cL'
+          USE_AGENTCORE: 'true'
           CHAT_TABLE: !Ref ChatHistoryTable
           AI_STATE_TABLE: !Ref AIStateTable
           ENABLE_EVENT_LISTENER: 'true'
