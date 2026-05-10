@@ -32,7 +32,43 @@
   }
 
   // ── Tab navigation ──
+  var SECTIONS = [
+    { id:'logo', label:'Logo บริษัท', icon:'target' },
+    { id:'company', label:'ข้อมูลบริษัท', icon:'building' },
+    { id:'hero', label:'Hero Section', icon:'trending' },
+    { id:'stats', label:'สถิติ', icon:'award' },
+    { id:'categories', label:'หมวดหมู่สินค้า', icon:'database' },
+    { id:'products', label:'สินค้า', icon:'shop' },
+    { id:'industries', label:'อุตสาหกรรม', icon:'factory' },
+    { id:'features', label:'จุดเด่น', icon:'star' },
+    { id:'testimonials', label:'Testimonials', icon:'users' },
+    { id:'clients', label:'ลูกค้า', icon:'heart' },
+    { id:'leads', label:'Leads จากฟอร์ม', icon:'mail' }
+  ];
+
   function initTabs() {
+    // Render section buttons
+    var sectionsEl = document.getElementById('ve-sections');
+    if (sectionsEl) {
+      sectionsEl.innerHTML = SECTIONS.map(function (s) {
+        return '<button class="ve-section-btn' + (s.id === state.activeTab ? ' active' : '') + '" data-tab="' + s.id + '">' +
+          (window.Icons ? window.Icons.get(s.icon, 14) : '') +
+          '<span>' + escHtml(s.label) + '</span>' +
+          (s.id === 'leads' ? '<span class="mk-cms-nav-count" id="leads-count" style="margin-left:auto">0</span>' : '') +
+        '</button>';
+      }).join('');
+
+      sectionsEl.querySelectorAll('.ve-section-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          sectionsEl.querySelectorAll('.ve-section-btn').forEach(function (b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          state.activeTab = btn.dataset.tab;
+          renderTab();
+        });
+      });
+    }
+
+    // Fallback: old sidebar nav (if exists)
     document.querySelectorAll('.mk-cms-nav-item').forEach(function (btn) {
       btn.addEventListener('click', function () {
         document.querySelectorAll('.mk-cms-nav-item').forEach(function (b) { b.classList.remove('active'); });
@@ -43,10 +79,27 @@
     });
   }
 
+  // ── Refresh live preview iframe ──
+  function refreshPreview() {
+    var iframe = document.getElementById('ve-iframe');
+    if (iframe && iframe.contentWindow) {
+      // Trigger re-render in iframe (landing.js listens to storage events)
+      try { iframe.contentWindow.dispatchEvent(new Event('storage')); } catch (e) {}
+    }
+  }
+
   // ── Render current tab ──
   function renderTab() {
-    var main = document.getElementById('mk-cms-main');
+    var main = document.getElementById('panel-body') || document.getElementById('mk-cms-main');
     if (!main) return;
+
+    // Update panel title
+    var titleEl = document.getElementById('panel-title');
+    var section = SECTIONS.find(function (s) { return s.id === state.activeTab; });
+    if (titleEl && section) {
+      titleEl.innerHTML = (window.Icons ? window.Icons.get(section.icon, 14) : '') + ' ' + escHtml(section.label);
+    }
+
     switch (state.activeTab) {
       case 'logo': renderLogo(main); break;
       case 'company': renderCompany(main); break;
@@ -64,38 +117,28 @@
 
   // ── Logo tab ──
   function renderLogo(container) {
-    container.innerHTML = '<div class="mk-panel">' +
-      '<div class="mk-panel-head"><div>' +
-        '<div class="mk-panel-title">Logo บริษัท (Landing Page)</div>' +
-        '<div class="mk-panel-desc">อัปโหลด Logo ที่จะแสดงบนหน้า Landing Page ของบริษัท — ไม่แสดงในระบบ CRM</div>' +
-      '</div></div>' +
+    container.innerHTML =
+      '<div style="margin-bottom:16px">' +
+        '<div style="font-size:12px;color:var(--text2);margin-bottom:16px">อัปโหลด Logo สำหรับ Landing Page เท่านั้น — CRM ใช้ text "SalesFAST 7 IT Solutions"</div>' +
+      '</div>' +
       '<div class="mk-logo-box">' +
         '<div class="mk-logo-preview">' +
           '<img id="logo-preview" src="" alt="Logo" style="display:none"/>' +
-          '<div id="logo-placeholder" class="mk-logo-placeholder">' +
-            '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
-            '<span>ไม่มี Logo<br/>(ใช้ text เริ่มต้น)</span>' +
+          '<div id="logo-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--text3);font-size:10px;text-align:center;padding:8px">' +
+            '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
+            '<span>ไม่มี Logo</span>' +
           '</div>' +
         '</div>' +
         '<div>' +
-          '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+          '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
             '<input type="file" id="logo-file-input" accept="image/png,image/jpeg,image/svg+xml" style="display:none"/>' +
-            '<button class="btn btn-primary" id="logo-upload-btn" style="display:flex;align-items:center;gap:6px">' +
-              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>' +
-              'Upload Logo' +
-            '</button>' +
-            '<button class="btn btn-secondary" onclick="MK.resetLogo()" style="color:#C23934" id="logo-reset-btn">Reset</button>' +
+            '<button class="btn btn-primary" id="logo-upload-btn" style="padding:6px 12px;font-size:11px">Upload Logo</button>' +
+            '<button class="btn btn-secondary" onclick="MK.resetLogo()" style="padding:6px 12px;font-size:11px;color:#C23934" id="logo-reset-btn">Reset</button>' +
           '</div>' +
-          '<div style="margin-top:10px;font-size:11px" id="logo-status">' +
-            '<span style="color:var(--text2)">Using default text</span>' +
-          '</div>' +
-          '<div style="margin-top:16px;padding:10px 14px;border-radius:8px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1);font-size:11px;color:var(--text2);line-height:1.6">' +
-            '<strong style="color:var(--sf-blue)">Note:</strong> รองรับ PNG, JPG, SVG (≤ 2MB) · แนะนำสี่เหลี่ยมจัตุรัส 512x512 px<br/>' +
-            'Logo นี้จะแสดงเฉพาะใน <strong>Landing Page</strong> ของบริษัท ไม่แสดงในระบบ CRM' +
-          '</div>' +
+          '<div style="margin-top:8px;font-size:10px" id="logo-status"><span style="color:var(--text2)">ใช้ text เริ่มต้น</span></div>' +
+          '<div style="margin-top:12px;font-size:10px;color:var(--text3);line-height:1.5">รองรับ PNG, JPG, SVG (≤ 2MB)<br/>แนะนำ 512x512 px</div>' +
         '</div>' +
-      '</div>' +
-    '</div>';
+      '</div>';
 
     document.getElementById('logo-upload-btn').addEventListener('click', function () {
       document.getElementById('logo-file-input').click();
@@ -572,6 +615,7 @@
   window.saveAll = function () {
     if (window.LandingData.save(state.content)) {
       markClean();
+      refreshPreview();
       if (window.toast) window.toast('บันทึกเรียบร้อย — Landing page อัพเดตทันที');
     } else {
       alert('เกิดข้อผิดพลาดในการบันทึก');
