@@ -1,135 +1,168 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { PageTransition, FadeIn, StaggerContainer, StaggerItem, AnimatedCard } from '@/components/motion';
+import { PageTransition, FadeIn, StaggerContainer, StaggerItem } from '@/components/motion';
 import { motion } from 'framer-motion';
 
-const STATUSES = ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost'];
-const STATUS_COLORS: Record<string, string> = {
-  New: 'bg-slate-100 border-slate-300',
-  Contacted: 'bg-blue-50 border-blue-200',
-  Qualified: 'bg-teal-50 border-teal-200',
-  Proposal: 'bg-amber-50 border-amber-200',
-  Negotiation: 'bg-red-50 border-red-200',
-  Won: 'bg-green-50 border-green-200',
-  Lost: 'bg-slate-50 border-slate-200',
+function fmt(n: number) {
+  if (n >= 1e6) return `฿${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `฿${(n / 1e3).toFixed(0)}K`;
+  return `฿${n.toLocaleString()}`;
+}
+
+const STAGES = ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost'] as const;
+
+const stageColors: Record<string, string> = {
+  New: '#64748B',
+  Contacted: '#0176D3',
+  Qualified: '#0B827C',
+  Proposal: '#D97706',
+  Negotiation: '#DC2626',
+  Won: '#2E844A',
+  Lost: '#9CA3AF',
 };
 
 export function LeadsPage() {
   const [view, setView] = useState<'kanban' | 'list'>('kanban');
 
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ['leads'],
     queryFn: () => api('/leads?limit=200'),
-    placeholderData: [],
   });
 
-  const leads = Array.isArray(data) ? data : data?.data || [];
+  const allLeads = (Array.isArray(data) ? data : data?.data || []).map((l: any) => {
+    const m = typeof l.metadata === 'string' ? JSON.parse(l.metadata) : l.metadata || {};
+    return { ...l, value: m.estimatedValue || 0, project: m.projectName || '', priority: m.priority || 'Medium', source: l.source || '' };
+  });
 
-  const grouped = STATUSES.reduce((acc, s) => {
-    acc[s] = leads.filter((l: any) => l.status === s);
+  const grouped = STAGES.reduce((acc, stage) => {
+    acc[stage] = allLeads.filter((l: any) => l.status === stage);
     return acc;
   }, {} as Record<string, any[]>);
 
   return (
     <PageTransition>
-      <div className="max-w-[1600px] mx-auto px-6 py-8">
+      <div className="px-5 py-5 max-w-[1400px] mx-auto">
         <FadeIn direction="down">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-5">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">ลีด</h1>
-              <p className="text-sm text-slate-500 mt-1">จัดการลีดและติดตามสถานะ</p>
+              <h1 className="text-[22px] font-bold text-[var(--text)]">Pipeline</h1>
+              <p className="text-[12px] text-[var(--text3)] mt-0.5">Manage leads and deals through every stage</p>
             </div>
-            <div className="flex gap-3">
-              <div className="flex bg-slate-100 rounded-lg p-1">
-                <button onClick={() => setView('kanban')} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${view === 'kanban' ? 'bg-white text-sf-blue shadow-sm' : 'text-slate-500'}`}>Kanban</button>
-                <button onClick={() => setView('list')} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${view === 'list' ? 'bg-white text-sf-blue shadow-sm' : 'text-slate-500'}`}>รายการ</button>
-              </div>
-              <button className="px-4 py-2 rounded-xl bg-sf-blue text-white text-sm font-semibold hover:bg-sf-blue-d transition shadow-md shadow-sf-blue/20">
-                + สร้างลีด
+            {/* View Toggle */}
+            <div className="flex gap-1 bg-[rgba(3,45,96,.05)] rounded-lg p-1">
+              <button
+                onClick={() => setView('kanban')}
+                className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all cursor-pointer ${view === 'kanban' ? 'bg-white shadow-sm text-[var(--text)]' : 'text-[var(--text2)]'}`}
+              >
+                Kanban
+              </button>
+              <button
+                onClick={() => setView('list')}
+                className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all cursor-pointer ${view === 'list' ? 'bg-white shadow-sm text-[var(--text)]' : 'text-[var(--text2)]'}`}
+              >
+                List
               </button>
             </div>
           </div>
         </FadeIn>
 
-        {isLoading ? (
-          <p className="text-center text-slate-400 py-16">กำลังโหลด...</p>
-        ) : view === 'kanban' ? (
-          /* Kanban Board */
-          <StaggerContainer className="grid grid-flow-col auto-cols-[260px] gap-4 overflow-x-auto pb-4">
-            {STATUSES.map((status) => (
-              <StaggerItem key={status}>
-                <div className={`rounded-xl p-3 border ${STATUS_COLORS[status]} min-h-[400px]`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-bold text-slate-700">{status}</span>
-                    <span className="text-xs font-semibold bg-white/80 text-slate-500 px-2 py-0.5 rounded-full">
-                      {grouped[status]?.length || 0}
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {(grouped[status] || []).map((lead: any) => (
-                      <motion.div
-                        key={lead.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        whileHover={{ y: -2, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
-                        className="bg-white rounded-xl p-3 border border-slate-200/60 cursor-pointer transition-shadow"
+        {view === 'kanban' ? (
+          <FadeIn delay={0.1}>
+            <div className="flex gap-2.5 overflow-x-auto pb-4">
+              {STAGES.map((stage) => {
+                const leads = grouped[stage] || [];
+                const color = stageColors[stage];
+                const totalValue = leads.reduce((s: number, l: any) => s + l.value, 0);
+                return (
+                  <div key={stage} className="bg-[var(--surface2)] rounded-[10px] p-2.5 min-w-[180px] flex-1">
+                    {/* Column Header */}
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-[7px] h-[7px] rounded-full" style={{ background: color }} />
+                        <span className="text-[11px] font-bold text-[var(--text)]">{stage}</span>
+                      </div>
+                      <span
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                        style={{ background: `${color}18`, color }}
                       >
-                        <p className="text-sm font-semibold text-slate-800 mb-1">{lead.name}</p>
-                        {lead.company_name && (
-                          <p className="text-xs text-slate-500">{lead.company_name}</p>
-                        )}
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-[10px] text-slate-400">{lead.source || '-'}</span>
-                          {lead.metadata?.estimatedValue && (
-                            <span className="text-xs font-bold text-sf-blue">
-                              ฿{(lead.metadata.estimatedValue / 1000).toFixed(0)}K
-                            </span>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
-                    {(grouped[status] || []).length === 0 && (
-                      <p className="text-center text-slate-300 text-xs py-8">ว่าง</p>
-                    )}
+                        {leads.length}
+                      </span>
+                    </div>
+                    <div className="text-[11px] font-bold text-[var(--sf-blue)] mb-2 px-1">{fmt(totalValue)}</div>
+
+                    {/* Cards */}
+                    <div className="space-y-2">
+                      {leads.length === 0 ? (
+                        <div className="text-[11px] text-[var(--text3)] text-center py-4">No leads</div>
+                      ) : (
+                        leads.map((l: any) => (
+                          <motion.div
+                            key={l.id}
+                            whileHover={{ y: -1, boxShadow: '0 4px 12px rgba(0,0,0,.06)' }}
+                            className="bg-[var(--surface)] rounded-lg p-2.5 border border-[var(--border)] cursor-pointer"
+                          >
+                            <div className="text-[12px] font-semibold text-[var(--text)] leading-tight">{l.project || l.name}</div>
+                            {l.company_name && (
+                              <div className="text-[10px] text-[var(--text3)] mt-0.5">{l.company_name}</div>
+                            )}
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-[10px] text-[var(--text3)]">{l.source}</span>
+                              {l.value > 0 && (
+                                <span className="text-[11px] font-bold text-[var(--sf-blue)]">{fmt(l.value)}</span>
+                              )}
+                            </div>
+                          </motion.div>
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        ) : (
-          /* List View */
-          <AnimatedCard className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">ชื่อ</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">บริษัท</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">สถานะ</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">แหล่งที่มา</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">มูลค่า</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leads.map((l: any) => (
-                    <tr key={l.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3 font-medium text-sf-blue">{l.name}</td>
-                      <td className="px-5 py-3 text-slate-600">{l.company_name || '-'}</td>
-                      <td className="px-5 py-3">
-                        <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-sf-blue/10 text-sf-blue">{l.status}</span>
-                      </td>
-                      <td className="px-5 py-3 text-slate-500">{l.source || '-'}</td>
-                      <td className="px-5 py-3 font-semibold text-slate-700">
-                        {l.metadata?.estimatedValue ? `฿${(l.metadata.estimatedValue / 1000).toFixed(0)}K` : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                );
+              })}
             </div>
-          </AnimatedCard>
+          </FadeIn>
+        ) : (
+          <FadeIn delay={0.1}>
+            <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="text-[10px] font-semibold text-[var(--text3)] uppercase tracking-[.3px] text-left pb-2.5 border-b-2 border-[var(--border)]">Name</th>
+                      <th className="text-[10px] font-semibold text-[var(--text3)] uppercase tracking-[.3px] text-left pb-2.5 border-b-2 border-[var(--border)]">Company</th>
+                      <th className="text-[10px] font-semibold text-[var(--text3)] uppercase tracking-[.3px] text-left pb-2.5 border-b-2 border-[var(--border)]">Stage</th>
+                      <th className="text-[10px] font-semibold text-[var(--text3)] uppercase tracking-[.3px] text-left pb-2.5 border-b-2 border-[var(--border)]">Source</th>
+                      <th className="text-[10px] font-semibold text-[var(--text3)] uppercase tracking-[.3px] text-left pb-2.5 border-b-2 border-[var(--border)]">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allLeads.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="text-center text-[var(--text3)] py-8 text-[12px]">No leads found</td>
+                      </tr>
+                    ) : (
+                      allLeads.map((l: any) => (
+                        <tr key={l.id} className="hover:bg-[rgba(1,118,211,.02)]">
+                          <td className="py-2.5 border-b border-[var(--border)] text-[12px] font-semibold text-[var(--text)]">{l.project || l.name}</td>
+                          <td className="py-2.5 border-b border-[var(--border)] text-[12px] text-[var(--text2)]">{l.company_name || '-'}</td>
+                          <td className="py-2.5 border-b border-[var(--border)]">
+                            <span
+                              className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                              style={{ background: `${stageColors[l.status]}18`, color: stageColors[l.status] }}
+                            >
+                              {l.status}
+                            </span>
+                          </td>
+                          <td className="py-2.5 border-b border-[var(--border)] text-[12px] text-[var(--text2)]">{l.source || '-'}</td>
+                          <td className="py-2.5 border-b border-[var(--border)] text-[12px] font-bold text-[var(--sf-blue)]">{l.value > 0 ? fmt(l.value) : '-'}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </FadeIn>
         )}
       </div>
     </PageTransition>

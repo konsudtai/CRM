@@ -1,133 +1,208 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { PageTransition, FadeIn, AnimatedCard } from '@/components/motion';
+import { PageTransition, FadeIn } from '@/components/motion';
+import { motion } from 'framer-motion';
 
-const STATUS_FILTERS = ['ทั้งหมด', 'Open', 'In Progress', 'Completed', 'Overdue'];
+function fmt(n: number) {
+  if (n >= 1e6) return `฿${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `฿${(n / 1e3).toFixed(0)}K`;
+  return `฿${n.toLocaleString()}`;
+}
+
+type SortKey = 'title' | 'due_date' | 'priority' | 'status';
+type SortDir = 'asc' | 'desc';
+
+const priorityOrder: Record<string, number> = { High: 3, Medium: 2, Low: 1 };
+const statusOrder: Record<string, number> = { Overdue: 4, 'In Progress': 3, Open: 2, Completed: 1 };
+
+const priorityColors: Record<string, { bg: string; text: string }> = {
+  High: { bg: 'rgba(194,57,52,.1)', text: '#C23934' },
+  Medium: { bg: 'rgba(217,119,6,.1)', text: '#D97706' },
+  Low: { bg: 'rgba(100,116,139,.1)', text: '#64748B' },
+};
+
+const statusColors: Record<string, { bg: string; text: string }> = {
+  Overdue: { bg: 'rgba(194,57,52,.1)', text: '#C23934' },
+  Completed: { bg: 'rgba(46,132,74,.1)', text: '#2E844A' },
+  'In Progress': { bg: 'rgba(1,118,211,.1)', text: '#0176D3' },
+  Open: { bg: 'rgba(100,116,139,.1)', text: '#64748B' },
+};
+
+const FILTERS = [
+  { key: 'all', label: 'ทั้งหมด' },
+  { key: 'Open', label: 'Open' },
+  { key: 'In Progress', label: 'In Progress' },
+  { key: 'Completed', label: 'Completed' },
+  { key: 'Overdue', label: 'Overdue' },
+];
 
 export function TasksPage() {
-  const [statusFilter, setStatusFilter] = useState('ทั้งหมด');
-  const [sortField, setSortField] = useState<'dueDate' | 'priority'>('dueDate');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [filter, setFilter] = useState('all');
+  const [sortKey, setSortKey] = useState<SortKey>('due_date');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => api('/tasks'),
-    placeholderData: [],
   });
 
-  const tasks = useMemo(() => {
-    const raw = Array.isArray(data) ? data : data?.data || [];
-    const now = new Date().toDateString();
-    const list = raw.map((t: any) => ({
-      ...t,
-      status: t.status !== 'Completed' && new Date(t.due_date || t.dueDate) < new Date(now) ? 'Overdue' : t.status,
-    }));
-    const filtered = statusFilter === 'ทั้งหมด' ? list : list.filter((t: any) => t.status === statusFilter);
-    const priorityOrder: Record<string, number> = { High: 0, Medium: 1, Low: 2 };
-    return filtered.sort((a: any, b: any) => {
+  const allTasks = (Array.isArray(data) ? data : data?.data || []).map((t: any) => {
+    const isOverdue = t.due_date && t.status !== 'Completed' && new Date(t.due_date) < new Date();
+    return { ...t, displayStatus: isOverdue ? 'Overdue' : t.status };
+  });
+
+  const filtered = useMemo(() => {
+    let list = filter === 'all' ? allTasks : allTasks.filter((t: any) => t.displayStatus === filter);
+
+    list.sort((a: any, b: any) => {
       let cmp = 0;
-      if (sortField === 'dueDate') cmp = new Date(a.due_date || a.dueDate).getTime() - new Date(b.due_date || b.dueDate).getTime();
-      else cmp = (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9);
+      switch (sortKey) {
+        case 'title':
+          cmp = (a.title || '').localeCompare(b.title || '');
+          break;
+        case 'due_date':
+          cmp = (a.due_date || '9999').localeCompare(b.due_date || '9999');
+          break;
+        case 'priority':
+          cmp = (priorityOrder[a.priority] || 0) - (priorityOrder[b.priority] || 0);
+          break;
+        case 'status':
+          cmp = (statusOrder[a.displayStatus] || 0) - (statusOrder[b.displayStatus] || 0);
+          break;
+      }
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [data, statusFilter, sortField, sortDir]);
 
-  function toggleSort(field: 'dueDate' | 'priority') {
-    if (sortField === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else { setSortField(field); setSortDir('asc'); }
+    return list;
+  }, [allTasks, filter, sortKey, sortDir]);
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }
+
+  function formatDate(dateStr: string) {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function SortIcon({ col }: { col: SortKey }) {
+    if (sortKey !== col) return <span className="text-[var(--text3)] ml-0.5">↕</span>;
+    return <span className="text-[var(--sf-blue)] ml-0.5">{sortDir === 'asc' ? '↑' : '↓'}</span>;
   }
 
   return (
     <PageTransition>
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="px-5 py-5 max-w-[1400px] mx-auto">
         <FadeIn direction="down">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">งานและกิจกรรม</h1>
-              <p className="text-sm text-slate-500 mt-1">จัดการงาน นัดหมาย และบันทึกการโทร</p>
-            </div>
-            <button className="px-4 py-2 rounded-xl bg-sf-blue text-white text-sm font-semibold hover:bg-sf-blue-d transition shadow-md shadow-sf-blue/20">
-              + สร้างงาน
-            </button>
+          <div className="mb-5">
+            <h1 className="text-[22px] font-bold text-[var(--text)]">Tasks & Activities</h1>
+            <p className="text-[12px] text-[var(--text3)] mt-0.5">Manage tasks, appointments and call logs</p>
           </div>
         </FadeIn>
 
-        {/* Filters */}
-        <div className="flex gap-1.5 mb-5 bg-slate-100 dark:bg-slate-800 rounded-lg p-1 w-fit">
-          {STATUS_FILTERS.map((s) => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${
-                statusFilter === s ? 'bg-white dark:bg-slate-700 text-sf-blue shadow-sm' : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+        {/* Filter Bar */}
+        <FadeIn delay={0.1}>
+          <div className="flex gap-1 bg-[rgba(3,45,96,.05)] rounded-lg p-1 mb-4 w-fit">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all cursor-pointer ${
+                  filter === f.key ? 'bg-white shadow-sm text-[var(--text)]' : 'text-[var(--text2)]'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </FadeIn>
 
-        {isLoading ? (
-          <p className="text-center text-slate-400 py-16">กำลังโหลด...</p>
-        ) : (
-          <AnimatedCard className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 overflow-hidden">
-            {tasks.length === 0 ? (
-              <p className="text-center text-slate-400 py-16 text-sm">ไม่พบงาน</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100 dark:border-slate-700">
-                      <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">ชื่องาน</th>
-                      <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase cursor-pointer hover:text-sf-blue" onClick={() => toggleSort('dueDate')}>
-                        วันครบกำหนด {sortField === 'dueDate' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-                      </th>
-                      <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase cursor-pointer hover:text-sf-blue" onClick={() => toggleSort('priority')}>
-                        ความสำคัญ {sortField === 'priority' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-                      </th>
-                      <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase">สถานะ</th>
+        <FadeIn delay={0.15}>
+          <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th
+                      onClick={() => handleSort('title')}
+                      className="text-[10px] font-semibold text-[var(--text3)] uppercase tracking-[.3px] text-left pb-2.5 border-b-2 border-[var(--border)] cursor-pointer select-none hover:text-[var(--sf-blue)]"
+                    >
+                      ชื่องาน <SortIcon col="title" />
+                    </th>
+                    <th
+                      onClick={() => handleSort('due_date')}
+                      className="text-[10px] font-semibold text-[var(--text3)] uppercase tracking-[.3px] text-left pb-2.5 border-b-2 border-[var(--border)] cursor-pointer select-none hover:text-[var(--sf-blue)]"
+                    >
+                      วันครบกำหนด <SortIcon col="due_date" />
+                    </th>
+                    <th
+                      onClick={() => handleSort('priority')}
+                      className="text-[10px] font-semibold text-[var(--text3)] uppercase tracking-[.3px] text-left pb-2.5 border-b-2 border-[var(--border)] cursor-pointer select-none hover:text-[var(--sf-blue)]"
+                    >
+                      ความสำคัญ <SortIcon col="priority" />
+                    </th>
+                    <th
+                      onClick={() => handleSort('status')}
+                      className="text-[10px] font-semibold text-[var(--text3)] uppercase tracking-[.3px] text-left pb-2.5 border-b-2 border-[var(--border)] cursor-pointer select-none hover:text-[var(--sf-blue)]"
+                    >
+                      สถานะ <SortIcon col="status" />
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="text-center text-[var(--text3)] py-8 text-[12px]">No tasks found</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {tasks.map((t: any) => {
-                      const overdue = t.status === 'Overdue';
+                  ) : (
+                    filtered.map((t: any) => {
+                      const isOverdue = t.displayStatus === 'Overdue';
+                      const pc = priorityColors[t.priority] || priorityColors.Medium;
+                      const sc = statusColors[t.displayStatus] || statusColors.Open;
                       return (
-                        <tr key={t.id} className={`border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${overdue ? 'bg-red-50/50' : ''}`}>
-                          <td className={`px-5 py-3 font-medium ${overdue ? 'text-red-700' : 'text-slate-800 dark:text-slate-200'}`}>
+                        <motion.tr
+                          key={t.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className={isOverdue ? 'bg-red-50/50' : 'hover:bg-[rgba(1,118,211,.02)]'}
+                        >
+                          <td className={`py-2.5 border-b border-[var(--border)] text-[12px] font-semibold ${isOverdue ? 'text-red-700' : 'text-[var(--text)]'}`}>
                             {t.title}
                           </td>
-                          <td className={`px-5 py-3 ${overdue ? 'text-red-600 font-semibold' : 'text-slate-600'}`}>
-                            {new Date(t.due_date || t.dueDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })}
+                          <td className={`py-2.5 border-b border-[var(--border)] text-[12px] ${isOverdue ? 'font-semibold text-red-700' : 'text-[var(--text2)]'}`}>
+                            {formatDate(t.due_date)}
                           </td>
-                          <td className="px-5 py-3">
-                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
-                              t.priority === 'High' ? 'bg-red-50 text-red-700' :
-                              t.priority === 'Medium' ? 'bg-amber-50 text-amber-700' :
-                              'bg-slate-100 text-slate-500'
-                            }`}>
-                              {t.priority === 'High' ? 'สูง' : t.priority === 'Medium' ? 'กลาง' : 'ต่ำ'}
+                          <td className="py-2.5 border-b border-[var(--border)]">
+                            <span
+                              className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                              style={{ background: pc.bg, color: pc.text }}
+                            >
+                              {t.priority}
                             </span>
                           </td>
-                          <td className="px-5 py-3">
-                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
-                              overdue ? 'bg-red-100 text-red-700' :
-                              t.status === 'Completed' ? 'bg-green-50 text-green-700' :
-                              t.status === 'In Progress' ? 'bg-blue-50 text-blue-700' :
-                              'bg-slate-100 text-slate-500'
-                            }`}>
-                              {overdue ? 'เกินกำหนด' : t.status === 'Completed' ? 'เสร็จสิ้น' : t.status === 'In Progress' ? 'กำลังดำเนินการ' : 'เปิด'}
+                          <td className="py-2.5 border-b border-[var(--border)]">
+                            <span
+                              className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                              style={{ background: sc.bg, color: sc.text }}
+                            >
+                              {t.displayStatus}
                             </span>
                           </td>
-                        </tr>
+                        </motion.tr>
                       );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </AnimatedCard>
-        )}
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </FadeIn>
       </div>
     </PageTransition>
   );
