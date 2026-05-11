@@ -1,24 +1,34 @@
-"""SalesFAST 7 — Universal Agent Handler. Detects role from AGENT_ROLE env."""
+"""SalesFAST 7 — Universal Agent Handler. Uses AGENT_ROLE env + configurable Bedrock credentials."""
 import json, os, traceback, boto3, urllib.request, urllib.error
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 PORT = int(os.environ.get("PORT", "8080"))
-REGION = os.environ.get("BEDROCK_REGION", "ap-southeast-1")
-MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "apac.anthropic.claude-sonnet-4-20250514-v1:0")
-GATEWAY_URL = os.environ.get("GATEWAY_URL", "https://sf7-crm-gateway-zd795zpjtz.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp")
 AGENT_ROLE = os.environ.get("AGENT_ROLE", "sales-assistant")
-SALES_ARN = os.environ.get("SALES_RUNTIME_ARN", "arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_agents_v2-HGDCxK46cL")
-ANALYTICS_ARN = os.environ.get("ANALYTICS_RUNTIME_ARN", "arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_analytics-AY5sRH2Qtv")
-ADMIN_ARN = os.environ.get("ADMIN_RUNTIME_ARN", "arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_admin_ai-iWwNN6CdL3")
+GATEWAY_URL = os.environ.get("GATEWAY_URL", "https://sf7-crm-gateway-zd795zpjtz.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp")
+SALES_ARN = os.environ.get("SALES_RUNTIME_ARN", "")
+ANALYTICS_ARN = os.environ.get("ANALYTICS_RUNTIME_ARN", "")
 
-bedrock = boto3.client("bedrock-runtime", region_name=REGION)
-ac = boto3.client("bedrock-agentcore", region_name=REGION)
+# Bedrock config — reads from ENV (settable via Settings UI)
+BEDROCK_ACCESS_KEY = os.environ.get("BEDROCK_ACCESS_KEY", "")
+BEDROCK_SECRET_KEY = os.environ.get("BEDROCK_SECRET_KEY", "")
+BEDROCK_REGION = os.environ.get("BEDROCK_REGION", os.environ.get("AWS_REGION", "ap-southeast-1"))
+BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "apac.anthropic.claude-sonnet-4-20250514-v1:0")
+
+# Create Bedrock client with custom credentials if provided, else use IAM Role
+def create_bedrock_client():
+    if BEDROCK_ACCESS_KEY and BEDROCK_SECRET_KEY:
+        return boto3.client("bedrock-runtime", region_name=BEDROCK_REGION,
+            aws_access_key_id=BEDROCK_ACCESS_KEY, aws_secret_access_key=BEDROCK_SECRET_KEY)
+    return boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
+
+bedrock = create_bedrock_client()
+ac = boto3.client("bedrock-agentcore", region_name="ap-southeast-1")
 GP = "sf7-crm-tools___"
 
 CONFIGS = {
     "sales-assistant": {
         "name": "น้องขายไว",
-        "system": "คุณเป็น Sales Assistant ชื่อ น้องขายไว ตอบภาษาไทย ใช้ค่ะ ทำ action แทน manual ได้เลย: assign lead, สร้าง QT, อนุมัติ, สร้าง task, ปิด deal ใช้ tools ดึงข้อมูลจริง ตอบสั้นกระชับ ใช้ tenantId=default ถ้าต้องการวิเคราะห์ให้ใช้ ask_analytics",
+        "system": "คุณเป็น Sales Assistant ชื่อ น้องขายไว ตอบภาษาไทย ใช้ค่ะ ทำ action แทน manual ได้เลย: assign lead, สร้าง QT, อนุมัติ, สร้าง task, ปิด deal ใช้ tools ดึงข้อมูลจริง ตอบสั้นกระชับเป็นธรรมชาติ ใช้ tenantId=default ถ้าต้องการวิเคราะห์ให้ใช้ ask_analytics",
         "tools": ["search_leads","assign_lead","create_lead","search_accounts","get_account_detail","search_products","create_quotation","approve_quotation","search_tasks","create_task","search_opportunities","get_users","log_activity","send_notification","ask_analytics"],
     },
     "admin-ai": {
@@ -34,8 +44,8 @@ CONFIGS = {
 }
 
 ALL_TOOLS = {
-    "search_leads":{"description":"ค้นหา Lead","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"status":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId"]}}},
-    "assign_lead":{"description":"มอบหมาย Lead","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"leadId":{"type":"string"},"assignToUserId":{"type":"string"},"assignToName":{"type":"string"}},"required":["tenantId","leadId","assignToUserId","assignToName"]}}},
+    "search_leads":{"description":"ค้นหา Lead ตาม status/ชื่อ/assigned","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"status":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId"]}}},
+    "assign_lead":{"description":"มอบหมาย Lead ให้ Sales Rep","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"leadId":{"type":"string"},"assignToUserId":{"type":"string"},"assignToName":{"type":"string"}},"required":["tenantId","leadId","assignToUserId","assignToName"]}}},
     "create_lead":{"description":"สร้าง Lead ใหม่","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"name":{"type":"string"},"companyName":{"type":"string"},"phone":{"type":"string"},"email":{"type":"string"},"source":{"type":"string"},"notes":{"type":"string"}},"required":["tenantId","name"]}}},
     "search_accounts":{"description":"ค้นหา Account","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId","search"]}}},
     "get_account_detail":{"description":"ดูรายละเอียด Account","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"accountId":{"type":"string"}},"required":["tenantId","accountId"]}}},
@@ -70,6 +80,7 @@ def call_gw(name, args):
         return body
 
 def call_a2a(arn, q):
+    if not arn: return {"error": "Runtime not configured"}
     resp = ac.invoke_agent_runtime(agentRuntimeArn=arn, payload=json.dumps({"message":q}).encode(), contentType="application/json", accept="application/json")
     d = json.loads(resp["response"].read().decode())
     return {"answer": d.get("reply", str(d))}
@@ -89,7 +100,7 @@ def invoke(message):
     tools_config = {"tools": [{"toolSpec":{"name":n,"description":ALL_TOOLS[n]["description"],"inputSchema":ALL_TOOLS[n]["inputSchema"]}} for n in tool_names]}
     messages = [{"role":"user","content":[{"text":message}]}]
     for _ in range(6):
-        resp = bedrock.converse(modelId=MODEL_ID, system=[{"text":cfg["system"]}], messages=messages, toolConfig=tools_config, inferenceConfig={"maxTokens":2048,"temperature":0.3})
+        resp = bedrock.converse(modelId=BEDROCK_MODEL_ID, system=[{"text":cfg["system"]}], messages=messages, toolConfig=tools_config, inferenceConfig={"maxTokens":2048,"temperature":0.3})
         out = resp["output"]["message"]
         out["content"] = sanitize(out["content"])
         messages.append(out)
@@ -119,7 +130,7 @@ class H(BaseHTTPRequestHandler):
             except: p={"message":body.decode()}
             msg=p.get("message",p.get("prompt",str(p)))
             cfg=CONFIGS.get(AGENT_ROLE,CONFIGS["sales-assistant"])
-            try: reply=invoke(msg);out=json.dumps({"reply":reply,"agentUsed":cfg["name"],"via":"AgentCore Gateway"},ensure_ascii=False)
+            try: reply=invoke(msg);out=json.dumps({"reply":reply,"agentUsed":cfg["name"],"model":BEDROCK_MODEL_ID,"via":"AgentCore Gateway"},ensure_ascii=False)
             except Exception as e: print(f"[ERR]{traceback.format_exc()}");out=json.dumps({"reply":f"ขออภัยค่ะ: {e}","error":str(e),"agentUsed":cfg["name"]},ensure_ascii=False)
             self.send_response(200);self.send_header("Content-Type","application/json");self.end_headers();self.wfile.write(out.encode())
         else: self.send_response(404);self.end_headers()
@@ -127,4 +138,6 @@ class H(BaseHTTPRequestHandler):
 
 if __name__=="__main__":
     cfg=CONFIGS.get(AGENT_ROLE,CONFIGS["sales-assistant"])
-    print(f"[{cfg['name']}] role={AGENT_ROLE} port={PORT} model={MODEL_ID}");HTTPServer(("0.0.0.0",PORT),H).serve_forever()
+    cred_mode = "API Key" if BEDROCK_ACCESS_KEY else "IAM Role"
+    print(f"[{cfg['name']}] role={AGENT_ROLE} model={BEDROCK_MODEL_ID} region={BEDROCK_REGION} auth={cred_mode}")
+    HTTPServer(("0.0.0.0",PORT),H).serve_forever()
