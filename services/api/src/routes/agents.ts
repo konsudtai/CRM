@@ -167,7 +167,11 @@ async function runAgent(message: string, agentType: string, tenantId: string, hi
       inferenceConfig: { maxTokens: 2048, temperature: 0.4 },
     }));
 
-    const content = res.output?.message?.content || [];
+    const content = (res.output?.message?.content || []).filter((c: any) => {
+      if ('text' in c && (!c.text || !c.text.trim())) return false;
+      return true;
+    });
+    if (content.length === 0) content.push({ text: ' ' });
     messages.push({ role: 'assistant', content });
 
     const toolUses = content.filter((c: any) => c.toolUse);
