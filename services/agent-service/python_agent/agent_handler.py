@@ -12,29 +12,27 @@ GATEWAY_URL = os.environ.get("GATEWAY_URL", "https://sf7-crm-gateway-zd795zpjtz.
 
 bedrock = boto3.client("bedrock-runtime", region_name=REGION)
 
-# Tool definitions for Bedrock Converse
 TOOLS_SCHEMA = [
-    {"name":"search_leads","description":"ค้นหา Lead ตาม status/ชื่อ","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"status":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId"]}}},
+    {"name":"search_leads","description":"ค้นหา Lead ตาม status/ชื่อ/assigned","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"status":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId"]}}},
     {"name":"assign_lead","description":"มอบหมาย Lead ให้ Sales Rep","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"leadId":{"type":"string"},"assignToUserId":{"type":"string"},"assignToName":{"type":"string"}},"required":["tenantId","leadId","assignToUserId","assignToName"]}}},
     {"name":"create_lead","description":"สร้าง Lead ใหม่","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"name":{"type":"string"},"companyName":{"type":"string"},"phone":{"type":"string"},"email":{"type":"string"},"source":{"type":"string"},"notes":{"type":"string"}},"required":["tenantId","name"]}}},
-    {"name":"search_accounts","description":"ค้นหา Account","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId","search"]}}},
+    {"name":"search_accounts","description":"ค้นหา Account ตามชื่อบริษัท","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId","search"]}}},
     {"name":"get_account_detail","description":"ดูรายละเอียด Account","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"accountId":{"type":"string"}},"required":["tenantId","accountId"]}}},
     {"name":"search_products","description":"ค้นหาสินค้า","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"search":{"type":"string"},"category":{"type":"string"}},"required":["tenantId"]}}},
     {"name":"create_quotation","description":"สร้างใบเสนอราคา","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"accountId":{"type":"string"},"lineItems":{"type":"array"},"notes":{"type":"string"}},"required":["tenantId","accountId","lineItems"]}}},
     {"name":"approve_quotation","description":"อนุมัติใบเสนอราคา","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"quotationId":{"type":"string"},"approvedBy":{"type":"string"}},"required":["tenantId","quotationId","approvedBy"]}}},
     {"name":"search_tasks","description":"ค้นหา Task","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"assignedTo":{"type":"string"},"status":{"type":"string"},"overdue":{"type":"boolean"}},"required":["tenantId"]}}},
-    {"name":"create_task","description":"สร้าง Task","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"title":{"type":"string"},"assignedTo":{"type":"string"},"dueDate":{"type":"string"},"priority":{"type":"string"}},"required":["tenantId","title","assignedTo","dueDate"]}}},
-    {"name":"search_opportunities","description":"ค้นหา Deal","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"stage":{"type":"string"},"ownerId":{"type":"string"}},"required":["tenantId"]}}},
+    {"name":"create_task","description":"สร้าง Task ใหม่","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"title":{"type":"string"},"assignedTo":{"type":"string"},"dueDate":{"type":"string"},"priority":{"type":"string"}},"required":["tenantId","title","assignedTo","dueDate"]}}},
+    {"name":"search_opportunities","description":"ค้นหา Deal/Opportunity","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"stage":{"type":"string"},"ownerId":{"type":"string"}},"required":["tenantId"]}}},
     {"name":"get_kpi_summary","description":"ดึง KPI สรุป","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"period":{"type":"string"}},"required":["tenantId"]}}},
     {"name":"get_pipeline_analysis","description":"วิเคราะห์ pipeline","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"}},"required":["tenantId"]}}},
-    {"name":"get_revenue_data","description":"ดึง revenue","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"year":{"type":"number"}},"required":["tenantId"]}}},
+    {"name":"get_revenue_data","description":"ดึง revenue รายเดือน","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"year":{"type":"number"}},"required":["tenantId"]}}},
     {"name":"get_forecast","description":"พยากรณ์ revenue","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"}},"required":["tenantId"]}}},
     {"name":"get_users","description":"ดึงรายชื่อ Users","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"}},"required":["tenantId"]}}},
     {"name":"log_activity","description":"บันทึก Activity","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"entityType":{"type":"string"},"entityId":{"type":"string"},"summary":{"type":"string"}},"required":["tenantId","entityType","entityId","summary"]}}},
     {"name":"send_notification","description":"ส่ง notification","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"userId":{"type":"string"},"type":{"type":"string"},"title":{"type":"string"},"body":{"type":"string"}},"required":["tenantId","userId","type","title","body"]}}},
 ]
 
-# Map: model tool name → Gateway prefixed name
 GATEWAY_PREFIX = "sf7-crm-tools___"
 
 SYSTEM_PROMPTS = {
@@ -45,32 +43,18 @@ SYSTEM_PROMPTS = {
 
 
 def call_tool_via_gateway(tool_name, arguments):
-    """Call tool through AgentCore Gateway MCP endpoint."""
     gateway_tool_name = GATEWAY_PREFIX + tool_name
-
-    # MCP tools/call request
     mcp_request = {
         "jsonrpc": "2.0",
         "id": "1",
         "method": "tools/call",
-        "params": {
-            "name": gateway_tool_name,
-            "arguments": arguments
-        }
+        "params": {"name": gateway_tool_name, "arguments": arguments}
     }
-
     data = json.dumps(mcp_request).encode()
-    req = urllib.request.Request(
-        GATEWAY_URL,
-        data=data,
-        headers={"Content-Type": "application/json"},
-        method="POST"
-    )
-
+    req = urllib.request.Request(GATEWAY_URL, data=data, headers={"Content-Type": "application/json"}, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=25) as resp:
             result = json.loads(resp.read().decode())
-            # MCP response format
             if "result" in result:
                 content = result["result"].get("content", [])
                 if content and isinstance(content, list):
@@ -91,8 +75,24 @@ def call_tool_via_gateway(tool_name, arguments):
         return {"error": f"Gateway error: {str(e)}"}
 
 
+def sanitize_content(content_blocks):
+    """Remove empty text blocks that cause Bedrock API errors."""
+    sanitized = []
+    for block in content_blocks:
+        if "text" in block:
+            if block["text"] and block["text"].strip():
+                sanitized.append(block)
+            # Skip empty text blocks
+        elif "toolUse" in block:
+            sanitized.append(block)
+        elif "toolResult" in block:
+            sanitized.append(block)
+        else:
+            sanitized.append(block)
+    return sanitized if sanitized else [{"text": " "}]
+
+
 def invoke_agent(agent_type, message):
-    """Converse with tool use loop via Gateway."""
     system = SYSTEM_PROMPTS.get(agent_type, SYSTEM_PROMPTS["sales-assistant"])
     tools_config = {"tools": [{"toolSpec": {"name": t["name"], "description": t["description"], "inputSchema": t["inputSchema"]}} for t in TOOLS_SCHEMA]}
     messages = [{"role": "user", "content": [{"text": message}]}]
@@ -106,11 +106,15 @@ def invoke_agent(agent_type, message):
             inferenceConfig={"maxTokens": 2048, "temperature": 0.3},
         )
         output = resp["output"]["message"]
+
+        # Sanitize content blocks before appending to messages
+        output["content"] = sanitize_content(output["content"])
         messages.append(output)
 
         tool_uses = [b for b in output["content"] if "toolUse" in b]
         if not tool_uses:
-            return "\n".join(b["text"] for b in output["content"] if "text" in b)
+            texts = [b["text"] for b in output["content"] if "text" in b and b["text"]]
+            return "\n".join(texts) if texts else "ได้รับข้อมูลแล้วค่ะ"
 
         tool_results = []
         for tu in tool_uses:
