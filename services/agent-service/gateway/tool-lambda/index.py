@@ -1,280 +1,140 @@
 """
 SF7 AgentCore Gateway — Tool Lambda Handler
-This Lambda is called by AgentCore Gateway as an MCP tool target.
-It routes tool calls to the appropriate backend service (CRM, Sales, Quotation, etc.)
+Routes tool calls to backend API Gateway.
 """
 import json
 import os
 import urllib.request
 import urllib.error
 
-# Internal API base URL (API Gateway)
-API_BASE = os.environ.get("API_BASE_URL", "")
-INTERNAL_TOKEN = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+API_BASE = os.environ.get("API_BASE_URL", "https://ejk5xmi2e8.execute-api.ap-southeast-1.amazonaws.com")
 DEFAULT_TENANT = os.environ.get("DEFAULT_TENANT_ID", "default")
 
 
-def make_request(method, url, body=None, headers=None):
-    """Make HTTP request to internal APIs."""
-    hdrs = {
-        "Content-Type": "application/json",
-        "x-tenant-id": DEFAULT_TENANT,
-    }
-    if INTERNAL_TOKEN:
-        hdrs["Authorization"] = f"Bearer {INTERNAL_TOKEN}"
-    if headers:
-        hdrs.update(headers)
-
+def req(method, path, body=None, tenant_id=None):
+    token = os.environ.get("SERVICE_TOKEN", "")
+    url = f"{API_BASE}{path}"
+    hdrs = {"Content-Type": "application/json", "x-tenant-id": tenant_id or DEFAULT_TENANT, "Authorization": f"Bearer {token}"}
     data = json.dumps(body).encode() if body else None
-    req = urllib.request.Request(url, data=data, headers=hdrs, method=method)
+    r = urllib.request.Request(url, data=data, headers=hdrs, method=method)
     try:
-        with urllib.request.urlopen(req, timeout=25) as resp:
+        with urllib.request.urlopen(r, timeout=20) as resp:
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
-        error_body = e.read().decode() if e.fp else str(e)
-        return {"error": f"HTTP {e.code}", "detail": error_body}
+        return {"error": f"HTTP {e.code}", "detail": e.read().decode()[:200] if e.fp else ""}
     except Exception as e:
         return {"error": str(e)}
 
 
-def api_get(path, tenant_id=None):
-    hdrs = {}
-    if tenant_id:
-        hdrs["x-tenant-id"] = tenant_id
-    url = f"{API_BASE}{path}"
-    return make_request("GET", url, headers=hdrs)
+def search_leads(p):
+    qs = [f"limit={p.get('limit',10)}"]
+    if p.get("status"): qs.append(f"status={p['status']}")
+    if p.get("assignedTo"): qs.append(f"assignedTo={p['assignedTo']}")
+    if p.get("search"): qs.append(f"search={p['search']}")
+    return req("GET", f"/leads?{'&'.join(qs)}", tenant_id=p.get("tenantId"))
 
+def assign_lead(p):
+    return req("PATCH", f"/leads/{p['leadId']}", {"assignedTo": p["assignToUserId"], "status": "Contacted"}, p.get("tenantId"))
 
-def api_post(path, body, tenant_id=None):
-    hdrs = {}
-    if tenant_id:
-        hdrs["x-tenant-id"] = tenant_id
-    url = f"{API_BASE}{path}"
-    return make_request("POST", url, body=body, headers=hdrs)
+def create_lead(p):
+    body = {k: v for k, v in p.items() if k != "tenantId" and v}
+    return req("POST", "/leads", body, p.get("tenantId"))
 
+def search_accounts(p):
+    return req("GET", f"/accounts?search={p.get('search','')}&limit={p.get('limit',5)}", tenant_id=p.get("tenantId"))
 
-def api_patch(path, body, tenant_id=None):
-    hdrs = {}
-    if tenant_id:
-        hdrs["x-tenant-id"] = tenant_id
-    url = f"{API_BASE}{path}"
-    return make_request("PATCH", url, body=body, headers=hdrs)
+def get_account_detail(p):
+    return req("GET", f"/accounts/{p['accountId']}", tenant_id=p.get("tenantId"))
 
+def search_products(p):
+    qs = [f"limit={p.get('limit',10)}"]
+    if p.get("search"): qs.append(f"search={p['search']}")
+    if p.get("category"): qs.append(f"category={p['category']}")
+    return req("GET", f"/products?{'&'.join(qs)}", tenant_id=p.get("tenantId"))
 
-# ═══════════════════════════════════════════════════════════
-# Tool Implementations
-# ═══════════════════════════════════════════════════════════
+def create_quotation(p):
+    body = {k: v for k, v in p.items() if k != "tenantId"}
+    return req("POST", "/quotations", body, p.get("tenantId"))
 
-def search_leads(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    qs = []
-    if params.get("status"):
-        qs.append(f"status={params['status']}")
-    if params.get("assignedTo"):
-        qs.append(f"assignedTo={params['assignedTo']}")
-    if params.get("search"):
-        qs.append(f"search={params['search']}")
-    qs.append(f"limit={params.get('limit', 10)}")
-    return api_get(f"/sales/leads?{'&'.join(qs)}", tid)
+def get_quotation(p):
+    qid = p.get("quotationId") or p.get("quotationNumber") or ""
+    return req("GET", f"/quotations/{qid}", tenant_id=p.get("tenantId"))
 
+def approve_quotation(p):
+    return req("POST", f"/quotations/{p['quotationId']}/approve", {"approvedBy": p["approvedBy"]}, p.get("tenantId"))
 
-def assign_lead(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    lead_id = params["leadId"]
-    return api_patch(f"/sales/leads/{lead_id}", {
-        "assignedTo": params["assignToUserId"],
-        "status": "Contacted"
-    }, tid)
+def search_tasks(p):
+    qs = [f"limit={p.get('limit',10)}"]
+    if p.get("assignedTo"): qs.append(f"assignedTo={p['assignedTo']}")
+    if p.get("status"): qs.append(f"status={p['status']}")
+    if p.get("overdue"): qs.append("overdue=true")
+    return req("GET", f"/tasks?{'&'.join(qs)}", tenant_id=p.get("tenantId"))
 
+def create_task(p):
+    body = {k: v for k, v in p.items() if k != "tenantId"}
+    return req("POST", "/tasks", body, p.get("tenantId"))
 
-def create_lead(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    body = {k: v for k, v in params.items() if k != "tenantId" and v}
-    return api_post("/sales/leads", body, tid)
+def search_opportunities(p):
+    qs = [f"limit={p.get('limit',10)}"]
+    if p.get("stage"): qs.append(f"stage={p['stage']}")
+    if p.get("ownerId"): qs.append(f"ownerId={p['ownerId']}")
+    return req("GET", f"/opportunities?{'&'.join(qs)}", tenant_id=p.get("tenantId"))
 
+def get_kpi_summary(p):
+    return req("GET", f"/dashboard?period={p.get('period','month')}", tenant_id=p.get("tenantId"))
 
-def search_accounts(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    search = params.get("search", "")
-    limit = params.get("limit", 5)
-    return api_get(f"/crm/accounts?search={search}&limit={limit}", tid)
+def get_pipeline_analysis(p):
+    return req("GET", "/dashboard/pipeline", tenant_id=p.get("tenantId"))
 
+def get_revenue_data(p):
+    qs = f"?year={p['year']}" if p.get("year") else ""
+    return req("GET", f"/dashboard/revenue{qs}", tenant_id=p.get("tenantId"))
 
-def get_account_detail(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    return api_get(f"/crm/accounts/{params['accountId']}", tid)
+def get_forecast(p):
+    return req("GET", "/dashboard/forecast", tenant_id=p.get("tenantId"))
 
+def get_users(p):
+    return req("GET", "/users", tenant_id=p.get("tenantId"))
 
-def search_products(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    qs = []
-    if params.get("search"):
-        qs.append(f"search={params['search']}")
-    if params.get("category"):
-        qs.append(f"category={params['category']}")
-    qs.append(f"limit={params.get('limit', 10)}")
-    return api_get(f"/quotation/products?{'&'.join(qs)}", tid)
+def log_activity(p):
+    return req("POST", "/activities", {
+        "entityType": p["entityType"], "entityId": p["entityId"],
+        "summary": p["summary"], "userId": p.get("userId", "system-agent"),
+        "metadata": {"source": "agentcore", "automated": True}
+    }, p.get("tenantId"))
 
+def send_notification(p):
+    return req("POST", "/notifications", {
+        "userId": p["userId"], "channel": p.get("channel", "in_app"),
+        "type": p["type"], "title": p["title"], "body": p["body"],
+    }, p.get("tenantId"))
 
-def create_quotation(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    body = {k: v for k, v in params.items() if k != "tenantId"}
-    return api_post("/quotation/quotations", body, tid)
-
-
-def get_quotation(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    qid = params.get("quotationId") or params.get("quotationNumber")
-    return api_get(f"/quotation/quotations/{qid}", tid)
-
-
-def approve_quotation(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    return api_post(f"/quotation/quotations/{params['quotationId']}/approve", {
-        "approvedBy": params["approvedBy"]
-    }, tid)
-
-
-def search_tasks(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    qs = []
-    if params.get("assignedTo"):
-        qs.append(f"assignedTo={params['assignedTo']}")
-    if params.get("status"):
-        qs.append(f"status={params['status']}")
-    if params.get("overdue"):
-        qs.append("overdue=true")
-    qs.append(f"limit={params.get('limit', 10)}")
-    return api_get(f"/crm/tasks?{'&'.join(qs)}", tid)
-
-
-def create_task(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    body = {k: v for k, v in params.items() if k != "tenantId"}
-    return api_post("/crm/tasks", body, tid)
-
-
-def search_opportunities(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    qs = []
-    if params.get("stage"):
-        qs.append(f"stage={params['stage']}")
-    if params.get("ownerId"):
-        qs.append(f"ownerId={params['ownerId']}")
-    qs.append(f"limit={params.get('limit', 10)}")
-    return api_get(f"/sales/opportunities?{'&'.join(qs)}", tid)
-
-
-def get_kpi_summary(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    period = params.get("period", "month")
-    return api_get(f"/sales/dashboard/kpi?period={period}", tid)
-
-
-def get_pipeline_analysis(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    return api_get("/sales/dashboard/pipeline-analysis", tid)
-
-
-def get_revenue_data(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    year = params.get("year", "")
-    qs = f"?year={year}" if year else ""
-    return api_get(f"/sales/dashboard/revenue{qs}", tid)
-
-
-def get_forecast(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    return api_get("/sales/dashboard/forecast", tid)
-
-
-def get_users(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    return api_get("/auth/users", tid)
-
-
-def log_activity(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    body = {
-        "entityType": params["entityType"],
-        "entityId": params["entityId"],
-        "summary": params["summary"],
-        "userId": params.get("userId", "system-agent"),
-        "metadata": {**(params.get("metadata") or {}), "source": "agentcore", "automated": True},
-    }
-    return api_post("/crm/activities", body, tid)
-
-
-def send_notification(params):
-    tid = params.get("tenantId", DEFAULT_TENANT)
-    body = {
-        "userId": params["userId"],
-        "channel": params.get("channel", "in_app"),
-        "type": params["type"],
-        "title": params["title"],
-        "body": params["body"],
-        "metadata": {**(params.get("metadata") or {}), "source": "agentcore"},
-    }
-    return api_post("/notification/notifications", body, tid)
-
-
-# ═══════════════════════════════════════════════════════════
-# Tool Registry
-# ═══════════════════════════════════════════════════════════
 
 TOOLS = {
-    "search_leads": search_leads,
-    "assign_lead": assign_lead,
-    "create_lead": create_lead,
-    "search_accounts": search_accounts,
-    "get_account_detail": get_account_detail,
-    "search_products": search_products,
-    "create_quotation": create_quotation,
-    "get_quotation": get_quotation,
-    "approve_quotation": approve_quotation,
-    "search_tasks": search_tasks,
-    "create_task": create_task,
-    "search_opportunities": search_opportunities,
-    "get_kpi_summary": get_kpi_summary,
-    "get_pipeline_analysis": get_pipeline_analysis,
-    "get_revenue_data": get_revenue_data,
-    "get_forecast": get_forecast,
-    "get_users": get_users,
-    "log_activity": log_activity,
-    "send_notification": send_notification,
+    "search_leads": search_leads, "assign_lead": assign_lead, "create_lead": create_lead,
+    "search_accounts": search_accounts, "get_account_detail": get_account_detail,
+    "search_products": search_products, "create_quotation": create_quotation,
+    "get_quotation": get_quotation, "approve_quotation": approve_quotation,
+    "search_tasks": search_tasks, "create_task": create_task,
+    "search_opportunities": search_opportunities, "get_kpi_summary": get_kpi_summary,
+    "get_pipeline_analysis": get_pipeline_analysis, "get_revenue_data": get_revenue_data,
+    "get_forecast": get_forecast, "get_users": get_users,
+    "log_activity": log_activity, "send_notification": send_notification,
 }
 
 
 def handler(event, context):
-    """
-    Lambda handler for AgentCore Gateway tool invocations.
-    The Gateway sends: { "name": "tool_name", "arguments": {...} }
-    """
-    # Gateway sends tool call as the event
     tool_name = event.get("name", "")
     arguments = event.get("arguments", event.get("input", {}))
-
-    # If arguments is a string, parse it
     if isinstance(arguments, str):
-        try:
-            arguments = json.loads(arguments)
-        except:
-            arguments = {"query": arguments}
+        try: arguments = json.loads(arguments)
+        except: arguments = {"query": arguments}
 
     if tool_name not in TOOLS:
-        return {
-            "statusCode": 400,
-            "body": json.dumps({"error": f"Unknown tool: {tool_name}", "available": list(TOOLS.keys())})
-        }
+        return {"statusCode": 400, "body": json.dumps({"error": f"Unknown tool: {tool_name}", "available": list(TOOLS.keys())})}
 
     try:
         result = TOOLS[tool_name](arguments)
-        return {
-            "statusCode": 200,
-            "body": json.dumps(result, ensure_ascii=False, default=str)
-        }
+        return {"statusCode": 200, "body": json.dumps(result, ensure_ascii=False, default=str)}
     except Exception as e:
-        return {
-            "statusCode": 500,
-            "body": json.dumps({"error": str(e), "tool": tool_name})
-        }
+        return {"statusCode": 500, "body": json.dumps({"error": str(e), "tool": tool_name})}

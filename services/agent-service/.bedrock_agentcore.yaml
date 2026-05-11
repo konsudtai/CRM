@@ -32,7 +32,7 @@ agents:
     bedrock_agentcore:
       agent_id: sf7_agents_v2-HGDCxK46cL
       agent_arn: arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_agents_v2-HGDCxK46cL
-      agent_session_id: 58b482e2-b70b-47c5-b4ef-9dceecde3719
+      agent_session_id: null
     codebuild:
       project_name: bedrock-agentcore-sf7_agents_v2-builder
       execution_role: arn:aws:iam::364478544994:role/AmazonBedrockAgentCoreSDKCodeBuild-ap-southeast-1-90a61ef872
@@ -92,7 +92,7 @@ agents:
     bedrock_agentcore:
       agent_id: sf7_agents_v2-HGDCxK46cL
       agent_arn: arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_agents_v2-HGDCxK46cL
-      agent_session_id: 58b482e2-b70b-47c5-b4ef-9dceecde3719
+      agent_session_id: null
     codebuild:
       project_name: bedrock-agentcore-sf7_agents_v2-builder
       execution_role: arn:aws:iam::364478544994:role/AmazonBedrockAgentCoreSDKCodeBuild-ap-southeast-1-90a61ef872
