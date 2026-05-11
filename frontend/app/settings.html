@@ -530,8 +530,8 @@
       </div>
 
       <div style="display:flex;gap:8px;margin-top:16px">
-        <button class="btn btn-primary" onclick="alert('AI Configuration saved!')">Save Configuration</button>
-        <button class="btn btn-secondary" onclick="alert('Connection test: OK')">Test Connection</button>
+        <button class="btn btn-primary" onclick="saveAIConfig()">Save Configuration</button>
+        <button class="btn btn-secondary" onclick="testAIConnection()">Test Connection</button>
       </div>
     </div>
 
@@ -898,6 +898,68 @@ function showAITab(id,btn){
     var el=document.getElementById('ai-tab-'+t);
     if(el)el.style.display=t===id?'block':'none';
   });
+
+// ── AI Config Save ──
+function saveAIConfig() {
+  var config = {
+    bedrockRegion: document.getElementById('ai-region').value,
+    accessKeyId: document.getElementById('ai-access-key').value,
+    secretAccessKey: document.getElementById('ai-secret-key').value,
+    chatModel: document.getElementById('ai-chat-model').value,
+    embedModel: document.getElementById('ai-embed-model').value,
+    knowledgeBaseId: document.getElementById('ai-kb-id').value,
+    promptSales: document.getElementById('ai-prompt-sales').value,
+    promptAdmin: document.getElementById('ai-prompt-admin').value,
+    promptAnalytics: document.getElementById('ai-prompt-analytics').value,
+  };
+  apiFetch('/settings/ai', {
+    method: 'PUT',
+    body: JSON.stringify(config),
+  }).then(function(res) {
+    alert('✅ AI Configuration saved successfully!');
+  }).catch(function(err) {
+    alert('Error saving AI config: ' + (err.message || err));
+  });
+}
+
+function testAIConnection() {
+  var btn = event.target;
+  btn.textContent = 'Testing...';
+  btn.disabled = true;
+  apiFetch('/agents/chat', {
+    method: 'POST',
+    body: JSON.stringify({message: 'สวัสดี', agentType: 'sales-assistant', tenantId: 'default'}),
+  }).then(function(res) {
+    btn.textContent = 'Test Connection';
+    btn.disabled = false;
+    if (res && res.reply) {
+      alert('✅ Connection OK!\n\nAgent: ' + (res.agentUsed || 'unknown') + '\nModel: ' + (res.model || 'unknown') + '\nReply: ' + res.reply.substring(0, 100));
+    } else {
+      alert('⚠️ Connected but no reply: ' + JSON.stringify(res).substring(0, 200));
+    }
+  }).catch(function(err) {
+    btn.textContent = 'Test Connection';
+    btn.disabled = false;
+    alert('❌ Connection failed: ' + (err.message || err));
+  });
+}
+
+function loadAIConfig() {
+  apiFetch('/settings/ai').then(function(res) {
+    if (!res) return;
+    if (res.bedrockRegion) document.getElementById('ai-region').value = res.bedrockRegion;
+    if (res.accessKeyId) document.getElementById('ai-access-key').value = res.accessKeyId;
+    if (res.secretAccessKey) document.getElementById('ai-secret-key').value = '••••••••';
+    if (res.chatModel) document.getElementById('ai-chat-model').value = res.chatModel;
+    if (res.embedModel) document.getElementById('ai-embed-model').value = res.embedModel;
+    if (res.knowledgeBaseId) document.getElementById('ai-kb-id').value = res.knowledgeBaseId;
+    if (res.promptSales) document.getElementById('ai-prompt-sales').value = res.promptSales;
+    if (res.promptAdmin) document.getElementById('ai-prompt-admin').value = res.promptAdmin;
+    if (res.promptAnalytics) document.getElementById('ai-prompt-analytics').value = res.promptAnalytics;
+  }).catch(function(){});
+}
+// Load AI config on page load
+setTimeout(loadAIConfig, 500);
   btn.parentElement.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
   btn.classList.add('active');
 }
