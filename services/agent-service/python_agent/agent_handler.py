@@ -1,38 +1,41 @@
 """
 SalesFAST 7 — Multi-Agent (AgentCore Runtime)
-Calls Tool Lambda directly via boto3 (bypasses MCP prefix issue).
+Calls tools via AgentCore Gateway MCP endpoint.
 """
-import json, os, traceback, boto3
+import json, os, traceback, boto3, urllib.request, urllib.error
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 PORT = int(os.environ.get("PORT", "8080"))
 REGION = os.environ.get("BEDROCK_REGION", os.environ.get("AWS_REGION", "ap-southeast-1"))
 MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "apac.anthropic.claude-sonnet-4-20250514-v1:0")
-TOOL_LAMBDA = os.environ.get("TOOL_LAMBDA", "sf7-prod-agent-tools")
+GATEWAY_URL = os.environ.get("GATEWAY_URL", "https://sf7-crm-gateway-zd795zpjtz.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp")
 
 bedrock = boto3.client("bedrock-runtime", region_name=REGION)
-lam = boto3.client("lambda", region_name=REGION)
 
+# Tool definitions for Bedrock Converse
 TOOLS_SCHEMA = [
-    {"name":"search_leads","description":"ค้นหา Lead ตาม status/ชื่อ/assigned","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"status":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId"]}}},
+    {"name":"search_leads","description":"ค้นหา Lead ตาม status/ชื่อ","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"status":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId"]}}},
     {"name":"assign_lead","description":"มอบหมาย Lead ให้ Sales Rep","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"leadId":{"type":"string"},"assignToUserId":{"type":"string"},"assignToName":{"type":"string"}},"required":["tenantId","leadId","assignToUserId","assignToName"]}}},
     {"name":"create_lead","description":"สร้าง Lead ใหม่","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"name":{"type":"string"},"companyName":{"type":"string"},"phone":{"type":"string"},"email":{"type":"string"},"source":{"type":"string"},"notes":{"type":"string"}},"required":["tenantId","name"]}}},
-    {"name":"search_accounts","description":"ค้นหา Account ตามชื่อบริษัท","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId","search"]}}},
+    {"name":"search_accounts","description":"ค้นหา Account","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId","search"]}}},
     {"name":"get_account_detail","description":"ดูรายละเอียด Account","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"accountId":{"type":"string"}},"required":["tenantId","accountId"]}}},
     {"name":"search_products","description":"ค้นหาสินค้า","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"search":{"type":"string"},"category":{"type":"string"}},"required":["tenantId"]}}},
     {"name":"create_quotation","description":"สร้างใบเสนอราคา","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"accountId":{"type":"string"},"lineItems":{"type":"array"},"notes":{"type":"string"}},"required":["tenantId","accountId","lineItems"]}}},
     {"name":"approve_quotation","description":"อนุมัติใบเสนอราคา","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"quotationId":{"type":"string"},"approvedBy":{"type":"string"}},"required":["tenantId","quotationId","approvedBy"]}}},
     {"name":"search_tasks","description":"ค้นหา Task","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"assignedTo":{"type":"string"},"status":{"type":"string"},"overdue":{"type":"boolean"}},"required":["tenantId"]}}},
-    {"name":"create_task","description":"สร้าง Task ใหม่","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"title":{"type":"string"},"assignedTo":{"type":"string"},"dueDate":{"type":"string"},"priority":{"type":"string"}},"required":["tenantId","title","assignedTo","dueDate"]}}},
-    {"name":"search_opportunities","description":"ค้นหา Deal/Opportunity","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"stage":{"type":"string"},"ownerId":{"type":"string"}},"required":["tenantId"]}}},
+    {"name":"create_task","description":"สร้าง Task","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"title":{"type":"string"},"assignedTo":{"type":"string"},"dueDate":{"type":"string"},"priority":{"type":"string"}},"required":["tenantId","title","assignedTo","dueDate"]}}},
+    {"name":"search_opportunities","description":"ค้นหา Deal","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"stage":{"type":"string"},"ownerId":{"type":"string"}},"required":["tenantId"]}}},
     {"name":"get_kpi_summary","description":"ดึง KPI สรุป","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"period":{"type":"string"}},"required":["tenantId"]}}},
     {"name":"get_pipeline_analysis","description":"วิเคราะห์ pipeline","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"}},"required":["tenantId"]}}},
-    {"name":"get_revenue_data","description":"ดึง revenue รายเดือน","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"year":{"type":"number"}},"required":["tenantId"]}}},
+    {"name":"get_revenue_data","description":"ดึง revenue","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"year":{"type":"number"}},"required":["tenantId"]}}},
     {"name":"get_forecast","description":"พยากรณ์ revenue","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"}},"required":["tenantId"]}}},
     {"name":"get_users","description":"ดึงรายชื่อ Users","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"}},"required":["tenantId"]}}},
     {"name":"log_activity","description":"บันทึก Activity","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"entityType":{"type":"string"},"entityId":{"type":"string"},"summary":{"type":"string"}},"required":["tenantId","entityType","entityId","summary"]}}},
     {"name":"send_notification","description":"ส่ง notification","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"userId":{"type":"string"},"type":{"type":"string"},"title":{"type":"string"},"body":{"type":"string"}},"required":["tenantId","userId","type","title","body"]}}},
 ]
+
+# Map: model tool name → Gateway prefixed name
+GATEWAY_PREFIX = "sf7-crm-tools___"
 
 SYSTEM_PROMPTS = {
     "sales-assistant": "คุณเป็น Sales Assistant ชื่อ น้องขายไว ตอบภาษาไทย ใช้ค่ะ ใช้ tools ดึงข้อมูลจริง ตอบสั้นกระชับ ใช้ tenantId=default",
@@ -41,25 +44,60 @@ SYSTEM_PROMPTS = {
 }
 
 
-def call_tool(name, args):
-    """Invoke Tool Lambda directly."""
-    resp = lam.invoke(
-        FunctionName=TOOL_LAMBDA,
-        Payload=json.dumps({"name": name, "arguments": args}).encode()
+def call_tool_via_gateway(tool_name, arguments):
+    """Call tool through AgentCore Gateway MCP endpoint."""
+    gateway_tool_name = GATEWAY_PREFIX + tool_name
+
+    # MCP tools/call request
+    mcp_request = {
+        "jsonrpc": "2.0",
+        "id": "1",
+        "method": "tools/call",
+        "params": {
+            "name": gateway_tool_name,
+            "arguments": arguments
+        }
+    }
+
+    data = json.dumps(mcp_request).encode()
+    req = urllib.request.Request(
+        GATEWAY_URL,
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST"
     )
-    result = json.loads(resp["Payload"].read().decode())
-    body = result.get("body", "{}")
-    return json.loads(body) if isinstance(body, str) else body
+
+    try:
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            result = json.loads(resp.read().decode())
+            # MCP response format
+            if "result" in result:
+                content = result["result"].get("content", [])
+                if content and isinstance(content, list):
+                    texts = [c.get("text", "") for c in content if c.get("type") == "text"]
+                    combined = "\n".join(texts)
+                    try:
+                        return json.loads(combined)
+                    except:
+                        return {"result": combined}
+                return result["result"]
+            elif "error" in result:
+                return {"error": result["error"]}
+            return result
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()[:300] if e.fp else ""
+        return {"error": f"Gateway HTTP {e.code}", "detail": body}
+    except Exception as e:
+        return {"error": f"Gateway error: {str(e)}"}
 
 
 def invoke_agent(agent_type, message):
-    """Converse with tool use loop."""
+    """Converse with tool use loop via Gateway."""
     system = SYSTEM_PROMPTS.get(agent_type, SYSTEM_PROMPTS["sales-assistant"])
     tools_config = {"tools": [{"toolSpec": {"name": t["name"], "description": t["description"], "inputSchema": t["inputSchema"]}} for t in TOOLS_SCHEMA]}
-
     messages = [{"role": "user", "content": [{"text": message}]}]
 
-    for _ in range(5):  # max 5 tool rounds
+    for _ in range(5):
         resp = bedrock.converse(
             modelId=MODEL_ID,
             system=[{"text": system}],
@@ -70,20 +108,16 @@ def invoke_agent(agent_type, message):
         output = resp["output"]["message"]
         messages.append(output)
 
-        # Check if model wants to use tools
         tool_uses = [b for b in output["content"] if "toolUse" in b]
         if not tool_uses:
-            # No tool call — extract text
-            texts = [b["text"] for b in output["content"] if "text" in b]
-            return "\n".join(texts)
+            return "\n".join(b["text"] for b in output["content"] if "text" in b)
 
-        # Execute tools
         tool_results = []
         for tu in tool_uses:
             tool = tu["toolUse"]
-            print(f"[TOOL] {tool['name']}({json.dumps(tool['input'], ensure_ascii=False)[:100]})")
+            print(f"[GATEWAY] {tool['name']}({json.dumps(tool['input'], ensure_ascii=False)[:80]})")
             try:
-                result = call_tool(tool["name"], tool["input"])
+                result = call_tool_via_gateway(tool["name"], tool["input"])
                 tool_results.append({"toolResult": {"toolUseId": tool["toolUseId"], "content": [{"json": result}]}})
             except Exception as e:
                 tool_results.append({"toolResult": {"toolUseId": tool["toolUseId"], "content": [{"text": f"Error: {e}"}], "status": "error"}})
@@ -113,17 +147,14 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path == "/invocations":
             body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
-            try:
-                p = json.loads(body)
-            except:
-                p = {"message": body.decode()}
+            try: p = json.loads(body)
+            except: p = {"message": body.decode()}
             msg = p.get("message", p.get("prompt", str(p)))
             at = p.get("agentType", "auto")
             if at == "auto": at = detect_agent(msg)
-
             try:
                 reply = invoke_agent(at, msg)
-                out = json.dumps({"reply": reply, "agentUsed": at, "model": MODEL_ID}, ensure_ascii=False)
+                out = json.dumps({"reply": reply, "agentUsed": at, "model": MODEL_ID, "via": "AgentCore Gateway"}, ensure_ascii=False)
             except Exception as e:
                 print(f"[ERR] {traceback.format_exc()}")
                 out = json.dumps({"reply": f"ขออภัยค่ะ: {e}", "error": str(e), "agentUsed": at}, ensure_ascii=False)
@@ -139,5 +170,5 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    print(f"[START] port={PORT} model={MODEL_ID}")
+    print(f"[START] port={PORT} model={MODEL_ID} gateway={GATEWAY_URL}")
     HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
