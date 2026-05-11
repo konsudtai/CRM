@@ -1,4 +1,4 @@
-"""SalesFAST 7 — Universal Agent Handler. Uses AGENT_ROLE env + configurable Bedrock credentials."""
+"""SalesFAST 7 — Universal Agent Handler. Reads config from DynamoDB (Settings UI)."""
 import json, os, traceback, boto3, urllib.request, urllib.error
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -7,21 +7,48 @@ AGENT_ROLE = os.environ.get("AGENT_ROLE", "sales-assistant")
 GATEWAY_URL = os.environ.get("GATEWAY_URL", "https://sf7-crm-gateway-zd795zpjtz.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp")
 SALES_ARN = os.environ.get("SALES_RUNTIME_ARN", "")
 ANALYTICS_ARN = os.environ.get("ANALYTICS_RUNTIME_ARN", "")
+AI_STATE_TABLE = os.environ.get("AI_STATE_TABLE", "sf7-prod-ai-state")
+CONFIG_TENANT = os.environ.get("CONFIG_TENANT_ID", "default")
 
-# Bedrock config — reads from ENV (settable via Settings UI)
-BEDROCK_ACCESS_KEY = os.environ.get("BEDROCK_ACCESS_KEY", "")
-BEDROCK_SECRET_KEY = os.environ.get("BEDROCK_SECRET_KEY", "")
-BEDROCK_REGION = os.environ.get("BEDROCK_REGION", os.environ.get("AWS_REGION", "ap-southeast-1"))
-BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "apac.anthropic.claude-sonnet-4-20250514-v1:0")
+# Defaults (used if DynamoDB config not found)
+DEFAULT_REGION = os.environ.get("BEDROCK_REGION", "ap-southeast-1")
+DEFAULT_MODEL = os.environ.get("BEDROCK_MODEL_ID", "apac.anthropic.claude-sonnet-4-20250514-v1:0")
 
-# Create Bedrock client with custom credentials if provided, else use IAM Role
-def create_bedrock_client():
-    if BEDROCK_ACCESS_KEY and BEDROCK_SECRET_KEY:
-        return boto3.client("bedrock-runtime", region_name=BEDROCK_REGION,
-            aws_access_key_id=BEDROCK_ACCESS_KEY, aws_secret_access_key=BEDROCK_SECRET_KEY)
-    return boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
+# Cache config from DynamoDB
+_config_cache = None
+_config_ts = 0
 
-bedrock = create_bedrock_client()
+def load_config():
+    """Load AI config from DynamoDB (cached 60s)."""
+    global _config_cache, _config_ts
+    import time
+    if _config_cache and (time.time() - _config_ts) < 60:
+        return _config_cache
+    try:
+        ddb = boto3.client("dynamodb", region_name="ap-southeast-1")
+        res = ddb.get_item(TableName=AI_STATE_TABLE, Key={"pk":{"S":f"TENANT#{CONFIG_TENANT}"},"sk":{"S":"CONFIG#ai"}})
+        if res.get("Item"):
+            _config_cache = json.loads(res["Item"]["data"]["S"])
+            _config_ts = time.time()
+            return _config_cache
+    except Exception as e:
+        print(f"[CONFIG] Error loading: {e}")
+    return {}
+
+def get_bedrock_client():
+    """Create Bedrock client using config from Settings UI or ENV fallback."""
+    cfg = load_config()
+    access_key = cfg.get("accessKeyId", os.environ.get("BEDROCK_ACCESS_KEY", ""))
+    secret_key = cfg.get("secretAccessKey", os.environ.get("BEDROCK_SECRET_KEY", ""))
+    region = cfg.get("bedrockRegion", DEFAULT_REGION)
+    if access_key and secret_key and secret_key != "••••••••":
+        return boto3.client("bedrock-runtime", region_name=region, aws_access_key_id=access_key, aws_secret_access_key=secret_key), region
+    return boto3.client("bedrock-runtime", region_name=region), region
+
+def get_model_id():
+    cfg = load_config()
+    return cfg.get("chatModel", DEFAULT_MODEL)
+
 ac = boto3.client("bedrock-agentcore", region_name="ap-southeast-1")
 GP = "sf7-crm-tools___"
 
@@ -44,8 +71,8 @@ CONFIGS = {
 }
 
 ALL_TOOLS = {
-    "search_leads":{"description":"ค้นหา Lead ตาม status/ชื่อ/assigned","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"status":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId"]}}},
-    "assign_lead":{"description":"มอบหมาย Lead ให้ Sales Rep","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"leadId":{"type":"string"},"assignToUserId":{"type":"string"},"assignToName":{"type":"string"}},"required":["tenantId","leadId","assignToUserId","assignToName"]}}},
+    "search_leads":{"description":"ค้นหา Lead","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"status":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId"]}}},
+    "assign_lead":{"description":"มอบหมาย Lead","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"leadId":{"type":"string"},"assignToUserId":{"type":"string"},"assignToName":{"type":"string"}},"required":["tenantId","leadId","assignToUserId","assignToName"]}}},
     "create_lead":{"description":"สร้าง Lead ใหม่","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"name":{"type":"string"},"companyName":{"type":"string"},"phone":{"type":"string"},"email":{"type":"string"},"source":{"type":"string"},"notes":{"type":"string"}},"required":["tenantId","name"]}}},
     "search_accounts":{"description":"ค้นหา Account","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId","search"]}}},
     "get_account_detail":{"description":"ดูรายละเอียด Account","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"accountId":{"type":"string"}},"required":["tenantId","accountId"]}}},
@@ -62,8 +89,8 @@ ALL_TOOLS = {
     "get_users":{"description":"ดึงรายชื่อ Users","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"}},"required":["tenantId"]}}},
     "log_activity":{"description":"บันทึก Activity","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"entityType":{"type":"string"},"entityId":{"type":"string"},"summary":{"type":"string"}},"required":["tenantId","entityType","entityId","summary"]}}},
     "send_notification":{"description":"ส่ง notification","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"userId":{"type":"string"},"type":{"type":"string"},"title":{"type":"string"},"body":{"type":"string"}},"required":["tenantId","userId","type","title","body"]}}},
-    "ask_sales_assistant":{"description":"ถามน้องขายไว เรื่อง CRM/Lead/Account/QT","inputSchema":{"json":{"type":"object","properties":{"question":{"type":"string"}},"required":["question"]}}},
-    "ask_analytics":{"description":"ถามน้องวิ วิเคราะห์ KPI/forecast/pipeline","inputSchema":{"json":{"type":"object","properties":{"question":{"type":"string"}},"required":["question"]}}},
+    "ask_sales_assistant":{"description":"ถามน้องขายไว เรื่อง CRM","inputSchema":{"json":{"type":"object","properties":{"question":{"type":"string"}},"required":["question"]}}},
+    "ask_analytics":{"description":"ถามน้องวิ วิเคราะห์","inputSchema":{"json":{"type":"object","properties":{"question":{"type":"string"}},"required":["question"]}}},
 }
 
 def call_gw(name, args):
@@ -96,11 +123,20 @@ def sanitize(c):
 
 def invoke(message):
     cfg = CONFIGS.get(AGENT_ROLE, CONFIGS["sales-assistant"])
+    # Get custom prompt from Settings if available
+    db_cfg = load_config()
+    prompt_key = {"sales-assistant":"promptSales","admin-ai":"promptAdmin","analytics":"promptAnalytics"}.get(AGENT_ROLE)
+    system = db_cfg.get(prompt_key, cfg["system"]) if db_cfg.get(prompt_key) else cfg["system"]
+
     tool_names = cfg["tools"]
     tools_config = {"tools": [{"toolSpec":{"name":n,"description":ALL_TOOLS[n]["description"],"inputSchema":ALL_TOOLS[n]["inputSchema"]}} for n in tool_names]}
     messages = [{"role":"user","content":[{"text":message}]}]
+
+    bedrock, region = get_bedrock_client()
+    model_id = get_model_id()
+
     for _ in range(6):
-        resp = bedrock.converse(modelId=BEDROCK_MODEL_ID, system=[{"text":cfg["system"]}], messages=messages, toolConfig=tools_config, inferenceConfig={"maxTokens":2048,"temperature":0.3})
+        resp = bedrock.converse(modelId=model_id, system=[{"text":system}], messages=messages, toolConfig=tools_config, inferenceConfig={"maxTokens":2048,"temperature":0.3})
         out = resp["output"]["message"]
         out["content"] = sanitize(out["content"])
         messages.append(out)
@@ -130,14 +166,18 @@ class H(BaseHTTPRequestHandler):
             except: p={"message":body.decode()}
             msg=p.get("message",p.get("prompt",str(p)))
             cfg=CONFIGS.get(AGENT_ROLE,CONFIGS["sales-assistant"])
-            try: reply=invoke(msg);out=json.dumps({"reply":reply,"agentUsed":cfg["name"],"model":BEDROCK_MODEL_ID,"via":"AgentCore Gateway"},ensure_ascii=False)
-            except Exception as e: print(f"[ERR]{traceback.format_exc()}");out=json.dumps({"reply":f"ขออภัยค่ะ: {e}","error":str(e),"agentUsed":cfg["name"]},ensure_ascii=False)
+            try:
+                reply=invoke(msg)
+                model_id=get_model_id()
+                out=json.dumps({"reply":reply,"agentUsed":cfg["name"],"model":model_id,"via":"AgentCore Gateway"},ensure_ascii=False)
+            except Exception as e:
+                print(f"[ERR]{traceback.format_exc()}")
+                out=json.dumps({"reply":f"ขออภัยค่ะ: {e}","error":str(e),"agentUsed":cfg["name"]},ensure_ascii=False)
             self.send_response(200);self.send_header("Content-Type","application/json");self.end_headers();self.wfile.write(out.encode())
         else: self.send_response(404);self.end_headers()
     def log_message(self,*a): pass
 
 if __name__=="__main__":
     cfg=CONFIGS.get(AGENT_ROLE,CONFIGS["sales-assistant"])
-    cred_mode = "API Key" if BEDROCK_ACCESS_KEY else "IAM Role"
-    print(f"[{cfg['name']}] role={AGENT_ROLE} model={BEDROCK_MODEL_ID} region={BEDROCK_REGION} auth={cred_mode}")
+    print(f"[{cfg['name']}] role={AGENT_ROLE} table={AI_STATE_TABLE} (reads config from DynamoDB)")
     HTTPServer(("0.0.0.0",PORT),H).serve_forever()
