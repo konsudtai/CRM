@@ -60,7 +60,6 @@ async function getAIConfig(tenantId: string): Promise<{ modelId: string; region:
     console.warn('Failed to load AI config from DynamoDB:', err.message);
   }
 
-  // Fallback defaults
   cachedConfig = {
     modelId: DEFAULT_MODEL_ID,
     region: DEFAULT_REGION,
@@ -71,31 +70,23 @@ async function getAIConfig(tenantId: string): Promise<{ modelId: string; region:
   return cachedConfig;
 }
 
-function getBedrockClient(config: { region: string; apiKey?: string }): BedrockRuntimeClient {
-  // Always use Lambda IAM Role — VPC has bedrock-runtime endpoint
-  return new BedrockRuntimeClient({ region: config.region });
-}
-
-// Invoke Bedrock via proxy Lambda (outside VPC — has internet access)
-async function converseWithBearerToken(config: { region: string; modelId: string; apiKey: string; temperature: number; maxTokens: number }, body: any): Promise<any> {
+// Invoke Bedrock via proxy Lambda (outside VPC — has internet for cross-account API Key)
+async function invokeBedrockProxy(config: { region: string; modelId: string; apiKey: string }, body: any): Promise<any> {
   const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
   const lambdaClient = new LambdaClient({ region: config.region });
-  const payload = JSON.stringify({
-    region: config.region,
-    modelId: config.modelId,
-    apiKey: config.apiKey,
-    body: body,
-  });
+  const payload = JSON.stringify({ region: config.region, modelId: config.modelId, apiKey: config.apiKey, body });
   const res = await lambdaClient.send(new InvokeCommand({
     FunctionName: 'sf7-prod-bedrock-proxy',
     Payload: new TextEncoder().encode(payload),
   }));
   const responseBody = new TextDecoder().decode(res.Payload);
   const data = JSON.parse(responseBody);
-  if (data.error) {
-    throw new Error(data.message || `Bedrock ${data.statusCode || 'error'}`);
-  }
+  if (data.error) throw new Error(data.message || 'Bedrock proxy error');
   return data;
+}
+
+function getBedrockClient(region: string): BedrockRuntimeClient {
+  return new BedrockRuntimeClient({ region });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -250,19 +241,18 @@ async function runAgent(message: string, agentType: string, tenantId: string, hi
     let resOutput: any;
 
     if (aiConfig.apiKey) {
-      // Use Bearer Token auth (direct HTTP — no STS needed)
-      const body: any = {
-        modelId: aiConfig.modelId,
+      // Use Bedrock Proxy Lambda (outside VPC, has internet for cross-account API Key)
+      const converseBody: any = {
         system: [{ text: SYSTEM_PROMPT + `\n\n[Context: tenantId=${tenantId}]` + (overBudget ? '\n\n[URGENT: ตอบทันทีไม่ต้องเรียก tool เพิ่ม]' : '') }],
         messages,
         inferenceConfig: { maxTokens: aiConfig.maxTokens, temperature: aiConfig.temperature },
       };
-      if (!overBudget) body.toolConfig = toolConfig;
-      const httpRes = await converseWithBearerToken(aiConfig as any, body);
-      resOutput = httpRes.output;
+      if (!overBudget) converseBody.toolConfig = toolConfig;
+      const proxyRes = await invokeBedrockProxy(aiConfig as any, converseBody);
+      resOutput = { message: proxyRes.output?.message, stopReason: proxyRes.stopReason };
     } else {
-      // Fallback: SDK with IAM Role
-      const client = getBedrockClient(aiConfig);
+      // Fallback: SDK with IAM Role (same account, via VPC Endpoint)
+      const client = getBedrockClient(aiConfig.region);
       const res = await client.send(new ConverseCommand({
         modelId: aiConfig.modelId,
         system: [{ text: SYSTEM_PROMPT + `\n\n[Context: tenantId=${tenantId}]` + (overBudget ? '\n\n[URGENT: ตอบทันทีไม่ต้องเรียก tool เพิ่ม]' : '') }],
