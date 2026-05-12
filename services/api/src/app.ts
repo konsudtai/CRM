@@ -6,6 +6,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import auth from './routes/auth.js';
 import users from './routes/users.js';
+import roles from './routes/roles.js';
 import accounts from './routes/accounts.js';
 import leads from './routes/leads.js';
 import tasks from './routes/tasks.js';
@@ -33,6 +34,7 @@ app.get('/health', (c) => c.json({ status: 'ok' }));
 // Routes
 app.route('/auth', auth);
 app.route('/users', users);
+app.route('/roles', roles);
 app.route('/accounts', accounts);
 app.route('/leads', leads);
 app.route('/tasks', tasks);

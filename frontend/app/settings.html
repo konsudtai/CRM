@@ -13,16 +13,34 @@
 .tab-btn.active{color:var(--sf-blue);font-weight:600}
 .tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:var(--sf-blue)}
 .tab-content{display:none}.tab-content.active{display:block}
-.user-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;background:var(--surface2);margin-bottom:8px;transition:background .12s}
-.user-card:hover{background:var(--row-hover)}
-.user-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.user-card{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:12px;background:var(--surface);margin-bottom:10px;transition:all .15s;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.user-card:hover{background:var(--row-hover);border-color:var(--sf-blue);box-shadow:0 2px 8px rgba(1,118,211,.08);transform:translateY(-1px)}
+.user-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .user-info{flex:1;min-width:0}
-.user-name{font-size:13px;font-weight:600}
-.user-email{font-size:11px;color:var(--text3);margin-top:1px}
-.user-actions{display:flex;gap:6px}
-.user-action-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:11px;font-weight:500;font-family:inherit;color:var(--text2);transition:all .12s}
-.user-action-btn:hover{border-color:var(--sf-blue);color:var(--sf-blue)}
-.user-action-btn.danger:hover{border-color:#C23934;color:#C23934}
+.user-name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.user-email{font-size:11px;color:var(--text3);margin-top:2px}
+.user-role-badge{font-size:10px;font-weight:600;padding:2px 10px;border-radius:20px;white-space:nowrap}
+.user-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.user-actions{display:flex;gap:6px;opacity:0;transition:opacity .15s}
+.user-card:hover .user-actions{opacity:1}
+.user-action-btn{padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:11px;font-weight:500;font-family:inherit;color:var(--text2);transition:all .12s;display:inline-flex;align-items:center;gap:4px}
+.user-action-btn:hover{border-color:var(--sf-blue);color:var(--sf-blue);background:rgba(1,118,211,.04)}
+.user-action-btn.danger:hover{border-color:#C23934;color:#C23934;background:rgba(194,57,52,.04)}
+.user-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.user-stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;box-shadow:var(--shadow)}
+.user-stat-num{font-size:24px;font-weight:800;color:var(--sf-blue)}
+.user-stat-label{font-size:11px;color:var(--text3);margin-top:4px;font-weight:500}
+/* Role change modal */
+.role-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.role-modal-overlay.open{display:flex}
+.role-modal{background:var(--surface);border-radius:16px;padding:28px;width:90%;max-width:440px;box-shadow:0 24px 64px rgba(0,0,0,.25);animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.role-option{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:2px solid var(--border);margin-bottom:8px;cursor:pointer;transition:all .12s}
+.role-option:hover{border-color:var(--sf-blue);background:rgba(1,118,211,.03)}
+.role-option.selected{border-color:var(--sf-blue);background:rgba(1,118,211,.06)}
+.role-option-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.role-option-name{font-size:13px;font-weight:600}
+.role-option-desc{font-size:11px;color:var(--text3)}
 .perm-grid{display:grid;grid-template-columns:140px repeat(4,1fr);gap:0;font-size:12px}
 .perm-header{padding:8px 10px;font-weight:600;color:var(--text2);background:var(--surface2);border-bottom:1px solid var(--border)}
 .perm-cell{padding:8px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center}
@@ -70,24 +88,50 @@
 
   <!-- Tab: Users -->
   <div class="tab-content active" id="tab-users">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <input class="search-input" id="user-search" placeholder="Search by name or email..." style="max-width:300px" oninput="renderUsers()"/>
-      <button class="btn btn-primary" onclick="openAddUser()">+ Add User</button>
+    <!-- Stats -->
+    <div class="user-stats" id="user-stats"></div>
+
+    <!-- Toolbar -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:200px">
+        <div style="position:relative;flex:1;max-width:320px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="sf7-form-input" id="user-search" placeholder="ค้นหาชื่อ, อีเมล..." style="padding-left:36px;height:38px" oninput="renderUsers()"/>
+        </div>
+        <select class="sf7-form-input" id="user-filter-role" style="width:140px;height:38px" onchange="renderUsers()">
+          <option value="">ทุก Role</option>
+        </select>
+        <select class="sf7-form-input" id="user-filter-status" style="width:130px;height:38px" onchange="renderUsers()">
+          <option value="">ทุกสถานะ</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="openAddUser()" style="height:38px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        เพิ่มผู้ใช้
+      </button>
     </div>
+
+    <!-- User List -->
     <div id="user-list"></div>
+    <div id="user-count" style="margin-top:12px;font-size:11px;color:var(--text3);text-align:right"></div>
 
     <!-- Add User Form (hidden) -->
     <div id="add-user-form" style="display:none">
-      <div class="card" style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Add New User</div>
+      <div class="card" style="margin-bottom:16px;border:2px solid var(--sf-blue);border-radius:14px;padding:20px">
+        <div style="font-size:14px;font-weight:700;color:var(--sf-blue);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          เพิ่มผู้ใช้ใหม่
+        </div>
         <form onsubmit="saveUser(event)">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="sf7-form-group"><label class="sf7-form-label">First Name *</label><input class="sf7-form-input" id="u-first" required/></div>
-            <div class="sf7-form-group"><label class="sf7-form-label">Last Name *</label><input class="sf7-form-input" id="u-last" required/></div>
+            <div class="sf7-form-group"><label class="sf7-form-label">ชื่อ *</label><input class="sf7-form-input" id="u-first" required placeholder="ชื่อจริง"/></div>
+            <div class="sf7-form-group"><label class="sf7-form-label">นามสกุล *</label><input class="sf7-form-input" id="u-last" required placeholder="นามสกุล"/></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-            <div class="sf7-form-group"><label class="sf7-form-label">Email *</label><input class="sf7-form-input" id="u-email" type="email" required/></div>
-            <div class="sf7-form-group"><label class="sf7-form-label">Phone</label><input class="sf7-form-input" id="u-phone"/></div>
+            <div class="sf7-form-group"><label class="sf7-form-label">อีเมล *</label><input class="sf7-form-input" id="u-email" type="email" required placeholder="email@company.com"/></div>
+            <div class="sf7-form-group"><label class="sf7-form-label">เบอร์โทร</label><input class="sf7-form-input" id="u-phone" placeholder="08x-xxx-xxxx"/></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
             <div class="sf7-form-group"><label class="sf7-form-label">Role *</label>
@@ -101,11 +145,14 @@
                 <option value="Viewer">Viewer</option>
               </select>
             </div>
-            <div class="sf7-form-group"><label class="sf7-form-label">Temporary Password *</label><input class="sf7-form-input" id="u-pass" type="password" required minlength="8" placeholder="Min 8 characters"/></div>
+            <div class="sf7-form-group"><label class="sf7-form-label">รหัสผ่านชั่วคราว *</label><input class="sf7-form-input" id="u-pass" type="password" required minlength="8" placeholder="อย่างน้อย 8 ตัวอักษร"/></div>
           </div>
-          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-            <button type="button" class="btn btn-secondary" onclick="closeAddUser()">Cancel</button>
-            <button type="submit" class="btn btn-primary">Create User</button>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">
+            <button type="button" class="btn btn-secondary" onclick="closeAddUser()">ยกเลิก</button>
+            <button type="submit" class="btn btn-primary" id="btn-create-user">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+              สร้างผู้ใช้
+            </button>
           </div>
         </form>
       </div>
@@ -114,13 +161,29 @@
 
   <!-- Tab: Roles & Permissions -->
   <div class="tab-content" id="tab-roles">
-    <div class="card">
-      <div style="font-size:13px;font-weight:700;color:var(--sf-blue);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)">Permission Matrix</div>
+    <div class="card" style="border-radius:14px;padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:700;color:var(--sf-blue);display:flex;align-items:center;gap:8px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Permission Matrix
+        </div>
+        <button class="btn btn-secondary" id="btn-edit-perms" onclick="togglePermEdit()" style="font-size:11px;padding:5px 12px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          แก้ไข
+        </button>
+      </div>
       <div style="overflow-x:auto">
         <div class="perm-grid" id="perm-grid"></div>
       </div>
-      <div style="margin-top:16px;padding:10px 14px;border-radius:8px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1);font-size:11px;color:var(--text2)">
-        <strong style="color:var(--sf-blue)">Note:</strong> Sales Manager has the highest approval authority for quotations. Accounting can view and update quotation status. Support can manage customer tasks. Marketing has read-only access to leads and dashboard. Only Admin can manage users and settings.
+      <div id="perm-save-bar" style="display:none;margin-top:16px;padding:12px 16px;border-radius:10px;background:rgba(1,118,211,.06);border:1px solid rgba(1,118,211,.15);display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:12px;color:var(--sf-blue);font-weight:500">มีการเปลี่ยนแปลง — กดบันทึกเพื่ออัปเดต permissions</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary" onclick="cancelPermEdit()" style="font-size:11px;padding:5px 12px">ยกเลิก</button>
+          <button class="btn btn-primary" onclick="savePermissions()" style="font-size:11px;padding:5px 12px">บันทึก</button>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:12px 14px;border-radius:10px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1);font-size:11px;color:var(--text2)">
+        <strong style="color:var(--sf-blue)">หมายเหตุ:</strong> Sales Manager มีสิทธิ์อนุมัติใบเสนอราคาสูงสุด · Accounting ดูและอัปเดตสถานะใบเสนอราคาได้ · Support จัดการ tasks ลูกค้า · Marketing อ่านอย่างเดียว · Admin จัดการทุกอย่าง
       </div>
     </div>
   </div>
@@ -587,8 +650,10 @@ var USERS = [];
 var ROLES = [];
 var MODULES = ['Dashboard','Accounts','Pipeline','Tasks','Calendar','Quotations','Products','Settings'];
 var PERMS = {};
+var permEditMode = false;
 
 var roleColors = { 'Admin':'#0176D3', 'Sales Manager':'#2E844A', 'Sales Rep':'#DD7A01', 'Accounting':'#7F56D9', 'Support':'#0B827C', 'Marketing':'#C23934', 'Viewer':'#939393' };
+var roleDescriptions = { 'Admin':'จัดการระบบทั้งหมด', 'Sales Manager':'อนุมัติ QT, ดูแลทีม', 'Sales Rep':'จัดการ Lead & ลูกค้า', 'Accounting':'ดูแลใบเสนอราคา', 'Support':'ดูแล Tasks ลูกค้า', 'Marketing':'ดู Dashboard & Leads', 'Viewer':'ดูข้อมูลอย่างเดียว' };
 
 // ── Load users and roles from API ──
 async function loadSettingsData() {
@@ -605,8 +670,8 @@ async function loadSettingsData() {
           last: u.lastName || u.last_name || '',
           email: u.email || '',
           phone: u.phone || '',
-          role: u.role || (u.roles && u.roles[0] && u.roles[0].name) || 'Viewer',
-          active: u.isActive !== undefined ? u.isActive : true,
+          role: u.role || (u.roles && u.roles[0]) || 'Viewer',
+          active: u.is_active !== undefined ? u.is_active : (u.isActive !== undefined ? u.isActive : true),
         };
       });
     }
@@ -625,7 +690,15 @@ async function loadSettingsData() {
         }
       });
     }
+    // Populate role filter dropdown
+    var filterEl = document.getElementById('user-filter-role');
+    if (filterEl && ROLES.length) {
+      filterEl.innerHTML = '<option value="">ทุก Role</option>' + ROLES.map(function(r){
+        return '<option value="'+esc(r)+'">'+esc(r)+'</option>';
+      }).join('');
+    }
   } catch(e) { console.error('Settings data load error:', e); }
+  renderUserStats();
   renderUsers();
   renderPermissions();
 }
@@ -638,32 +711,103 @@ function showTab(id, btn) {
   btn.classList.add('active');
 }
 
+// ── User Stats ──
+function renderUserStats() {
+  var total = USERS.length;
+  var active = USERS.filter(function(u){ return u.active; }).length;
+  var inactive = total - active;
+  var roles = {};
+  USERS.forEach(function(u){ roles[u.role] = (roles[u.role]||0) + 1; });
+  var topRole = Object.keys(roles).sort(function(a,b){ return roles[b]-roles[a]; })[0] || '-';
+  document.getElementById('user-stats').innerHTML =
+    '<div class="user-stat-card"><div class="user-stat-num">'+total+'</div><div class="user-stat-label">ผู้ใช้ทั้งหมด</div></div>' +
+    '<div class="user-stat-card"><div class="user-stat-num" style="color:#2E844A">'+active+'</div><div class="user-stat-label">Active</div></div>' +
+    '<div class="user-stat-card"><div class="user-stat-num" style="color:#C23934">'+inactive+'</div><div class="user-stat-label">Inactive</div></div>' +
+    '<div class="user-stat-card"><div class="user-stat-num" style="color:#7F56D9;font-size:16px">'+esc(topRole)+'</div><div class="user-stat-label">Role ที่มากที่สุด</div></div>';
+}
+
 function renderUsers() {
   var q = (document.getElementById('user-search').value || '').toLowerCase();
+  var roleFilter = document.getElementById('user-filter-role') ? document.getElementById('user-filter-role').value : '';
+  var statusFilter = document.getElementById('user-filter-status') ? document.getElementById('user-filter-status').value : '';
   var filtered = USERS.filter(function(u) {
-    return (u.first + ' ' + u.last + ' ' + u.email).toLowerCase().indexOf(q) >= 0;
+    var matchText = (u.first + ' ' + u.last + ' ' + u.email).toLowerCase().indexOf(q) >= 0;
+    var matchRole = !roleFilter || u.role === roleFilter;
+    var matchStatus = !statusFilter || (statusFilter === 'active' ? u.active : !u.active);
+    return matchText && matchRole && matchStatus;
   });
   document.getElementById('user-list').innerHTML = filtered.map(function(u) {
     var initials = (u.first[0] || '') + (u.last[0] || '');
     var color = roleColors[u.role] || '#939393';
     return '<div class="user-card">' +
-      '<div class="user-av" style="background:' + color + '">' + initials + '</div>' +
+      '<div class="user-av" style="background:' + color + '">' + esc(initials) + '</div>' +
       '<div class="user-info">' +
-        '<div class="user-name">' + u.first + ' ' + u.last +
-          (u.active ? '' : ' <span style="font-size:10px;color:#C23934;font-weight:600">(Inactive)</span>') +
+        '<div class="user-name">' + esc(u.first) + ' ' + esc(u.last) +
+          ' <span class="user-status-dot" style="background:' + (u.active?'#2E844A':'#C23934') + '" title="' + (u.active?'Active':'Inactive') + '"></span>' +
         '</div>' +
-        '<div class="user-email">' + u.email + (u.phone ? ' / ' + u.phone : '') + '</div>' +
+        '<div class="user-email">' + esc(u.email) + (u.phone ? ' · ' + esc(u.phone) : '') + '</div>' +
       '</div>' +
-      '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:' + color + '14;color:' + color + '">' + u.role + '</span>' +
+      '<span class="user-role-badge" style="background:' + color + '14;color:' + color + '">' + esc(u.role) + '</span>' +
       '<div class="user-actions">' +
-        '<button class="user-action-btn" onclick="openEditUser(\'' + u.id + '\')">Edit</button>' +
-        '<button class="user-action-btn" onclick="changeRole(\'' + u.id + '\')">Role</button>' +
-        '<button class="user-action-btn" onclick="resetPw(\'' + u.id + '\')">Reset PW</button>' +
-        '<button class="user-action-btn danger" onclick="toggleActive(\'' + u.id + '\')">' + (u.active ? 'Deactivate' : 'Activate') + '</button>' +
-        '<button class="user-action-btn danger" onclick="deleteUser(\'' + u.id + '\')" style="color:#C23934">Delete</button>' +
+        '<button class="user-action-btn" onclick="openEditUser(\'' + u.id + '\')" title="แก้ไขข้อมูล"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> แก้ไข</button>' +
+        '<button class="user-action-btn" onclick="openRoleModal(\'' + u.id + '\')" title="เปลี่ยน Role"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Role</button>' +
+        '<button class="user-action-btn" onclick="resetPw(\'' + u.id + '\')" title="รีเซ็ตรหัสผ่าน"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> PW</button>' +
+        '<button class="user-action-btn danger" onclick="toggleActive(\'' + u.id + '\')">' + (u.active ? 'ปิด' : 'เปิด') + '</button>' +
+        '<button class="user-action-btn danger" onclick="deleteUser(\'' + u.id + '\')" title="ลบผู้ใช้"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
       '</div>' +
     '</div>';
-  }).join('') || '<div class="empty-state">No users found</div>';
+  }).join('') || '<div style="text-align:center;padding:40px;color:var(--text3)"><div style="font-size:13px;font-weight:600">ไม่พบผู้ใช้</div></div>';
+  var countEl = document.getElementById('user-count');
+  if (countEl) countEl.textContent = 'แสดง ' + filtered.length + ' จาก ' + USERS.length + ' ผู้ใช้';
+}
+
+// ── Role Change Modal ──
+function openRoleModal(id) {
+  var u = USERS.find(function(x){ return String(x.id) === String(id); });
+  if (!u) return;
+  document.getElementById('role-modal-user-id').value = id;
+  document.getElementById('role-modal-title').textContent = 'เปลี่ยน Role — ' + u.first + ' ' + u.last;
+  var container = document.getElementById('role-modal-options');
+  var allRoles = ROLES.length ? ROLES : Object.keys(roleColors);
+  container.innerHTML = allRoles.map(function(r) {
+    var color = roleColors[r] || '#939393';
+    var desc = roleDescriptions[r] || '';
+    var selected = r === u.role ? ' selected' : '';
+    return '<div class="role-option'+selected+'" data-role="'+esc(r)+'" onclick="selectRole(this)">' +
+      '<div class="role-option-dot" style="background:'+color+'"></div>' +
+      '<div style="flex:1"><div class="role-option-name">'+esc(r)+'</div><div class="role-option-desc">'+esc(desc)+'</div></div>' +
+      (r === u.role ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+color+'" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : '') +
+    '</div>';
+  }).join('');
+  document.getElementById('role-modal').classList.add('open');
+}
+function closeRoleModal() { document.getElementById('role-modal').classList.remove('open'); }
+function selectRole(el) {
+  var role = el.dataset.role;
+  var color = roleColors[role] || '#939393';
+  el.parentElement.querySelectorAll('.role-option').forEach(function(o){ o.classList.remove('selected'); var sv=o.querySelector('svg'); if(sv)sv.remove(); });
+  el.classList.add('selected');
+  el.insertAdjacentHTML('beforeend','<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+color+'" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>');
+}
+function confirmRoleChange() {
+  var id = document.getElementById('role-modal-user-id').value;
+  var selected = document.querySelector('#role-modal-options .role-option.selected');
+  if (!selected) return;
+  var newRole = selected.dataset.role;
+  var btn = document.getElementById('btn-confirm-role');
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+  apiFetch('/dashboard/users/' + id, {
+    method: 'PATCH',
+    body: JSON.stringify({ role: newRole }),
+  }).then(function() {
+    closeRoleModal();
+    toast('เปลี่ยน Role เป็น ' + newRole + ' สำเร็จ');
+    loadSettingsData();
+  }).catch(function(err) {
+    toast('Error: ' + err.message, 'error');
+  }).finally(function() {
+    btn.disabled = false; btn.textContent = 'บันทึก';
+  });
 }
 
 function openEditUser(id) {
@@ -682,24 +826,23 @@ function saveEditUser(e) {
   e.preventDefault();
   var id = document.getElementById('eu-id').value;
   var btn = e.target.querySelector('button[type=submit]');
-  btn.disabled = true; btn.textContent = 'Saving...';
-  fetch((window.__SF7_API_BASE__||'') + '/dashboard/users/' + id, {
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+  apiFetch('/dashboard/users/' + id, {
     method: 'PATCH',
-    headers: {'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sf7_token')||'')},
     body: JSON.stringify({
       first_name: document.getElementById('eu-first').value,
       last_name: document.getElementById('eu-last').value,
       email: document.getElementById('eu-email').value,
       phone: document.getElementById('eu-phone').value,
       role: document.getElementById('eu-role').value,
-    })
-  }).then(function(res){ return res.json().then(function(d){return{ok:res.ok,data:d}}); })
-  .then(function(r){
-    if(!r.ok) throw new Error(r.data.message||'Error');
+    }),
+  }).then(function() {
     closeEditUser();
+    toast('อัปเดตข้อมูลผู้ใช้สำเร็จ');
     loadSettingsData();
-  }).catch(function(err){ alert('Error: '+(err.message||'Unknown')); })
-  .finally(function(){ btn.disabled=false; btn.textContent='Save'; });
+  }).catch(function(err) {
+    toast('Error: ' + (err.message||'Unknown'), 'error');
+  }).finally(function(){ btn.disabled=false; btn.textContent='บันทึก'; });
 }
 
 function openAddUser() {
@@ -709,12 +852,14 @@ function openAddUser() {
   document.getElementById('u-email').value = '';
   document.getElementById('u-phone').value = '';
   document.getElementById('u-pass').value = '';
-  window.scrollTo(0, document.getElementById('add-user-form').offsetTop - 80);
+  window.scrollTo({ top: document.getElementById('add-user-form').offsetTop - 80, behavior: 'smooth' });
 }
 function closeAddUser() { document.getElementById('add-user-form').style.display = 'none'; }
 
 function saveUser(e) {
   e.preventDefault();
+  var btn = document.getElementById('btn-create-user');
+  btn.disabled = true; btn.textContent = 'กำลังสร้าง...';
   var userData = {
     firstName: document.getElementById('u-first').value,
     lastName: document.getElementById('u-last').value,
@@ -729,44 +874,33 @@ function saveUser(e) {
   }).then(function(res) {
     if (res) {
       closeAddUser();
+      toast('สร้างผู้ใช้ ' + userData.firstName + ' สำเร็จ');
       loadSettingsData();
     }
   }).catch(function(err) {
-    alert('Error creating user: ' + err.message);
+    toast('Error: ' + err.message, 'error');
+  }).finally(function() {
+    btn.disabled = false; btn.textContent = 'สร้างผู้ใช้';
   });
 }
 
-function changeRole(id) {
-  var u = USERS.find(function(x){ return String(x.id) === String(id); });
-  if (!u) return;
-  var newRole = prompt('Change role for ' + u.first + ' ' + u.last + '\n\nCurrent: ' + u.role + '\n\nOptions: ' + ROLES.join(', '), u.role);
-  if (newRole && ROLES.indexOf(newRole) >= 0) {
-    apiFetch('/users/' + id + '/role', {
-      method: 'PATCH',
-      body: JSON.stringify({ role: newRole }),
-    }).then(function() {
-      loadSettingsData();
-    }).catch(function(err) {
-      alert('Error changing role: ' + err.message);
-    });
-  }
-}
+function changeRole(id) { openRoleModal(id); }
 
 function resetPw(id) {
   var u = USERS.find(function(x){ return String(x.id) === String(id); });
   if (!u) return;
-  var newPw = prompt('Set new temporary password for ' + u.first + ' ' + u.last + ':');
+  var newPw = prompt('ตั้งรหัสผ่านใหม่สำหรับ ' + u.first + ' ' + u.last + ':');
   if (newPw && newPw.length >= 8) {
     apiFetch('/users/' + id + '/reset-password', {
       method: 'POST',
       body: JSON.stringify({ password: newPw }),
     }).then(function() {
-      alert('Password reset for ' + u.email + '. User must change on next login.');
+      toast('รีเซ็ตรหัสผ่านสำหรับ ' + u.email + ' สำเร็จ');
     }).catch(function(err) {
-      alert('Error resetting password: ' + err.message);
+      toast('Error: ' + err.message, 'error');
     });
   } else if (newPw) {
-    alert('Password must be at least 8 characters');
+    toast('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร', 'error');
   }
 }
 
@@ -774,51 +908,47 @@ function toggleActive(id) {
   var u = USERS.find(function(x){ return String(x.id) === String(id); });
   if (!u) return;
   var action = u.active ? 'deactivate' : 'activate';
+  if (!confirm((u.active ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน') + ' "' + u.first + ' ' + u.last + '" ?')) return;
   apiFetch('/dashboard/users/' + id + '/' + action, {
     method: 'PUT',
   }).then(function() {
+    toast((u.active ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน') + ' สำเร็จ');
     loadSettingsData();
   }).catch(function(err) {
-    alert('Error updating user status: ' + err.message);
+    toast('Error: ' + err.message, 'error');
   });
 }
 
 function deleteUser(id) {
   var u = USERS.find(function(x){ return String(x.id) === String(id); });
-  if (!u) { alert('User not found in list'); return; }
-  if (!confirm('Delete user "' + u.first + ' ' + u.last + '"?\nThis will permanently remove the user from the system.')) return;
-  fetch((window.__SF7_API_BASE__||'') + '/dashboard/users/' + id, {
+  if (!u) return;
+  if (!confirm('ลบผู้ใช้ "' + u.first + ' ' + u.last + '" ?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้')) return;
+  apiFetch('/dashboard/users/' + id, {
     method: 'DELETE',
-    headers: {'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('sf7_token')||'')}
-  }).then(function(res) {
-    if (!res.ok) return res.text().then(function(t){ throw new Error('HTTP '+res.status+': '+t.slice(0,100)); });
-    return res.json();
   }).then(function() {
-    alert('Deleted successfully');
+    toast('ลบผู้ใช้สำเร็จ');
     loadSettingsData();
   }).catch(function(err) {
-    alert('Error: ' + (err&&err.message||'Unknown'));
+    toast('Error: ' + (err.message||'Unknown'), 'error');
   });
 }
 
 function renderPermissions() {
   var html = '';
-  // Header row
   html += '<div class="perm-header">Module</div>';
   ROLES.forEach(function(r) {
-    html += '<div class="perm-header" style="text-align:center;color:' + (roleColors[r] || '#939393') + '">' + r + '</div>';
+    html += '<div class="perm-header" style="text-align:center;color:' + (roleColors[r] || '#939393') + '">' + esc(r) + '</div>';
   });
-  // Module rows
   MODULES.forEach(function(m) {
-    html += '<div class="perm-module">' + m + '</div>';
+    html += '<div class="perm-module">' + esc(m) + '</div>';
     ROLES.forEach(function(r) {
-      var p = PERMS[r][m] || '';
+      var p = (PERMS[r] && PERMS[r][m]) || '';
       var checks = '';
       ['C','R','U','D'].forEach(function(action) {
         var has = p.indexOf(action) >= 0;
         var label = action === 'C' ? 'Create' : action === 'R' ? 'Read' : action === 'U' ? 'Update' : 'Delete';
-        checks += '<label style="display:flex;align-items:center;gap:2px;font-size:10px;color:var(--text3)" title="' + label + '">' +
-          '<input type="checkbox" class="perm-check" ' + (has ? 'checked' : '') + ' disabled/>' + action +
+        checks += '<label style="display:flex;align-items:center;gap:2px;font-size:10px;color:var(--text3);cursor:'+(permEditMode?'pointer':'default')+'" title="' + label + '">' +
+          '<input type="checkbox" class="perm-check" ' + (has ? 'checked' : '') + ' '+(permEditMode?'':'disabled')+' data-role="'+esc(r)+'" data-module="'+esc(m)+'" data-action="'+action+'" onchange="onPermChange()"/>' + action +
         '</label>';
       });
       html += '<div class="perm-cell" style="gap:6px">' + checks + '</div>';
@@ -826,6 +956,45 @@ function renderPermissions() {
   });
   document.getElementById('perm-grid').innerHTML = html;
   document.getElementById('perm-grid').style.gridTemplateColumns = '140px repeat(' + ROLES.length + ', 1fr)';
+}
+
+function togglePermEdit() {
+  permEditMode = !permEditMode;
+  var btn = document.getElementById('btn-edit-perms');
+  if (permEditMode) {
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> ยกเลิก';
+    btn.style.borderColor = '#C23934'; btn.style.color = '#C23934';
+  } else {
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> แก้ไข';
+    btn.style.borderColor = ''; btn.style.color = '';
+  }
+  renderPermissions();
+  document.getElementById('perm-save-bar').style.display = permEditMode ? 'none' : 'none';
+}
+function cancelPermEdit() { permEditMode = false; togglePermEdit(); loadSettingsData(); }
+function onPermChange() { document.getElementById('perm-save-bar').style.display = 'flex'; }
+function savePermissions() {
+  var permsData = {};
+  document.querySelectorAll('.perm-check').forEach(function(cb) {
+    var role = cb.dataset.role;
+    var mod = cb.dataset.module;
+    var act = cb.dataset.action;
+    if (!permsData[role]) permsData[role] = {};
+    if (!permsData[role][mod]) permsData[role][mod] = '';
+    if (cb.checked) permsData[role][mod] += act;
+  });
+  apiFetch('/roles/permissions/bulk', {
+    method: 'PUT',
+    body: JSON.stringify(permsData),
+  }).then(function() {
+    toast('บันทึก Permissions สำเร็จ');
+    permEditMode = false;
+    document.getElementById('perm-save-bar').style.display = 'none';
+    PERMS = permsData;
+    togglePermEdit();
+  }).catch(function(err) {
+    toast('Error: ' + err.message, 'error');
+  });
 }
 
 // Initial render handled by loadSettingsData()
@@ -898,6 +1067,10 @@ function showAITab(id,btn){
     var el=document.getElementById('ai-tab-'+t);
     if(el)el.style.display=t===id?'block':'none';
   });
+  var btns=btn?btn.parentElement.querySelectorAll('.tab-btn'):[];
+  for(var i=0;i<btns.length;i++){btns[i].classList.remove('active')}
+  if(btn)btn.classList.add('active');
+}
 
 // ── AI Config Save ──
 function saveAIConfig() {
@@ -916,9 +1089,9 @@ function saveAIConfig() {
     method: 'PUT',
     body: JSON.stringify(config),
   }).then(function(res) {
-    alert('✅ AI Configuration saved successfully!');
+    showPopup('success', 'AI Configuration Saved', 'บันทึกการตั้งค่า AI เรียบร้อยแล้ว ระบบจะใช้ config ใหม่ภายใน 60 วินาที');
   }).catch(function(err) {
-    alert('Error saving AI config: ' + (err.message || err));
+    showPopup('error', 'Save Failed', 'ไม่สามารถบันทึกได้: ' + (err.message || err));
   });
 }
 
@@ -933,15 +1106,58 @@ function testAIConnection() {
     btn.textContent = 'Test Connection';
     btn.disabled = false;
     if (res && res.reply) {
-      alert('✅ Connection OK!\n\nAgent: ' + (res.agentUsed || 'unknown') + '\nModel: ' + (res.model || 'unknown') + '\nReply: ' + res.reply.substring(0, 100));
+      showPopup('success', 'Connection OK!', 'Agent: ' + (res.agentUsed || '-') + '\nModel: ' + (res.model || '-') + '\n\n' + res.reply.substring(0, 120));
     } else {
-      alert('⚠️ Connected but no reply: ' + JSON.stringify(res).substring(0, 200));
+      showPopup('warning', 'Connected', 'เชื่อมต่อได้แต่ไม่มี reply');
     }
   }).catch(function(err) {
     btn.textContent = 'Test Connection';
     btn.disabled = false;
-    alert('❌ Connection failed: ' + (err.message || err));
+    showPopup('error', 'Connection Failed', (err.message || err));
   });
+}
+
+// ── Animated Popup (replaces browser alert) ──
+function showPopup(type, title, message) {
+  var existing = document.getElementById('sf7-popup-overlay');
+  if (existing) existing.remove();
+
+  var colors = {success:'#10B981',error:'#EF4444',warning:'#F59E0B',info:'#3B82F6'};
+  var icons = {success:'✓',error:'✕',warning:'!',info:'i'};
+  var color = colors[type] || colors.info;
+  var icon = icons[type] || icons.info;
+
+  var overlay = document.createElement('div');
+  overlay.id = 'sf7-popup-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);opacity:0;transition:opacity .2s ease';
+  overlay.innerHTML = '<div id="sf7-popup-box" style="background:#fff;border-radius:16px;padding:32px;max-width:420px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.2);transform:scale(.85) translateY(20px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1)">'
+    + '<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">'
+    + '<div style="width:44px;height:44px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0">'+icon+'</div>'
+    + '<div style="font-size:18px;font-weight:700;color:#1a1a2e">'+title+'</div>'
+    + '</div>'
+    + '<div style="font-size:14px;color:#555;line-height:1.6;white-space:pre-wrap;margin-bottom:24px">'+message.replace(/\n/g,'<br>')+'</div>'
+    + '<button onclick="closePopup()" style="width:100%;padding:12px;border:none;border-radius:10px;background:'+color+';color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s">OK</button>'
+    + '</div>';
+  document.body.appendChild(overlay);
+
+  // Animate in
+  requestAnimationFrame(function(){
+    overlay.style.opacity = '1';
+    document.getElementById('sf7-popup-box').style.transform = 'scale(1) translateY(0)';
+    document.getElementById('sf7-popup-box').style.opacity = '1';
+  });
+
+  // Close on overlay click
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) closePopup(); });
+}
+
+function closePopup() {
+  var overlay = document.getElementById('sf7-popup-overlay');
+  if (!overlay) return;
+  var box = document.getElementById('sf7-popup-box');
+  if (box) { box.style.transform = 'scale(.9) translateY(10px)'; box.style.opacity = '0'; }
+  overlay.style.opacity = '0';
+  setTimeout(function() { overlay.remove(); }, 250);
 }
 
 function loadAIConfig() {
@@ -960,9 +1176,6 @@ function loadAIConfig() {
 }
 // Load AI config on page load
 setTimeout(loadAIConfig, 500);
-  btn.parentElement.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
-  btn.classList.add('active');
-}
 
 function saveKBConfig(){
   var kbId=document.getElementById('ai-kb-id').value.trim();
@@ -1011,6 +1224,22 @@ setTimeout(function(){
 },200);
 </script>
 
+<!-- Role Change Modal -->
+<div class="role-modal-overlay" id="role-modal" onclick="if(event.target===this)closeRoleModal()">
+  <div class="role-modal">
+    <input type="hidden" id="role-modal-user-id"/>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700" id="role-modal-title">เปลี่ยน Role</div>
+      <button onclick="closeRoleModal()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text3);line-height:1">&times;</button>
+    </div>
+    <div id="role-modal-options"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+      <button class="btn btn-secondary" onclick="closeRoleModal()">ยกเลิก</button>
+      <button class="btn btn-primary" id="btn-confirm-role" onclick="confirmRoleChange()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
 <!-- Edit User Modal -->
 <div class="lm-modal-overlay" id="edit-user-modal" onclick="if(event.target===this)closeEditUser()">
   <div style="background:var(--surface);border-radius:16px;padding:24px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
@@ -1020,24 +1249,24 @@ setTimeout(function(){
     <form onsubmit="saveEditUser(event)">
       <input type="hidden" id="eu-id"/>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="sf7-form-group"><label class="sf7-form-label">First Name</label><input class="sf7-form-input" id="eu-first" required/></div>
-        <div class="sf7-form-group"><label class="sf7-form-label">Last Name</label><input class="sf7-form-input" id="eu-last"/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">ชื่อ</label><input class="sf7-form-input" id="eu-first" required/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">นามสกุล</label><input class="sf7-form-input" id="eu-last"/></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-        <div class="sf7-form-group"><label class="sf7-form-label">Email</label><input class="sf7-form-input" id="eu-email" type="email" required/></div>
-        <div class="sf7-form-group"><label class="sf7-form-label">Phone</label><input class="sf7-form-input" id="eu-phone"/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">อีเมล</label><input class="sf7-form-input" id="eu-email" type="email" required/></div>
+        <div class="sf7-form-group"><label class="sf7-form-label">เบอร์โทร</label><input class="sf7-form-input" id="eu-phone"/></div>
       </div>
       <div class="sf7-form-group" style="margin-top:12px"><label class="sf7-form-label">Role</label>
-        <select class="sf7-form-input" id="eu-role"><option>Admin</option><option>Sales Manager</option><option>Sales Rep</option><option>Viewer</option></select>
+        <select class="sf7-form-input" id="eu-role"><option>Admin</option><option>Sales Manager</option><option>Sales Rep</option><option>Accounting</option><option>Support</option><option>Marketing</option><option>Viewer</option></select>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
-        <button type="button" class="btn btn-secondary" onclick="closeEditUser()">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="button" class="btn btn-secondary" onclick="closeEditUser()">ยกเลิก</button>
+        <button type="submit" class="btn btn-primary">บันทึก</button>
       </div>
     </form>
   </div>
 </div>
-<style>.lm-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:none;align-items:center;justify-content:center}.lm-modal-overlay.open{display:flex}</style>
+<style>.lm-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}.lm-modal-overlay.open{display:flex}</style>
 
 </body>
 </html>

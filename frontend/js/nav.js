@@ -202,8 +202,10 @@ function initCoAgent(){
 .co-fab img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .co-badge{position:absolute;top:-2px;right:-2px;width:20px;height:20px;border-radius:50%;background:#C23934;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;animation:co-pulse 2s ease infinite}
 @keyframes co-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
-.co-panel{position:fixed;bottom:92px;right:24px;z-index:901;width:380px;max-height:520px;background:var(--surface,#fff);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.18);border:1px solid var(--border,#D4DAE3);display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateY(12px) scale(.95);transition:all .2s;overflow:hidden}
+.co-panel{position:fixed;bottom:92px;right:24px;z-index:901;width:380px;max-height:520px;background:var(--surface,#fff);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.18);border:1px solid var(--border,#D4DAE3);display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateY(12px) scale(.95);transition:all .25s cubic-bezier(.4,0,.2,1);overflow:hidden}
 .co-panel.open{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
+.co-panel.expanded{width:calc(100vw - 48px);max-width:720px;max-height:calc(100vh - 120px);bottom:60px;right:24px}
+.co-panel.expanded .co-messages{max-height:none;min-height:400px}
 .co-header{background:linear-gradient(135deg,#032D60,#0176D3);padding:16px;display:flex;align-items:center;gap:12px}
 .co-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#1B96FF,#7F56D9);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.2)}
 .co-header-info{flex:1}
@@ -233,7 +235,7 @@ function initCoAgent(){
 .co-input::placeholder{color:var(--text3,#8E9BAE)}
 .co-send{width:36px;height:36px;border-radius:50%;border:none;background:#0176D3;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .co-send:hover{background:#014486}
-@media(max-width:480px){.co-panel{width:calc(100vw - 24px);right:12px;bottom:80px;max-height:70vh}.co-fab{bottom:16px;right:16px;width:50px;height:50px}}
+@media(max-width:480px){.co-panel{width:calc(100vw - 24px);right:12px;bottom:80px;max-height:70vh}.co-panel.expanded{width:calc(100vw - 24px);max-height:calc(100vh - 100px);bottom:12px;right:12px}.co-fab{bottom:16px;right:16px;width:50px;height:50px}}
   `;
   document.head.appendChild(style);
 
@@ -248,8 +250,9 @@ function initCoAgent(){
     <div class="co-avatar"><img src="${location.pathname.includes('/app/')?'../img/co-agent-avatar.svg':'img/co-agent-avatar.svg'}" alt="SC" style="width:100%;height:100%;border-radius:50%"/></div>
     <div class="co-header-info">
       <div class="co-header-name">น้องขายไว</div>
-      <div class="co-header-status"><span class="co-header-dot"></span> Online</div>
+      <div class="co-header-status"><span class="co-header-dot"></span> Online — Sales Assistant</div>
     </div>
+    <button class="co-close" style="margin-right:4px" onclick="toggleCoExpand()" title="ขยาย/ย่อ"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
     <button class="co-close" onclick="toggleCoAgent()">&times;</button>
   </div>
   <div class="co-messages" id="co-messages"></div>
@@ -268,6 +271,7 @@ function initCoAgent(){
 }
 
 var coOpen=false;
+var coExpanded=false;
 function toggleCoAgent(){
   coOpen=!coOpen;
   document.getElementById('co-panel').classList.toggle('open',coOpen);
@@ -276,6 +280,12 @@ function toggleCoAgent(){
     var msgs=document.getElementById('co-messages');
     msgs.scrollTop=msgs.scrollHeight;
   }
+}
+function toggleCoExpand(){
+  coExpanded=!coExpanded;
+  document.getElementById('co-panel').classList.toggle('expanded',coExpanded);
+  var msgs=document.getElementById('co-messages');
+  msgs.scrollTop=msgs.scrollHeight;
 }
 
 function initCoMessages(){

@@ -55,14 +55,23 @@ dashboard.patch('/users/:id', async (c) => {
   if (body.phone !== undefined) { sets.push(`phone=$${idx}`); vals.push(body.phone); idx++; }
   if (body.is_active !== undefined) { sets.push(`is_active=$${idx}`); vals.push(body.is_active); idx++; }
 
-  if (sets.length === 0) return c.json({ message: 'No fields to update' }, 400);
+  if (sets.length === 0 && !body.role) return c.json({ message: 'No fields to update' }, 400);
 
-  sets.push('updated_at=NOW()');
-  vals.push(id);
-  vals.push(t);
+  let userRow: any = null;
 
-  const r = await query(t, `UPDATE users SET ${sets.join(',')} WHERE id=$${idx} AND tenant_id=$${idx+1} RETURNING id, email, first_name, last_name, phone, is_active`, vals);
-  if (r.rows.length === 0) return c.json({ message: 'User not found' }, 404);
+  if (sets.length > 0) {
+    sets.push('updated_at=NOW()');
+    vals.push(id);
+    vals.push(t);
+
+    const r = await query(t, `UPDATE users SET ${sets.join(',')} WHERE id=$${idx} AND tenant_id=$${idx+1} RETURNING id, email, first_name, last_name, phone, is_active`, vals);
+    if (r.rows.length === 0) return c.json({ message: 'User not found' }, 404);
+    userRow = r.rows[0];
+  } else {
+    const check = await query(t, `SELECT id, email, first_name, last_name, phone, is_active FROM users WHERE id=$1 AND tenant_id=$2`, [id, t]);
+    if (check.rows.length === 0) return c.json({ message: 'User not found' }, 404);
+    userRow = check.rows[0];
+  }
 
   // Update role if provided
   if (body.role) {
@@ -73,7 +82,7 @@ dashboard.patch('/users/:id', async (c) => {
     }
   }
 
-  return c.json({ message: 'User updated', user: r.rows[0] });
+  return c.json({ message: 'User updated', user: userRow });
 });
 
 // ── PUT /dashboard/users/:id/deactivate ──
