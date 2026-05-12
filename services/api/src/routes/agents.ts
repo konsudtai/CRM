@@ -79,7 +79,7 @@ async function invokeAgentCore(message: string, agentType: string, tenantId: str
   const payload = JSON.stringify({ message, agentType, tenantId, sessionId: sid });
   const client = new BedrockAgentCoreClient({ region: AGENTCORE_REGION });
   const abortController = new AbortController();
-  const timeoutId = setTimeout(() => abortController.abort(), 12000);
+  const timeoutId = setTimeout(() => abortController.abort(), 20000);
   let response: any;
   try {
     response = await client.send(new InvokeAgentRuntimeCommand({
@@ -87,10 +87,52 @@ async function invokeAgentCore(message: string, agentType: string, tenantId: str
       payload: new TextEncoder().encode(payload), qualifier: 'DEFAULT',
     }), { abortSignal: abortController.signal });
   } finally { clearTimeout(timeoutId); }
-  const responseBody = response.response ? new TextDecoder().decode(response.response) : '{}';
-  const data = JSON.parse(responseBody);
+
+  // Handle response — may be various formats from AgentCore SDK
+  let responseBody = '';
+  try {
+    if (response.response) {
+      if (typeof response.response === 'string') {
+        responseBody = response.response;
+      } else if (response.response instanceof Uint8Array || Buffer.isBuffer(response.response)) {
+        responseBody = new TextDecoder().decode(response.response);
+      } else if (response.response.body) {
+        // Stream response
+        const chunks: Uint8Array[] = [];
+        for await (const chunk of response.response.body) {
+          if (chunk instanceof Uint8Array || Buffer.isBuffer(chunk)) {
+            chunks.push(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk));
+          } else if (chunk.chunk?.bytes) {
+            chunks.push(new Uint8Array(chunk.chunk.bytes));
+          }
+        }
+        if (chunks.length > 0) responseBody = new TextDecoder().decode(Buffer.concat(chunks));
+      }
+    }
+    // Try other response fields
+    if (!responseBody && response.output) {
+      responseBody = typeof response.output === 'string' ? response.output : JSON.stringify(response.output);
+    }
+    if (!responseBody && response.completion) {
+      responseBody = response.completion;
+    }
+  } catch (parseErr: any) {
+    responseBody = '';
+  }
+
+  if (!responseBody) {
+    // Last resort: extract any text-like field from response
+    const keys = Object.keys(response || {}).filter(k => k !== '$metadata');
+    for (const k of keys) {
+      const v = response[k];
+      if (typeof v === 'string' && v.length > 0) { responseBody = v; break; }
+    }
+  }
+
+  let data: any = {};
+  try { data = responseBody ? JSON.parse(responseBody) : {}; } catch { data = { reply: responseBody }; }
   const output = data.output || data;
-  return { reply: output.reply || output.message || responseBody, agentUsed: output.agentUsed || agentType, sessionId: sid };
+  return { reply: output.reply || output.message || output.text || responseBody.slice(0, 500) || 'AgentCore ตอบกลับแล้วแต่ไม่มีข้อความ', agentUsed: output.agentUsed || agentType, sessionId: sid };
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -300,10 +342,13 @@ agents.post('/chat', async (c) => {
     try {
       const result = await invokeAgentCore(message, agent, tid, sessionId);
       return c.json({ reply: result.reply, agentUsed: result.agentUsed, sessionId: result.sessionId, backend: 'agentcore' });
-    } catch { /* fallback below */ }
+    } catch (acErr: any) {
+      // AgentCore failed — return error immediately (no Bedrock fallback in VPC)
+      return c.json({ reply: 'ขออภัยค่ะ AgentCore ไม่ตอบสนอง กรุณาลองใหม่อีกครั้งค่ะ (' + String(acErr.message || '').slice(0, 80) + ')', error: true, backend: 'agentcore-failed' }, 200);
+    }
   }
 
-  // Bedrock Converse with full tools
+  // Bedrock Converse fallback (only when AgentCore is disabled)
   try {
     const out = await runAgent(message, agent, tid, conversationHistory);
     return c.json({ reply: out.reply, toolsUsed: out.toolsUsed, backend: 'bedrock-converse', agentUsed: 'น้องขายไว' });
