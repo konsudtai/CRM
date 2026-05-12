@@ -17,7 +17,7 @@ const agents = new Hono();
 
 const AGENTCORE_ARN = process.env.AGENTCORE_RUNTIME_ARN || '';
 const AGENTCORE_REGION = process.env.AGENTCORE_REGION || process.env.BEDROCK_REGION || 'ap-southeast-1';
-const DEFAULT_MODEL_ID = 'apac.anthropic.claude-3-5-sonnet-20241022-v2:0';
+const DEFAULT_MODEL_ID = process.env.BEDROCK_MODEL_ID || 'apac.amazon.nova-pro-v1:0';
 const DEFAULT_REGION = process.env.BEDROCK_REGION || 'ap-southeast-1';
 const USE_AGENTCORE = process.env.USE_AGENTCORE !== 'false' && !!AGENTCORE_ARN;
 const MAX_ITERATIONS = 8;
@@ -32,7 +32,7 @@ let cachedConfig: any = null;
 let configLastFetched = 0;
 const CONFIG_TTL_MS = 60000;
 
-async function getAIConfig(tenantId: string): Promise<{ modelId: string; region: string; temperature: number; maxTokens: number; apiKey?: string }> {
+async function getAIConfig(tenantId: string): Promise<{ modelId: string; region: string; temperature: number; maxTokens: number }> {
   const now = Date.now();
   if (cachedConfig && (now - configLastFetched) < CONFIG_TTL_MS) {
     return cachedConfig;
@@ -51,7 +51,6 @@ async function getAIConfig(tenantId: string): Promise<{ modelId: string; region:
         region: cfg.bedrockRegion || DEFAULT_REGION,
         temperature: cfg.temperature !== undefined ? parseFloat(cfg.temperature) : 0.4,
         maxTokens: cfg.maxTokens ? parseInt(cfg.maxTokens) : 2048,
-        apiKey: cfg.apiKey || undefined,
       };
       configLastFetched = now;
       return cachedConfig;
@@ -68,25 +67,6 @@ async function getAIConfig(tenantId: string): Promise<{ modelId: string; region:
   };
   configLastFetched = now;
   return cachedConfig;
-}
-
-// Invoke Bedrock via proxy Lambda (outside VPC — has internet for cross-account API Key)
-async function invokeBedrockProxy(config: { region: string; modelId: string; apiKey: string }, body: any): Promise<any> {
-  const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
-  const lambdaClient = new LambdaClient({ region: config.region });
-  const payload = JSON.stringify({ region: config.region, modelId: config.modelId, apiKey: config.apiKey, body });
-  const res = await lambdaClient.send(new InvokeCommand({
-    FunctionName: 'sf7-prod-bedrock-proxy',
-    Payload: new TextEncoder().encode(payload),
-  }));
-  const responseBody = new TextDecoder().decode(res.Payload);
-  const data = JSON.parse(responseBody);
-  if (data.error) throw new Error(data.message || 'Bedrock proxy error');
-  return data;
-}
-
-function getBedrockClient(region: string): BedrockRuntimeClient {
-  return new BedrockRuntimeClient({ region });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -240,28 +220,16 @@ async function runAgent(message: string, agentType: string, tenantId: string, hi
 
     let resOutput: any;
 
-    if (aiConfig.apiKey) {
-      // Use Bedrock Proxy Lambda (outside VPC, has internet for cross-account API Key)
-      const converseBody: any = {
-        system: [{ text: SYSTEM_PROMPT + `\n\n[Context: tenantId=${tenantId}]` + (overBudget ? '\n\n[URGENT: ตอบทันทีไม่ต้องเรียก tool เพิ่ม]' : '') }],
-        messages,
-        inferenceConfig: { maxTokens: aiConfig.maxTokens, temperature: aiConfig.temperature },
-      };
-      if (!overBudget) converseBody.toolConfig = toolConfig;
-      const proxyRes = await invokeBedrockProxy(aiConfig as any, converseBody);
-      resOutput = { message: proxyRes.output?.message, stopReason: proxyRes.stopReason };
-    } else {
-      // Fallback: SDK with IAM Role (same account, via VPC Endpoint)
-      const client = getBedrockClient(aiConfig.region);
-      const res = await client.send(new ConverseCommand({
-        modelId: aiConfig.modelId,
-        system: [{ text: SYSTEM_PROMPT + `\n\n[Context: tenantId=${tenantId}]` + (overBudget ? '\n\n[URGENT: ตอบทันทีไม่ต้องเรียก tool เพิ่ม]' : '') }],
-        messages,
-        toolConfig: !overBudget ? toolConfig : undefined,
-        inferenceConfig: { maxTokens: aiConfig.maxTokens, temperature: aiConfig.temperature },
-      }));
-      resOutput = { message: res.output?.message, stopReason: res.stopReason };
-    }
+    // Use Bedrock SDK with Lambda IAM Role (same account, via VPC Endpoint)
+    const client = new BedrockRuntimeClient({ region: aiConfig.region });
+    const res = await client.send(new ConverseCommand({
+      modelId: aiConfig.modelId,
+      system: [{ text: SYSTEM_PROMPT + `\n\n[Context: tenantId=${tenantId}]` + (overBudget ? '\n\n[URGENT: ตอบทันทีไม่ต้องเรียก tool เพิ่ม]' : '') }],
+      messages,
+      toolConfig: !overBudget ? toolConfig : undefined,
+      inferenceConfig: { maxTokens: aiConfig.maxTokens, temperature: aiConfig.temperature },
+    }));
+    resOutput = { message: res.output?.message, stopReason: res.stopReason };
 
     const content = (resOutput?.message?.content || []).filter((c: any) => {
       if ('text' in c && (!c.text || !c.text.trim())) return false;
