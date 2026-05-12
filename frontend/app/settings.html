@@ -816,7 +816,7 @@ function saveLineConfig() {
   var token = document.getElementById('line-token').value;
   var secret = document.getElementById('line-secret').value;
   if (!token || !secret) { alert('กรุณากรอก Channel Access Token และ Channel Secret'); return; }
-  apiFetch('/settings/line', {
+  apiFetch('/dashboard/settings/line', {
     method: 'PUT',
     body: JSON.stringify({
       channelAccessToken: token,
@@ -855,7 +855,7 @@ function saveAIConfig() {
     secretAccessKey: secretKey,
     chatModel: document.getElementById('ai-chat-model').value,
   };
-  apiFetch('/settings/ai', {
+  apiFetch('/dashboard/settings/ai', {
     method: 'PUT',
     body: JSON.stringify(config),
   }).then(function(res) {
@@ -934,7 +934,7 @@ function closePopup() {
 }
 
 function loadAIConfig() {
-  apiFetch('/settings/ai').then(function(res) {
+  apiFetch('/dashboard/settings/ai').then(function(res) {
     if (!res) return;
     if (res.bedrockRegion) document.getElementById('ai-region').value = res.bedrockRegion;
     if (res.accessKeyId) document.getElementById('ai-access-key').value = res.accessKeyId;

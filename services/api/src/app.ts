@@ -42,6 +42,7 @@ app.route('/products', products);
 app.route('/quotations', quotations);
 app.route('/opportunities', opportunities);
 app.route('/dashboard', dashboard);
+app.route('/dashboard/settings', settings);
 app.route('/notifications', notifications);
 app.route('/activities', activities);
 app.route('/agents', agents);
