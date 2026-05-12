@@ -76,22 +76,40 @@ function getBedrockClient(config: { region: string; apiKey?: string }): BedrockR
   return new BedrockRuntimeClient({ region: config.region });
 }
 
-// Direct HTTP call to Bedrock with Bearer Token (bypasses SDK credential resolution)
+// Direct HTTPS call to Bedrock Converse API with Bearer Token
 async function converseWithBearerToken(config: { region: string; modelId: string; apiKey: string; temperature: number; maxTokens: number }, body: any): Promise<any> {
-  const endpoint = `https://bedrock-runtime.${config.region}.amazonaws.com/model/${encodeURIComponent(config.modelId)}/converse`;
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.apiKey}`,
-    },
-    body: JSON.stringify(body),
+  const https = await import('https');
+  const endpoint = `bedrock-runtime.${config.region}.amazonaws.com`;
+  const path = `/model/${encodeURIComponent(config.modelId)}/converse`;
+  const payload = JSON.stringify(body);
+
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: endpoint,
+      port: 443,
+      path: path,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.apiKey}`,
+        'Content-Length': Buffer.byteLength(payload),
+      },
+    }, (res: any) => {
+      let data = '';
+      res.on('data', (chunk: any) => { data += chunk; });
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          try { resolve(JSON.parse(data)); } catch { reject(new Error('Invalid JSON: ' + data.slice(0, 100))); }
+        } else {
+          reject(new Error(`Bedrock ${res.statusCode}: ${data.slice(0, 200)}`));
+        }
+      });
+    });
+    req.on('error', (e: any) => reject(new Error('HTTPS error: ' + e.message)));
+    req.setTimeout(20000, () => { req.destroy(); reject(new Error('Bedrock request timeout')); });
+    req.write(payload);
+    req.end();
   });
-  if (!response.ok) {
-    const errText = await response.text().catch(() => '');
-    throw new Error(`Bedrock ${response.status}: ${errText.slice(0, 200)}`);
-  }
-  return response.json();
 }
 
 // ══════════════════════════════════════════════════════════════
