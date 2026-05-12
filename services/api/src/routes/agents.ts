@@ -6,22 +6,83 @@
  *   - Conversational: asks follow-up questions when data is incomplete
  *   - AgentCore primary + Bedrock Converse fallback
  *   - Event-driven: handles SQS domain events (lead.created, task.overdue, etc.)
+ *   - Reads AI config from DynamoDB (model, region, credentials from Settings UI)
  */
 import { Hono } from 'hono';
 import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
+import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { query } from '../lib/db.js';
 
 const agents = new Hono();
 
 const AGENTCORE_ARN = process.env.AGENTCORE_RUNTIME_ARN || '';
 const AGENTCORE_REGION = process.env.AGENTCORE_REGION || process.env.BEDROCK_REGION || 'ap-southeast-1';
-const MODEL_ID = process.env.BEDROCK_MODEL_ID || 'apac.anthropic.claude-3-5-sonnet-20241022-v2:0';
-const REGION = process.env.BEDROCK_REGION || 'ap-southeast-1';
+const DEFAULT_MODEL_ID = 'apac.anthropic.claude-sonnet-4-6-20250514-v1:0';
+const DEFAULT_REGION = process.env.BEDROCK_REGION || 'ap-southeast-1';
 const USE_AGENTCORE = process.env.USE_AGENTCORE !== 'false' && !!AGENTCORE_ARN;
 const MAX_ITERATIONS = 8;
 const TIME_BUDGET_MS = 25000;
+const AI_STATE_TABLE = process.env.AI_STATE_TABLE || 'sf7-prod-ai-state';
 
-const bedrockClient = new BedrockRuntimeClient({ region: REGION });
+// DynamoDB client for reading AI config
+const ddbClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'ap-southeast-1' });
+
+// Cache AI config (refresh every 60s)
+let cachedConfig: any = null;
+let configLastFetched = 0;
+const CONFIG_TTL_MS = 60000;
+
+async function getAIConfig(tenantId: string): Promise<{ modelId: string; region: string; temperature: number; maxTokens: number; credentials?: { accessKeyId: string; secretAccessKey: string } }> {
+  const now = Date.now();
+  if (cachedConfig && (now - configLastFetched) < CONFIG_TTL_MS) {
+    return cachedConfig;
+  }
+
+  try {
+    const res = await ddbClient.send(new GetItemCommand({
+      TableName: AI_STATE_TABLE,
+      Key: { pk: { S: `TENANT#${tenantId}` }, sk: { S: 'CONFIG#ai' } },
+    }));
+
+    if (res.Item?.data?.S) {
+      const cfg = JSON.parse(res.Item.data.S);
+      cachedConfig = {
+        modelId: cfg.chatModel || DEFAULT_MODEL_ID,
+        region: cfg.bedrockRegion || DEFAULT_REGION,
+        temperature: cfg.temperature !== undefined ? parseFloat(cfg.temperature) : 0.4,
+        maxTokens: cfg.maxTokens ? parseInt(cfg.maxTokens) : 2048,
+        credentials: (cfg.accessKeyId && cfg.secretAccessKey && cfg.secretAccessKey !== '••••••••')
+          ? { accessKeyId: cfg.accessKeyId, secretAccessKey: cfg.secretAccessKey }
+          : undefined,
+      };
+      configLastFetched = now;
+      return cachedConfig;
+    }
+  } catch (err: any) {
+    console.warn('Failed to load AI config from DynamoDB:', err.message);
+  }
+
+  // Fallback defaults
+  cachedConfig = {
+    modelId: DEFAULT_MODEL_ID,
+    region: DEFAULT_REGION,
+    temperature: 0.4,
+    maxTokens: 2048,
+  };
+  configLastFetched = now;
+  return cachedConfig;
+}
+
+function getBedrockClient(config: { region: string; credentials?: { accessKeyId: string; secretAccessKey: string } }): BedrockRuntimeClient {
+  const opts: any = { region: config.region };
+  if (config.credentials) {
+    opts.credentials = {
+      accessKeyId: config.credentials.accessKeyId,
+      secretAccessKey: config.credentials.secretAccessKey,
+    };
+  }
+  return new BedrockRuntimeClient(opts);
+}
 
 // ══════════════════════════════════════════════════════════════
 // AgentCore Integration (primary path)
@@ -109,11 +170,20 @@ const SYSTEM_PROMPT = `คุณคือ "น้องขายไว" — Sale
 - พูดภาษาไทย สุภาพ ใช้ค่ะ เป็นกันเอง
 - ตอบสั้น กระชับ ใช้ bullet points
 - ใช้ emoji เล็กน้อย (✅ 📊 📈 ⚠️ 💡)
+- **ห้ามแสดง UUID, ID, หรือ technical data ให้ผู้ใช้เด็ดขาด** — แปลงเป็นชื่อ/ข้อมูลที่อ่านง่ายเสมอ
 
 ## หลักการทำงาน
 1. **ใช้ tools ดึงข้อมูลจริงเสมอ** — ห้ามเดาหรือสมมติ
 2. **ทำ action จริงได้** — สร้าง Lead, สร้าง Task, อัพเดท status
 3. **ถ้าข้อมูลไม่ครบ ให้ถามกลับ** — อย่าเดาข้อมูลที่ขาด
+4. **คิดก่อนตอบ** — วิเคราะห์ข้อมูลที่ได้จาก tools แล้วสรุปเป็นภาษาคนที่เข้าใจง่าย
+
+## การแสดงผลข้อมูล
+- ห้ามแสดง UUID หรือ database ID (เช่น "abc-123-def") ให้ผู้ใช้
+- แสดงชื่อ, ตัวเลข, สถานะ แทน ID เสมอ
+- ถ้ามีหลายรายการ → สรุปเป็นตาราง/bullet ที่อ่านง่าย
+- ใส่ context เช่น "จากทั้งหมด X รายการ" หรือ "เทียบกับเดือนที่แล้ว"
+- ตอบแบบ insight ไม่ใช่แค่ dump ข้อมูล
 
 ## การสร้าง Lead
 - ต้องมีอย่างน้อย: ชื่อ + (เบอร์โทร หรือ email)
@@ -132,9 +202,10 @@ const SYSTEM_PROMPT = `คุณคือ "น้องขายไว" — Sale
 
 ## วิธีตอบ
 - ดึงข้อมูลจาก tools ก่อนตอบเสมอ
-- ถ้าถูกถามข้อมูล → ดึงจาก DB แล้วสรุปให้
+- ถ้าถูกถามข้อมูล → ดึงจาก DB แล้วสรุปให้เป็นภาษาคน พร้อม insight
 - ถ้าถูกสั่งให้ทำ → ตรวจสอบข้อมูลครบไหม → ถ้าครบทำเลย → ถ้าไม่ครบถามก่อน
-- จบด้วยคำแนะนำ next action เมื่อเหมาะสม`;
+- จบด้วยคำแนะนำ next action เมื่อเหมาะสม
+- ตอบเหมือนเพื่อนร่วมงานที่เก่ง ไม่ใช่ robot`;
 
 // ══════════════════════════════════════════════════════════════
 // Agent Runner (Bedrock Converse + tool_use loop)
@@ -144,6 +215,10 @@ async function runAgent(message: string, agentType: string, tenantId: string, hi
   const start = Date.now();
   const toolsUsed: string[] = [];
   const toolConfig = { tools: TOOLS.map(t => ({ toolSpec: { name: t.name, description: t.description, inputSchema: t.inputSchema } })) };
+
+  // Load AI config from DynamoDB (cached 60s)
+  const aiConfig = await getAIConfig(tenantId);
+  const client = getBedrockClient(aiConfig);
 
   // Build messages with conversation history
   const messages: any[] = [];
@@ -159,12 +234,12 @@ async function runAgent(message: string, agentType: string, tenantId: string, hi
   for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
     const overBudget = (Date.now() - start) > TIME_BUDGET_MS;
 
-    const res = await bedrockClient.send(new ConverseCommand({
-      modelId: MODEL_ID,
+    const res = await client.send(new ConverseCommand({
+      modelId: aiConfig.modelId,
       system: [{ text: SYSTEM_PROMPT + `\n\n[Context: tenantId=${tenantId}]` + (overBudget ? '\n\n[URGENT: ตอบทันทีไม่ต้องเรียก tool เพิ่ม]' : '') }],
       messages,
       toolConfig: !overBudget ? toolConfig : undefined,
-      inferenceConfig: { maxTokens: 2048, temperature: 0.4 },
+      inferenceConfig: { maxTokens: aiConfig.maxTokens, temperature: aiConfig.temperature },
     }));
 
     const content = (res.output?.message?.content || []).filter((c: any) => {
