@@ -10,18 +10,18 @@ phases:
     commands:
       - echo Logging in to ECR...
       - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
-      - cd services/agent-service
+      - echo Source dir contents...
+      - ls -la
   build:
     commands:
       - echo Building sales-assistant...
-      - cd services/agent-service
-      - docker build -t sf7-sales-assistant runtimes/sales-assistant
+      - docker build -t sf7-sales-assistant services/agent-service/runtimes/sales-assistant
       - docker tag sf7-sales-assistant:latest ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/sf7-sales-assistant:latest
       - echo Building admin-ai...
-      - docker build -t sf7-admin-ai runtimes/admin-ai
+      - docker build -t sf7-admin-ai services/agent-service/runtimes/admin-ai
       - docker tag sf7-admin-ai:latest ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/sf7-admin-ai:latest
       - echo Building analytics...
-      - docker build -t sf7-analytics runtimes/analytics
+      - docker build -t sf7-analytics services/agent-service/runtimes/analytics
       - docker tag sf7-analytics:latest ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/sf7-analytics:latest
   post_build:
     commands:
