@@ -72,15 +72,26 @@ async function getAIConfig(tenantId: string): Promise<{ modelId: string; region:
 }
 
 function getBedrockClient(config: { region: string; apiKey?: string }): BedrockRuntimeClient {
-  if (config.apiKey) {
-    // Use Bedrock API Key as Bearer Token auth
-    return new BedrockRuntimeClient({
-      region: config.region,
-      token: { token: config.apiKey },
-    });
-  }
-  // Fallback to Lambda IAM Role
+  // Always use Lambda IAM Role — VPC has bedrock-runtime endpoint
   return new BedrockRuntimeClient({ region: config.region });
+}
+
+// Direct HTTP call to Bedrock with Bearer Token (bypasses SDK credential resolution)
+async function converseWithBearerToken(config: { region: string; modelId: string; apiKey: string; temperature: number; maxTokens: number }, body: any): Promise<any> {
+  const endpoint = `https://bedrock-runtime.${config.region}.amazonaws.com/model/${encodeURIComponent(config.modelId)}/converse`;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.apiKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '');
+    throw new Error(`Bedrock ${response.status}: ${errText.slice(0, 200)}`);
+  }
+  return response.json();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -217,7 +228,6 @@ async function runAgent(message: string, agentType: string, tenantId: string, hi
 
   // Load AI config from DynamoDB (cached 60s)
   const aiConfig = await getAIConfig(tenantId);
-  const client = getBedrockClient(aiConfig);
 
   // Build messages with conversation history
   const messages: any[] = [];
@@ -233,23 +243,42 @@ async function runAgent(message: string, agentType: string, tenantId: string, hi
   for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
     const overBudget = (Date.now() - start) > TIME_BUDGET_MS;
 
-    const res = await client.send(new ConverseCommand({
-      modelId: aiConfig.modelId,
-      system: [{ text: SYSTEM_PROMPT + `\n\n[Context: tenantId=${tenantId}]` + (overBudget ? '\n\n[URGENT: ตอบทันทีไม่ต้องเรียก tool เพิ่ม]' : '') }],
-      messages,
-      toolConfig: !overBudget ? toolConfig : undefined,
-      inferenceConfig: { maxTokens: aiConfig.maxTokens, temperature: aiConfig.temperature },
-    }));
+    let resOutput: any;
 
-    const content = (res.output?.message?.content || []).filter((c: any) => {
+    if (aiConfig.apiKey) {
+      // Use Bearer Token auth (direct HTTP — no STS needed)
+      const body: any = {
+        modelId: aiConfig.modelId,
+        system: [{ text: SYSTEM_PROMPT + `\n\n[Context: tenantId=${tenantId}]` + (overBudget ? '\n\n[URGENT: ตอบทันทีไม่ต้องเรียก tool เพิ่ม]' : '') }],
+        messages,
+        inferenceConfig: { maxTokens: aiConfig.maxTokens, temperature: aiConfig.temperature },
+      };
+      if (!overBudget) body.toolConfig = toolConfig;
+      const httpRes = await converseWithBearerToken(aiConfig as any, body);
+      resOutput = httpRes.output;
+    } else {
+      // Fallback: SDK with IAM Role
+      const client = getBedrockClient(aiConfig);
+      const res = await client.send(new ConverseCommand({
+        modelId: aiConfig.modelId,
+        system: [{ text: SYSTEM_PROMPT + `\n\n[Context: tenantId=${tenantId}]` + (overBudget ? '\n\n[URGENT: ตอบทันทีไม่ต้องเรียก tool เพิ่ม]' : '') }],
+        messages,
+        toolConfig: !overBudget ? toolConfig : undefined,
+        inferenceConfig: { maxTokens: aiConfig.maxTokens, temperature: aiConfig.temperature },
+      }));
+      resOutput = { message: res.output?.message, stopReason: res.stopReason };
+    }
+
+    const content = (resOutput?.message?.content || []).filter((c: any) => {
       if ('text' in c && (!c.text || !c.text.trim())) return false;
       return true;
     });
     if (content.length === 0) content.push({ text: ' ' });
     messages.push({ role: 'assistant', content });
 
+    const stopReason = resOutput?.stopReason || '';
     const toolUses = content.filter((c: any) => c.toolUse);
-    if (toolUses.length === 0 || res.stopReason !== 'tool_use' || overBudget) {
+    if (toolUses.length === 0 || stopReason !== 'tool_use' || overBudget) {
       finalReply = content.map((c: any) => c.text || '').join('').trim();
       break;
     }
