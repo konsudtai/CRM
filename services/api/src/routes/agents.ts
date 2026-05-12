@@ -88,45 +88,48 @@ async function invokeAgentCore(message: string, agentType: string, tenantId: str
     }), { abortSignal: abortController.signal });
   } finally { clearTimeout(timeoutId); }
 
+  // Debug removed — production
+  console.log('[AgentCore] statusCode:', response.statusCode);
+
   // Handle response — may be various formats from AgentCore SDK
   let responseBody = '';
   try {
-    if (response.response) {
-      if (typeof response.response === 'string') {
-        responseBody = response.response;
-      } else if (response.response instanceof Uint8Array || Buffer.isBuffer(response.response)) {
-        responseBody = new TextDecoder().decode(response.response);
-      } else if (response.response.body) {
-        // Stream response
-        const chunks: Uint8Array[] = [];
-        for await (const chunk of response.response.body) {
-          if (chunk instanceof Uint8Array || Buffer.isBuffer(chunk)) {
-            chunks.push(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk));
-          } else if (chunk.chunk?.bytes) {
-            chunks.push(new Uint8Array(chunk.chunk.bytes));
-          }
-        }
-        if (chunks.length > 0) responseBody = new TextDecoder().decode(Buffer.concat(chunks));
+    const r = response.response;
+    if (!r) {
+      responseBody = '';
+    } else if (typeof r === 'string') {
+      responseBody = r;
+    } else if (typeof r.transformToString === 'function') {
+      responseBody = await r.transformToString();
+    } else if (typeof r.read === 'function') {
+      // Node.js Readable stream
+      const chunks: Buffer[] = [];
+      for await (const chunk of r) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
       }
-    }
-    // Try other response fields
-    if (!responseBody && response.output) {
-      responseBody = typeof response.output === 'string' ? response.output : JSON.stringify(response.output);
-    }
-    if (!responseBody && response.completion) {
-      responseBody = response.completion;
+      responseBody = Buffer.concat(chunks).toString('utf-8');
+    } else if (typeof r[Symbol.asyncIterator] === 'function') {
+      const chunks: Uint8Array[] = [];
+      for await (const chunk of r) {
+        chunks.push(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk));
+      }
+      responseBody = new TextDecoder().decode(Buffer.concat(chunks));
+    } else if (r instanceof Uint8Array || Buffer.isBuffer(r)) {
+      responseBody = new TextDecoder().decode(r);
+    } else if (r.body) {
+      const chunks: Uint8Array[] = [];
+      for await (const chunk of r.body) {
+        if (chunk instanceof Uint8Array) chunks.push(chunk);
+        else if (chunk.chunk?.bytes) chunks.push(new Uint8Array(chunk.chunk.bytes));
+      }
+      if (chunks.length > 0) responseBody = new TextDecoder().decode(Buffer.concat(chunks));
+    } else {
+      // Last resort — try to stringify
+      try { responseBody = JSON.stringify(r); } catch { responseBody = ''; }
     }
   } catch (parseErr: any) {
+    console.warn('[AgentCore] parse error:', parseErr.message);
     responseBody = '';
-  }
-
-  if (!responseBody) {
-    // Last resort: extract any text-like field from response
-    const keys = Object.keys(response || {}).filter(k => k !== '$metadata');
-    for (const k of keys) {
-      const v = response[k];
-      if (typeof v === 'string' && v.length > 0) { responseBody = v; break; }
-    }
   }
 
   let data: any = {};
