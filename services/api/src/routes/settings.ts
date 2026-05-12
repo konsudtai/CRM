@@ -4,14 +4,16 @@
  */
 import { Hono } from 'hono';
 import { DynamoDBClient, PutItemCommand, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { authMiddleware } from '../lib/auth.js';
 
 const settings = new Hono();
+settings.use('*', authMiddleware);
 const ddb = new DynamoDBClient({ region: process.env.AWS_REGION || 'ap-southeast-1' });
 const TABLE = process.env.AI_STATE_TABLE || 'sf7-prod-ai-state';
 
 settings.put('/ai', async (c) => {
   const body = await c.req.json();
-  const tenantId = c.req.header('x-tenant-id') || (c as any).get?.('tenantId') || 'default';
+  const tenantId = c.get('tenantId') || 'default';
   await ddb.send(new PutItemCommand({
     TableName: TABLE,
     Item: {
@@ -25,7 +27,7 @@ settings.put('/ai', async (c) => {
 });
 
 settings.get('/ai', async (c) => {
-  const tenantId = c.req.header('x-tenant-id') || (c as any).get?.('tenantId') || 'default';
+  const tenantId = c.get('tenantId') || 'default';
   const res = await ddb.send(new GetItemCommand({
     TableName: TABLE,
     Key: { PK: { S: `TENANT#${tenantId}` }, SK: { S: 'CONFIG#ai' } },
@@ -36,7 +38,7 @@ settings.get('/ai', async (c) => {
 
 settings.put('/line', async (c) => {
   const body = await c.req.json();
-  const tenantId = c.req.header('x-tenant-id') || (c as any).get?.('tenantId') || 'default';
+  const tenantId = c.get('tenantId') || 'default';
   await ddb.send(new PutItemCommand({
     TableName: TABLE,
     Item: {
@@ -50,7 +52,7 @@ settings.put('/line', async (c) => {
 });
 
 settings.get('/line', async (c) => {
-  const tenantId = c.req.header('x-tenant-id') || (c as any).get?.('tenantId') || 'default';
+  const tenantId = c.get('tenantId') || 'default';
   const res = await ddb.send(new GetItemCommand({
     TableName: TABLE,
     Key: { PK: { S: `TENANT#${tenantId}` }, SK: { S: 'CONFIG#line' } },
