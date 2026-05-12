@@ -72,9 +72,14 @@ async function getAIConfig(tenantId: string): Promise<{ modelId: string; region:
 }
 
 function getBedrockClient(config: { region: string; apiKey?: string }): BedrockRuntimeClient {
-  // Always use Lambda IAM Role for authentication
-  // API Key stored in config is for reference/validation only
-  // Lambda role already has bedrock:InvokeModel permission
+  if (config.apiKey) {
+    // Use Bedrock API Key as Bearer Token auth
+    return new BedrockRuntimeClient({
+      region: config.region,
+      token: { token: config.apiKey },
+    });
+  }
+  // Fallback to Lambda IAM Role
   return new BedrockRuntimeClient({ region: config.region });
 }
 
