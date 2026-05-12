@@ -348,19 +348,21 @@
           <div style="font-size:10px;color:var(--text3);margin-top:4px">Model ที่ใช้ตอบ chat ทุก Agent (น้องขายไว, น้องวิ, น้องแอ๊ด)</div>
         </div>
         <div class="sf7-form-group">
-          <label class="sf7-form-label">AWS Access Key ID *</label>
-          <input class="sf7-form-input" id="ai-access-key" type="password" placeholder="AKIA..." autocomplete="off"/>
+          <label class="sf7-form-label">API Key Name *</label>
+          <input class="sf7-form-input" id="ai-key-name" type="text" placeholder="ชื่อ API Key (สำหรับจดจำ)" autocomplete="off"/>
+          <div style="font-size:10px;color:var(--text3);margin-top:4px">ชื่อที่ตั้งให้ API Key เพื่อจำแนก</div>
         </div>
         <div class="sf7-form-group">
-          <label class="sf7-form-label">AWS Secret Access Key *</label>
-          <input class="sf7-form-input" id="ai-secret-key" type="password" placeholder="wJalr..." autocomplete="off"/>
+          <label class="sf7-form-label">API Key *</label>
+          <input class="sf7-form-input" id="ai-api-key" type="password" placeholder="ใส่ API Key จาก Bedrock Console" autocomplete="off"/>
+          <div style="font-size:10px;color:var(--text3);margin-top:4px">สร้างจาก Bedrock Console → API Keys</div>
         </div>
       </div>
 
       <!-- Info box -->
       <div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(1,118,211,.04);border:1px solid rgba(1,118,211,.1);font-size:11px;color:var(--text2)">
-        <strong style="color:var(--sf-blue)">วิธีใช้:</strong> ใส่ Long-term Access Key ของ IAM User ที่มีสิทธิ์ <code>bedrock:InvokeModel</code> ใน region ที่เลือก<br>
-        AI Agent ทั้ง 3 ตัว (น้องขายไว, น้องวิ, น้องแอ๊ด) จะใช้ credentials นี้ในการเรียก Bedrock API
+        <strong style="color:var(--sf-blue)">วิธีใช้:</strong> สร้าง API Key จาก Amazon Bedrock Console → Settings → API Keys<br>
+        AI Agent ทั้ง 3 ตัว (น้องขายไว, น้องวิ, น้องแอ๊ด) จะใช้ API Key นี้ในการเรียก Bedrock
       </div>
 
       <!-- Save buttons -->
@@ -843,24 +845,23 @@ function disconnectLine() {
 
 // ── AI Config Save ──
 function saveAIConfig() {
-  var accessKey = document.getElementById('ai-access-key').value;
-  var secretKey = document.getElementById('ai-secret-key').value;
-  if (!accessKey || !secretKey) {
-    showPopup('error', 'กรุณากรอกข้อมูล', 'ต้องใส่ AWS Access Key ID และ Secret Access Key');
+  var apiKeyName = document.getElementById('ai-key-name').value;
+  var apiKey = document.getElementById('ai-api-key').value;
+  if (!apiKey) {
+    showPopup('error', 'กรุณากรอกข้อมูล', 'ต้องใส่ API Key');
     return;
   }
   var config = {
     bedrockRegion: document.getElementById('ai-region').value,
-    accessKeyId: accessKey,
-    secretAccessKey: secretKey,
+    apiKeyName: apiKeyName,
+    apiKey: apiKey,
     chatModel: document.getElementById('ai-chat-model').value,
   };
   apiFetch('/dashboard/settings/ai', {
     method: 'PUT',
     body: JSON.stringify(config),
   }).then(function(res) {
-    showPopup('success', 'AI Configuration Saved', 'บันทึกเรียบร้อย — AI Agent จะใช้ ' + config.chatModel.split('.').pop().split('-')[0] + ' ภายใน 60 วินาที');
-    // Update status badge
+    showPopup('success', 'AI Configuration Saved', 'บันทึกเรียบร้อย — AI Agent จะใช้ config ใหม่ภายใน 60 วินาที');
     var badge = document.getElementById('ai-status-badge');
     if (badge) badge.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#2E844A"></span><span style="font-size:11px;font-weight:600;color:#2E844A">Connected</span>';
   }).catch(function(err) {
@@ -937,11 +938,10 @@ function loadAIConfig() {
   apiFetch('/dashboard/settings/ai').then(function(res) {
     if (!res) return;
     if (res.bedrockRegion) document.getElementById('ai-region').value = res.bedrockRegion;
-    if (res.accessKeyId) document.getElementById('ai-access-key').value = res.accessKeyId;
-    if (res.secretAccessKey) document.getElementById('ai-secret-key').value = '••••••••';
+    if (res.apiKeyName) document.getElementById('ai-key-name').value = res.apiKeyName;
+    if (res.apiKey) document.getElementById('ai-api-key').value = '••••••••••••';
     if (res.chatModel) document.getElementById('ai-chat-model').value = res.chatModel;
-    // Update status badge if config exists
-    if (res.accessKeyId && res.chatModel) {
+    if (res.apiKey && res.chatModel) {
       var badge = document.getElementById('ai-status-badge');
       if (badge) badge.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#2E844A"></span><span style="font-size:11px;font-weight:600;color:#2E844A">Connected</span>';
     }

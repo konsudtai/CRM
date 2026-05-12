@@ -32,7 +32,7 @@ let cachedConfig: any = null;
 let configLastFetched = 0;
 const CONFIG_TTL_MS = 60000;
 
-async function getAIConfig(tenantId: string): Promise<{ modelId: string; region: string; temperature: number; maxTokens: number; credentials?: { accessKeyId: string; secretAccessKey: string } }> {
+async function getAIConfig(tenantId: string): Promise<{ modelId: string; region: string; temperature: number; maxTokens: number; apiKey?: string }> {
   const now = Date.now();
   if (cachedConfig && (now - configLastFetched) < CONFIG_TTL_MS) {
     return cachedConfig;
@@ -51,9 +51,7 @@ async function getAIConfig(tenantId: string): Promise<{ modelId: string; region:
         region: cfg.bedrockRegion || DEFAULT_REGION,
         temperature: cfg.temperature !== undefined ? parseFloat(cfg.temperature) : 0.4,
         maxTokens: cfg.maxTokens ? parseInt(cfg.maxTokens) : 2048,
-        credentials: (cfg.accessKeyId && cfg.secretAccessKey && cfg.secretAccessKey !== '••••••••')
-          ? { accessKeyId: cfg.accessKeyId, secretAccessKey: cfg.secretAccessKey }
-          : undefined,
+        apiKey: cfg.apiKey || undefined,
       };
       configLastFetched = now;
       return cachedConfig;
@@ -73,15 +71,11 @@ async function getAIConfig(tenantId: string): Promise<{ modelId: string; region:
   return cachedConfig;
 }
 
-function getBedrockClient(config: { region: string; credentials?: { accessKeyId: string; secretAccessKey: string } }): BedrockRuntimeClient {
-  const opts: any = { region: config.region };
-  if (config.credentials) {
-    opts.credentials = {
-      accessKeyId: config.credentials.accessKeyId,
-      secretAccessKey: config.credentials.secretAccessKey,
-    };
-  }
-  return new BedrockRuntimeClient(opts);
+function getBedrockClient(config: { region: string; apiKey?: string }): BedrockRuntimeClient {
+  // Always use Lambda IAM Role for authentication
+  // API Key stored in config is for reference/validation only
+  // Lambda role already has bedrock:InvokeModel permission
+  return new BedrockRuntimeClient({ region: config.region });
 }
 
 // ══════════════════════════════════════════════════════════════
