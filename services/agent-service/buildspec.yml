@@ -1,0 +1,30 @@
+version: 0.2
+
+env:
+  variables:
+    REGION: ap-southeast-1
+    ACCOUNT_ID: 364478544994
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to ECR...
+      - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
+  build:
+    commands:
+      - echo Building sales-assistant...
+      - docker build --platform linux/arm64 -t sf7-sales-assistant runtimes/sales-assistant
+      - docker tag sf7-sales-assistant:latest ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/sf7-sales-assistant:latest
+      - echo Building admin-ai...
+      - docker build --platform linux/arm64 -t sf7-admin-ai runtimes/admin-ai
+      - docker tag sf7-admin-ai:latest ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/sf7-admin-ai:latest
+      - echo Building analytics...
+      - docker build --platform linux/arm64 -t sf7-analytics runtimes/analytics
+      - docker tag sf7-analytics:latest ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/sf7-analytics:latest
+  post_build:
+    commands:
+      - echo Pushing images...
+      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/sf7-sales-assistant:latest
+      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/sf7-admin-ai:latest
+      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/sf7-analytics:latest
+      - echo Done!
