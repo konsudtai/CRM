@@ -41,7 +41,7 @@ async function getAIConfig(tenantId: string): Promise<{ modelId: string; region:
   try {
     const res = await ddbClient.send(new GetItemCommand({
       TableName: AI_STATE_TABLE,
-      Key: { pk: { S: `TENANT#${tenantId}` }, sk: { S: 'CONFIG#ai' } },
+      Key: { PK: { S: `TENANT#${tenantId}` }, SK: { S: 'CONFIG#ai' } },
     }));
 
     if (res.Item?.data?.S) {

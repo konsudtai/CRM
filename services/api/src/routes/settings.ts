@@ -15,8 +15,8 @@ settings.put('/ai', async (c) => {
   await ddb.send(new PutItemCommand({
     TableName: TABLE,
     Item: {
-      pk: { S: `TENANT#${tenantId}` },
-      sk: { S: 'CONFIG#ai' },
+      PK: { S: `TENANT#${tenantId}` },
+      SK: { S: 'CONFIG#ai' },
       data: { S: JSON.stringify(body) },
       updatedAt: { S: new Date().toISOString() },
     },
@@ -28,7 +28,7 @@ settings.get('/ai', async (c) => {
   const tenantId = c.req.header('x-tenant-id') || (c as any).get?.('tenantId') || 'default';
   const res = await ddb.send(new GetItemCommand({
     TableName: TABLE,
-    Key: { pk: { S: `TENANT#${tenantId}` }, sk: { S: 'CONFIG#ai' } },
+    Key: { PK: { S: `TENANT#${tenantId}` }, SK: { S: 'CONFIG#ai' } },
   }));
   if (!res.Item) return c.json({});
   return c.json(JSON.parse(res.Item.data?.S || '{}'));
@@ -40,8 +40,8 @@ settings.put('/line', async (c) => {
   await ddb.send(new PutItemCommand({
     TableName: TABLE,
     Item: {
-      pk: { S: `TENANT#${tenantId}` },
-      sk: { S: 'CONFIG#line' },
+      PK: { S: `TENANT#${tenantId}` },
+      SK: { S: 'CONFIG#line' },
       data: { S: JSON.stringify(body) },
       updatedAt: { S: new Date().toISOString() },
     },
@@ -53,7 +53,7 @@ settings.get('/line', async (c) => {
   const tenantId = c.req.header('x-tenant-id') || (c as any).get?.('tenantId') || 'default';
   const res = await ddb.send(new GetItemCommand({
     TableName: TABLE,
-    Key: { pk: { S: `TENANT#${tenantId}` }, sk: { S: 'CONFIG#line' } },
+    Key: { PK: { S: `TENANT#${tenantId}` }, SK: { S: 'CONFIG#line' } },
   }));
   if (!res.Item) return c.json({});
   return c.json(JSON.parse(res.Item.data?.S || '{}'));
