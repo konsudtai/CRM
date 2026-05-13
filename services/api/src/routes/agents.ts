@@ -17,7 +17,7 @@ const agents = new Hono();
 
 const AGENTCORE_ARN = process.env.AGENTCORE_RUNTIME_ARN || '';
 const AGENTCORE_REGION = process.env.AGENTCORE_REGION || process.env.BEDROCK_REGION || 'ap-southeast-1';
-const DEFAULT_MODEL_ID = process.env.BEDROCK_MODEL_ID || 'anthropic.claude-sonnet-4-6';
+const DEFAULT_MODEL_ID = process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-sonnet-4-6';
 const DEFAULT_REGION = process.env.BEDROCK_REGION || 'ap-southeast-1';
 const USE_AGENTCORE = process.env.USE_AGENTCORE !== 'false' && !!AGENTCORE_ARN;
 const MAX_ITERATIONS = 8;
