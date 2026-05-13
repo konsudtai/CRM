@@ -378,4 +378,90 @@ agents.post('/stream', async (c) => {
 
 agents.get('/health', (c) => c.json({ ok: true, service: 'agents', backend: USE_AGENTCORE ? 'agentcore+fallback' : 'bedrock-converse', tools: TOOLS.length, agents: ['admin','sales-assistant','analytics'], ts: Date.now() }));
 
+// ══════════════════════════════════════════════════════════════
+// Async Task Pattern — for long-running agent actions
+// ══════════════════════════════════════════════════════════════
+
+import { DynamoDBClient as DDBClient2, PutItemCommand as PutItem2, GetItemCommand as GetItem2 } from '@aws-sdk/client-dynamodb';
+const taskDdb = new DDBClient2({ region: process.env.AWS_REGION || 'ap-southeast-1' });
+const TASK_TABLE = process.env.AI_STATE_TABLE || 'sf7-prod-ai-state';
+
+// POST /agents/task — Start async agent task (returns immediately)
+agents.post('/task', async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const { message, agentType, tenantId, sessionId } = body as any;
+  if (!message) return c.json({ error: 'message required' }, 400);
+
+  const tid = (!tenantId || tenantId === 'default') ? '00000000-0000-0000-0000-000000000001' : tenantId;
+  const taskId = `task-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  // Save task as "processing"
+  await taskDdb.send(new PutItem2({
+    TableName: TASK_TABLE,
+    Item: {
+      PK: { S: `TASK#${taskId}` },
+      SK: { S: 'STATUS' },
+      status: { S: 'processing' },
+      message: { S: message },
+      agentType: { S: agentType || 'sales-assistant' },
+      tenantId: { S: tid },
+      createdAt: { S: new Date().toISOString() },
+    },
+  }));
+
+  // Run agent in background (don't await — let it finish after response)
+  const agent = agentType || 'sales-assistant';
+  (async () => {
+    try {
+      let reply = '';
+      if (USE_AGENTCORE) {
+        const result = await invokeAgentCore(message, agent, tid, sessionId);
+        reply = result.reply;
+      } else {
+        const out = await runAgent(message, agent, tid);
+        reply = out.reply;
+      }
+      await taskDdb.send(new PutItem2({
+        TableName: TASK_TABLE,
+        Item: {
+          PK: { S: `TASK#${taskId}` },
+          SK: { S: 'STATUS' },
+          status: { S: 'done' },
+          reply: { S: reply },
+          completedAt: { S: new Date().toISOString() },
+        },
+      }));
+    } catch (err: any) {
+      await taskDdb.send(new PutItem2({
+        TableName: TASK_TABLE,
+        Item: {
+          PK: { S: `TASK#${taskId}` },
+          SK: { S: 'STATUS' },
+          status: { S: 'error' },
+          reply: { S: 'ขออภัยค่ะ: ' + String(err.message || '').slice(0, 200) },
+          completedAt: { S: new Date().toISOString() },
+        },
+      }));
+    }
+  })();
+
+  return c.json({ taskId, status: 'processing', message: 'กำลังดำเนินการค่ะ...' });
+});
+
+// GET /agents/task/:id — Poll task status
+agents.get('/task/:id', async (c) => {
+  const taskId = c.req.param('id');
+  const res = await taskDdb.send(new GetItem2({
+    TableName: TASK_TABLE,
+    Key: { PK: { S: `TASK#${taskId}` }, SK: { S: 'STATUS' } },
+  }));
+  if (!res.Item) return c.json({ status: 'not_found' }, 404);
+  return c.json({
+    taskId,
+    status: res.Item.status?.S || 'unknown',
+    reply: res.Item.reply?.S || null,
+    completedAt: res.Item.completedAt?.S || null,
+  });
+});
+
 export default agents;

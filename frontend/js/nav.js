@@ -329,8 +329,32 @@ function sendCoMsg(){
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({message:t,agentType:'sales-assistant',tenantId:user.tenantId||'default'})
-  }).then(function(res){return res.json().then(function(d){return{ok:res.ok,data:d}})})
+  }).then(function(res){
+    if(res.status===504||res.status===503){
+      // Timeout — switch to async mode
+      var e=document.getElementById('co-typing');if(e)e.textContent='กำลังดำเนินการ...';
+      return fetch('/agents/task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,agentType:'sales-assistant',tenantId:user.tenantId||'default'})}).then(function(r){return r.json()}).then(function(task){
+        if(!task.taskId){throw new Error('task failed')}
+        // Poll every 3s
+        var pollCount=0;
+        var poll=setInterval(function(){
+          pollCount++;
+          if(pollCount>20){clearInterval(poll);var e2=document.getElementById('co-typing');if(e2)e2.remove();addCoMsg('agent','ขออภัยค่ะ ใช้เวลานานเกินไป กรุณาลองใหม่ค่ะ');return}
+          fetch('/agents/task/'+task.taskId).then(function(r){return r.json()}).then(function(s){
+            if(s.status==='done'||s.status==='error'){
+              clearInterval(poll);
+              var e3=document.getElementById('co-typing');if(e3)e3.remove();
+              addCoMsg('agent',(s.reply||'เสร็จแล้วค่ะ').replace(/\n/g,'<br>'));
+            }
+          });
+        },3000);
+        return {ok:true,data:{reply:null}};
+      });
+    }
+    return res.json().then(function(d){return{ok:res.ok,data:d}});
+  })
   .then(function(r){
+    if(!r||!r.data||r.data.reply===null)return; // async mode handled above
     var e=document.getElementById('co-typing');if(e)e.remove();
     var reply=(r.data&&(r.data.reply||r.data.error||r.data.message))||'ขออภัยค่ะ ไม่ได้รับข้อมูลจาก AI';
     addCoMsg('agent',reply.replace(/\n/g,'<br>'));
