@@ -79,7 +79,7 @@ async function invokeAgentCore(message: string, agentType: string, tenantId: str
   const payload = JSON.stringify({ message, agentType, tenantId, sessionId: sid });
   const client = new BedrockAgentCoreClient({ region: AGENTCORE_REGION });
   const abortController = new AbortController();
-  const timeoutId = setTimeout(() => abortController.abort(), 20000);
+  const timeoutId = setTimeout(() => abortController.abort(), 28000);
   let response: any;
   try {
     response = await client.send(new InvokeAgentRuntimeCommand({
