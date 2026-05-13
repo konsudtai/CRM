@@ -133,9 +133,7 @@ notifications.post('/line/webhook', async (c) => {
 // Authenticated routes
 // ══════════════════════════════════════════════════════════════
 
-notifications.use('/*', authMiddleware);
-
-notifications.get('/', async (c) => {
+notifications.get('/', authMiddleware, async (c) => {
   const t = c.get('tenantId');
   const userId = c.get('userId');
   const limit = parseInt(c.req.query('limit') || '20');
@@ -145,7 +143,7 @@ notifications.get('/', async (c) => {
   return c.json(r.rows);
 });
 
-notifications.post('/', async (c) => {
+notifications.post('/', authMiddleware, async (c) => {
   const t = c.get('tenantId');
   const b = await c.req.json().catch(() => ({}));
   const r = await query(t,

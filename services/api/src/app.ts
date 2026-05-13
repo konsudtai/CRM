@@ -5,6 +5,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import auth from './routes/auth.js';
+import { handleLineWebhook } from './routes/line-webhook.js';
 import users from './routes/users.js';
 import roles from './routes/roles.js';
 import accounts from './routes/accounts.js';
@@ -30,6 +31,9 @@ app.use('*', cors({
 // Health check
 app.get('/', (c) => c.json({ service: 'salesfast7-api', status: 'ok' }));
 app.get('/health', (c) => c.json({ status: 'ok' }));
+
+// LINE Webhook
+app.post('/line-webhook', (c) => handleLineWebhook(c));
 
 // Routes
 app.route('/auth', auth);
