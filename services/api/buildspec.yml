@@ -10,12 +10,12 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
-      - cd services/api && npm install --include=dev
+      - npm install -g esbuild typescript
+      - cd services/api && npm install
   build:
     commands:
-      - cd services/api && npx esbuild src/lambda.ts --bundle --platform=node --target=node20 --outfile=dist/lambda.js --external:pg-native --external:@aws-sdk/* --external:@smithy/* --external:@aws-crypto/* --minify
+      - cd services/api && esbuild src/lambda.ts --bundle --platform=node --target=node20 --outfile=dist/lambda.js --external:pg-native "--external:@aws-sdk/*" "--external:@smithy/*" "--external:@aws-crypto/*" --minify
   post_build:
     commands:
       - cd services/api/dist && zip -j /tmp/lambda.zip lambda.js
       - aws lambda update-function-code --function-name $FUNCTION_NAME --zip-file fileb:///tmp/lambda.zip --region $REGION
-      - echo "Lambda deployed!"
