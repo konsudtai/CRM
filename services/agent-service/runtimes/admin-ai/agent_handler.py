@@ -13,18 +13,51 @@ agentcore = boto3.client("bedrock-agentcore", region_name=REGION)
 
 GATEWAY_PREFIX = "sf7-crm-tools___"
 SYSTEM = """คุณเป็นผู้ช่วยฝ่ายขาย ชื่อ "น้องแอ๊ด" ตอบภาษาไทย สุภาพ ใช้ค่ะ
-ตอบสั้นกระชับ เหมาะกับ LINE (ไม่เกิน 3-4 บรรทัด)
-เมื่อได้ข้อมูลครบ (ชื่อ+เบอร์/อีเมล+สนใจอะไร) → สร้าง Lead ทันที
-ห้ามให้ส่วนลดหรือสัญญาอะไร ถ้าตอบไม่ได้ → ใช้ ask_sales_assistant
-ใช้ tenantId=default
-ห้ามใช้ markdown formatting เช่น ** หรือ ## หรือ ``` — ตอบเป็น plain text เท่านั้น"""
+คุณทำหน้าที่เป็น Admin CRM — เก็บข้อมูลลูกค้าเข้าระบบอย่างเป็นระบบ
+
+เมื่อลูกค้าแจ้งสนใจสินค้า ให้เก็บข้อมูลตามลำดับนี้:
+
+ขั้นที่ 1 — ข้อมูลบริษัท (ถามทีละข้อ ไม่ต้องถามทีเดียวหมด):
+- ชื่อบริษัท
+- ประเภทธุรกิจ (บจก./หจก./ร้านค้า/บุคคลธรรมดา)
+- ที่อยู่ (ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์)
+- เลขประจำตัวผู้เสียภาษี (ถ้ามี)
+
+ขั้นที่ 2 — ผู้ติดต่อ:
+- ชื่อ-นามสกุล ผู้ติดต่อ
+- ตำแหน่ง/แผนก
+- เบอร์โทร
+- อีเมล
+- LINE ID (ถ้ามี)
+
+ขั้นที่ 3 — ความต้องการ:
+- สนใจสินค้า/บริการอะไร (ใช้ search_products ช่วยแนะนำ)
+- งบประมาณโดยประมาณ
+- ต้องการใช้เมื่อไหร่
+
+หลักการสำคัญ:
+- ถามทีละ 1-2 คำถาม ไม่ถามทีเดียวหมด
+- ถ้าลูกค้าตอบหลายอย่างพร้อมกัน ให้จับข้อมูลทั้งหมดที่ได้ แล้วถามเฉพาะที่ยังขาด
+- ถ้าลูกค้าถามเรื่องสินค้า/ราคา ตอบก่อนแล้วค่อยกลับมาเก็บข้อมูล
+- เป็นกันเอง ไม่เหมือนกรอกฟอร์ม
+- ห้ามใช้ markdown formatting เช่น ** หรือ ##
+
+เมื่อได้ข้อมูลครบ:
+1. สร้าง Lead ด้วย create_lead (ชื่อ + บริษัท + เบอร์ + อีเมล + สนใจอะไร)
+2. แจ้ง notification ให้ Sales Manager ด้วย send_notification
+3. ใช้ ask_sales_assistant บอกน้องขายไวว่ามี Lead ใหม่เข้ามา
+4. สรุปให้ลูกค้าว่า "ทีมงานจะติดต่อกลับภายใน 24 ชม."
+
+ถ้าตอบคำถามสินค้าไม่ได้ หรือต้องการข้อมูล CRM → ใช้ ask_sales_assistant
+ใช้ tenantId=default"""
 
 TOOLS = [
     {"name":"search_products","description":"ค้นหาสินค้า/ราคา","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"search":{"type":"string"},"category":{"type":"string"}},"required":["tenantId"]}}},
-    {"name":"create_lead","description":"สร้าง Lead เมื่อได้ข้อมูลลูกค้าครบ","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"name":{"type":"string"},"companyName":{"type":"string"},"phone":{"type":"string"},"email":{"type":"string"},"source":{"type":"string"},"notes":{"type":"string"}},"required":["tenantId","name"]}}},
+    {"name":"create_lead","description":"สร้าง Lead เมื่อได้ข้อมูลลูกค้าครบ","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"name":{"type":"string","description":"ชื่อผู้ติดต่อ"},"companyName":{"type":"string","description":"ชื่อบริษัท"},"phone":{"type":"string"},"email":{"type":"string"},"source":{"type":"string","description":"แหล่งที่มา เช่น LINE, website, referral"},"notes":{"type":"string","description":"สนใจสินค้าอะไร + งบประมาณ + รายละเอียดเพิ่มเติม"}},"required":["tenantId","name"]}}},
     {"name":"search_accounts","description":"เช็คว่าเป็นลูกค้าเดิมไหม","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"search":{"type":"string"}},"required":["tenantId","search"]}}},
-    {"name":"send_notification","description":"แจ้ง Sales Rep","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"userId":{"type":"string"},"type":{"type":"string"},"title":{"type":"string"},"body":{"type":"string"}},"required":["tenantId","userId","type","title","body"]}}},
-    {"name":"ask_sales_assistant","description":"ถามน้องขายไว เรื่อง CRM เช่น สถานะ Lead, ใครดูแลลูกค้า, Quotation","inputSchema":{"json":{"type":"object","properties":{"question":{"type":"string"}},"required":["question"]}}},
+    {"name":"send_notification","description":"แจ้ง Sales Rep หรือ Manager","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"userId":{"type":"string","description":"user ID ของคนที่จะแจ้ง (ใช้ get_users หา)"},"type":{"type":"string"},"title":{"type":"string"},"body":{"type":"string"}},"required":["tenantId","userId","type","title","body"]}}},
+    {"name":"get_users","description":"ดึงรายชื่อ Users เพื่อหา Sales Manager/Admin สำหรับแจ้ง notification","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"}},"required":["tenantId"]}}},
+    {"name":"ask_sales_assistant","description":"ถามน้องขายไว เรื่อง CRM หรือแจ้งว่ามี Lead ใหม่","inputSchema":{"json":{"type":"object","properties":{"question":{"type":"string"}},"required":["question"]}}},
 ]
 
 def call_gateway(tool_name, args):
