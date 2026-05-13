@@ -77,17 +77,17 @@ TOOLS = [
 def get_memory_history(session_id, actor_id):
     """Retrieve conversation history from AgentCore Memory"""
     try:
-        resp = memory_client.retrieve_memory_events(
+        resp = memory_client.list_events(
             memoryId=MEMORY_ID,
             sessionId=session_id,
             actorId=actor_id,
-            maxEvents=20
+            includePayloads=True
         )
         events = resp.get("events", [])
         messages = []
         for ev in events:
-            role = ev.get("role", "user")
-            content = ev.get("content", "")
+            role = ev.get("payload",[{}])[0].get("conversational",{}).get("role","USER").lower()
+            content = ev.get("payload",[{}])[0].get("conversational",{}).get("content",{}).get("text","")
             if role in ("user", "assistant") and content:
                 messages.append({"role": role, "content": [{"text": content}]})
         return messages
@@ -98,11 +98,11 @@ def get_memory_history(session_id, actor_id):
 def save_memory_event(session_id, actor_id, role, content):
     """Save a message to AgentCore Memory"""
     try:
-        memory_client.create_memory_event(
+        memory_client.create_event(
             memoryId=MEMORY_ID,
             sessionId=session_id,
             actorId=actor_id,
-            event={"role": role, "content": content}
+            payload=[{"conversational":{"content":{"text":content},"role":role.upper()}}]
         )
     except Exception as e:
         print(f"[Memory] Save error: {e}")
