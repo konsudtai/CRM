@@ -18,4 +18,5 @@ phases:
   post_build:
     commands:
       - cd services/api/dist && zip -j /tmp/lambda.zip lambda.js
-      - aws lambda update-function-code --function-name $FUNCTION_NAME --zip-file fileb:///tmp/lambda.zip --region $REGION
+      - aws s3 cp /tmp/lambda.zip s3://sf7-prod-frontend-364478544994/deploy/api-lambda.zip --region $REGION
+      - aws lambda update-function-code --function-name $FUNCTION_NAME --s3-bucket sf7-prod-frontend-364478544994 --s3-key deploy/api-lambda.zip --region $REGION
