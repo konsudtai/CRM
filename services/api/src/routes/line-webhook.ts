@@ -61,7 +61,7 @@ export async function processLineAsync(event: any) {
   try {
     const { BedrockAgentCoreClient, InvokeAgentRuntimeCommand } = await import('@aws-sdk/client-bedrock-agentcore');
     const client = new BedrockAgentCoreClient({ region: 'ap-southeast-1' });
-    const sid = `line-${lineUserId}-${Date.now()}`;
+    const sid = `line-${lineUserId}-session`;
     const resp = await client.send(new InvokeAgentRuntimeCommand({
       agentRuntimeArn: process.env.ADMIN_AI_RUNTIME_ARN || process.env.AGENTCORE_RUNTIME_ARN || '',
       runtimeSessionId: sid,
