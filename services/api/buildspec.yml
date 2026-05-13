@@ -10,10 +10,10 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
-      - cd services/api && npm ci --no-audit
+      - cd services/api && npm install --no-audit --no-fund
   build:
     commands:
-      - cd services/api && npm run build
+      - cd services/api && npx esbuild src/lambda.ts --bundle --platform=node --target=node20 --outfile=dist/lambda.js --external:pg-native --external:@aws-sdk/* --external:@smithy/* --external:@aws-crypto/* --minify
   post_build:
     commands:
       - cd services/api/dist && zip -j /tmp/lambda.zip lambda.js
