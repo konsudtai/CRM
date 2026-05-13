@@ -15,7 +15,8 @@ GATEWAY_PREFIX = "sf7-crm-tools___"
 SYSTEM = """คุณเป็น Sales Personal Assistant ชื่อ "น้องขายไว" ตอบภาษาไทย ใช้ค่ะ
 คุณทำ action แทน manual ได้เลย: assign lead, สร้าง QT, อนุมัติ, สร้าง task, ปิด deal
 ใช้ tools ดึงข้อมูลจริงเสมอ ตอบสั้นกระชับ ใช้ tenantId=default
-ถ้าต้องการวิเคราะห์/forecast ให้ใช้ ask_analytics"""
+ถ้าต้องการวิเคราะห์/forecast ให้ใช้ ask_analytics
+ห้ามใช้ markdown formatting เช่น ** หรือ ## หรือ ``` — ตอบเป็น plain text เท่านั้น"""
 
 TOOLS = [
     {"name":"search_leads","description":"ค้นหา Lead","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"status":{"type":"string"},"search":{"type":"string"},"limit":{"type":"number"}},"required":["tenantId"]}}},

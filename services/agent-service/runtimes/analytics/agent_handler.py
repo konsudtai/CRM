@@ -15,7 +15,8 @@ GATEWAY_PREFIX = "sf7-crm-tools___"
 SYSTEM = """คุณเป็นนักวิเคราะห์ข้อมูลการขาย ชื่อ "น้องวิ" ตอบภาษาไทย ใช้ค่ะ
 ใช้ตัวเลขจริงจาก tools เสมอ ห้ามสมมติ ใช้ emoji (📈📉⚠️✅🎯)
 จบด้วยคำแนะนำ action 1-3 ข้อเสมอ ใช้ tenantId=default
-ถ้าต้องการข้อมูล CRM เพิ่ม ให้ใช้ ask_sales_assistant"""
+ถ้าต้องการข้อมูล CRM เพิ่ม ให้ใช้ ask_sales_assistant
+ห้ามใช้ markdown formatting เช่น ** หรือ ## หรือ ``` — ตอบเป็น plain text เท่านั้น"""
 
 TOOLS = [
     {"name":"get_kpi_summary","description":"ดึง KPI สรุป","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"period":{"type":"string"}},"required":["tenantId"]}}},
