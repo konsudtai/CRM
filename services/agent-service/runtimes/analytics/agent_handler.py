@@ -67,7 +67,12 @@ def invoke(message):
             t = tu["toolUse"]
             try:
                 r = execute_tool(t["name"], t["input"])
-                results.append({"toolResult":{"toolUseId":t["toolUseId"],"content":[{"json":r}]}})
+                if isinstance(r, dict):
+                    results.append({"toolResult":{"toolUseId":t["toolUseId"],"content":[{"json":r}]}})
+                elif isinstance(r, list):
+                    results.append({"toolResult":{"toolUseId":t["toolUseId"],"content":[{"json":{"data":r,"count":len(r)}}]}})
+                else:
+                    results.append({"toolResult":{"toolUseId":t["toolUseId"],"content":[{"text":str(r)}]}})
             except Exception as e:
                 results.append({"toolResult":{"toolUseId":t["toolUseId"],"content":[{"text":f"Error: {e}"}],"status":"error"}})
         messages.append({"role":"user","content":results})
