@@ -1,4 +1,4 @@
-"""น้องแอ๊ด — Admin AI Runtime (Customer-facing)"""
+"""น้องแอ๊ด — Admin AI Runtime (Customer-facing via LINE)"""
 import json, os, traceback, boto3, urllib.request, urllib.error
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -13,51 +13,57 @@ agentcore = boto3.client("bedrock-agentcore", region_name=REGION)
 
 GATEWAY_PREFIX = "sf7-crm-tools___"
 SYSTEM = """คุณเป็นผู้ช่วยฝ่ายขาย ชื่อ "น้องแอ๊ด" ตอบภาษาไทย สุภาพ ใช้ค่ะ
-คุณทำหน้าที่เป็น Admin CRM — เก็บข้อมูลลูกค้าเข้าระบบอย่างเป็นระบบ
+คุณทำหน้าที่รับลูกค้าใหม่ผ่าน LINE OA และเก็บข้อมูลเข้าระบบ CRM
 
-เมื่อลูกค้าแจ้งสนใจสินค้า ให้เก็บข้อมูลตามลำดับนี้:
+Flow การสนทนา (ทำตามลำดับนี้):
 
-ขั้นที่ 1 — ข้อมูลบริษัท (ถามทีละข้อ ไม่ต้องถามทีเดียวหมด):
-- ชื่อบริษัท
-- ประเภทธุรกิจ (บจก./หจก./ร้านค้า/บุคคลธรรมดา)
-- ที่อยู่ (ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์)
-- เลขประจำตัวผู้เสียภาษี (ถ้ามี)
+1. แนะนำตัว:
+   - ทักทาย แนะนำว่าเป็นน้องแอ๊ด ผู้ช่วยฝ่ายขาย
+   - ถามว่าสนใจสินค้า/บริการอะไร
 
-ขั้นที่ 2 — ผู้ติดต่อ:
-- ชื่อ-นามสกุล ผู้ติดต่อ
-- ตำแหน่ง/แผนก
-- เบอร์โทร
-- อีเมล
-- LINE ID (ถ้ามี)
+2. แนะนำสินค้า:
+   - เมื่อลูกค้าบอกสิ่งที่สนใจ → ใช้ search_products ค้นหา
+   - แสดงสินค้าที่เกี่ยวข้อง (ชื่อ + ราคา + รายละเอียดสั้นๆ)
+   - ถามว่าสนใจตัวไหน หรือต้องการข้อมูลเพิ่มเติม
 
-ขั้นที่ 3 — ความต้องการ:
-- สนใจสินค้า/บริการอะไร (ใช้ search_products ช่วยแนะนำ)
-- งบประมาณโดยประมาณ
-- ต้องการใช้เมื่อไหร่
+3. เก็บข้อมูลบริษัท (ถามทีละข้อ เป็นกันเอง):
+   - ชื่อบริษัท
+   - ประเภทธุรกิจ
+   - ที่อยู่ (ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์)
+   - เลขผู้เสียภาษี (ถ้ามี ไม่บังคับ)
+
+4. เก็บข้อมูลผู้ติดต่อ:
+   - ชื่อ-นามสกุล
+   - ตำแหน่ง
+   - เบอร์โทร
+   - อีเมล
+
+5. สร้าง Lead ในระบบ:
+   - เมื่อได้ข้อมูลครบ → ใช้ create_lead สร้าง Lead
+   - notes ให้ใส่: สินค้าที่สนใจ + ข้อมูลบริษัท + ที่อยู่
+   - แจ้งลูกค้าว่า "ทีมงานจะติดต่อกลับภายใน 24 ชม."
+   - ใช้ ask_sales_assistant แจ้งน้องขายไวว่ามี Lead ใหม่
+
+6. เมื่อ Lead ถูก assign:
+   - ถ้าน้องขายไวแจ้งกลับมาว่า assign ให้ใครแล้ว
+   - แจ้งลูกค้าผ่าน LINE ว่า "คุณ [ชื่อ Sales Rep] จะเป็นผู้ดูแลท่านค่ะ"
 
 หลักการสำคัญ:
 - ถามทีละ 1-2 คำถาม ไม่ถามทีเดียวหมด
-- ถ้าลูกค้าตอบหลายอย่างพร้อมกัน ให้จับข้อมูลทั้งหมดที่ได้ แล้วถามเฉพาะที่ยังขาด
+- ถ้าลูกค้าตอบหลายอย่างพร้อมกัน จับข้อมูลทั้งหมด แล้วถามเฉพาะที่ยังขาด
 - ถ้าลูกค้าถามเรื่องสินค้า/ราคา ตอบก่อนแล้วค่อยกลับมาเก็บข้อมูล
-- เป็นกันเอง ไม่เหมือนกรอกฟอร์ม
+- เป็นกันเอง ไม่เหมือนกรอกฟอร์ม ใช้ภาษาสบายๆ
 - ห้ามใช้ markdown formatting เช่น ** หรือ ##
-
-เมื่อได้ข้อมูลครบ:
-1. สร้าง Lead ด้วย create_lead (ชื่อ + บริษัท + เบอร์ + อีเมล + สนใจอะไร)
-2. แจ้ง notification ให้ Sales Manager ด้วย send_notification
-3. ใช้ ask_sales_assistant บอกน้องขายไวว่ามี Lead ใหม่เข้ามา
-4. สรุปให้ลูกค้าว่า "ทีมงานจะติดต่อกลับภายใน 24 ชม."
-
-ถ้าตอบคำถามสินค้าไม่ได้ หรือต้องการข้อมูล CRM → ใช้ ask_sales_assistant
-ใช้ tenantId=default"""
+- ห้ามให้ส่วนลดหรือสัญญาอะไรที่ไม่ได้รับอนุญาต
+- ใช้ tenantId=default"""
 
 TOOLS = [
     {"name":"search_products","description":"ค้นหาสินค้า/ราคา","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"search":{"type":"string"},"category":{"type":"string"}},"required":["tenantId"]}}},
-    {"name":"create_lead","description":"สร้าง Lead เมื่อได้ข้อมูลลูกค้าครบ","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"name":{"type":"string","description":"ชื่อผู้ติดต่อ"},"companyName":{"type":"string","description":"ชื่อบริษัท"},"phone":{"type":"string"},"email":{"type":"string"},"source":{"type":"string","description":"แหล่งที่มา เช่น LINE, website, referral"},"notes":{"type":"string","description":"สนใจสินค้าอะไร + งบประมาณ + รายละเอียดเพิ่มเติม"}},"required":["tenantId","name"]}}},
+    {"name":"create_lead","description":"สร้าง Lead เมื่อได้ข้อมูลลูกค้าครบ","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"name":{"type":"string","description":"ชื่อผู้ติดต่อ"},"companyName":{"type":"string","description":"ชื่อบริษัท"},"phone":{"type":"string"},"email":{"type":"string"},"source":{"type":"string","description":"แหล่งที่มา เช่น LINE"},"notes":{"type":"string","description":"สินค้าที่สนใจ + ข้อมูลบริษัท + ที่อยู่ + งบประมาณ"}},"required":["tenantId","name"]}}},
     {"name":"search_accounts","description":"เช็คว่าเป็นลูกค้าเดิมไหม","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"search":{"type":"string"}},"required":["tenantId","search"]}}},
-    {"name":"send_notification","description":"แจ้ง Sales Rep หรือ Manager","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"userId":{"type":"string","description":"user ID ของคนที่จะแจ้ง (ใช้ get_users หา)"},"type":{"type":"string"},"title":{"type":"string"},"body":{"type":"string"}},"required":["tenantId","userId","type","title","body"]}}},
-    {"name":"get_users","description":"ดึงรายชื่อ Users เพื่อหา Sales Manager/Admin สำหรับแจ้ง notification","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"}},"required":["tenantId"]}}},
-    {"name":"ask_sales_assistant","description":"ถามน้องขายไว เรื่อง CRM หรือแจ้งว่ามี Lead ใหม่","inputSchema":{"json":{"type":"object","properties":{"question":{"type":"string"}},"required":["question"]}}},
+    {"name":"get_users","description":"ดึงรายชื่อ Sales Reps","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"}},"required":["tenantId"]}}},
+    {"name":"send_notification","description":"แจ้ง Sales Rep หรือ Manager","inputSchema":{"json":{"type":"object","properties":{"tenantId":{"type":"string"},"userId":{"type":"string"},"type":{"type":"string"},"title":{"type":"string"},"body":{"type":"string"}},"required":["tenantId","userId","type","title","body"]}}},
+    {"name":"ask_sales_assistant","description":"ถามน้องขายไว เช่น แจ้ง Lead ใหม่ หรือถามข้อมูล CRM","inputSchema":{"json":{"type":"object","properties":{"question":{"type":"string"}},"required":["question"]}}},
 ]
 
 def call_gateway(tool_name, args):
@@ -88,7 +94,7 @@ def invoke(message):
     tools_config = {"tools": [{"toolSpec": {"name":t["name"],"description":t["description"],"inputSchema":t["inputSchema"]}} for t in TOOLS]}
     messages = [{"role":"user","content":[{"text":message}]}]
     for _ in range(5):
-        resp = bedrock.converse(modelId=MODEL_ID, system=[{"text":SYSTEM}], messages=messages, toolConfig=tools_config, inferenceConfig={"maxTokens":1024,"temperature":0.3})
+        resp = bedrock.converse(modelId=MODEL_ID, system=[{"text":SYSTEM}], messages=messages, toolConfig=tools_config, inferenceConfig={"maxTokens":2048,"temperature":0.4})
         output = resp["output"]["message"]
         output["content"] = sanitize(output["content"])
         messages.append(output)
@@ -100,7 +106,6 @@ def invoke(message):
             t = tu["toolUse"]
             try:
                 r = execute_tool(t["name"], t["input"])
-                # Ensure result is always a JSON object (not list/string)
                 if isinstance(r, dict):
                     results.append({"toolResult":{"toolUseId":t["toolUseId"],"content":[{"json":r}]}})
                 elif isinstance(r, list):
