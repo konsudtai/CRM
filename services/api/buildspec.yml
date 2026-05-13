@@ -1,0 +1,21 @@
+version: 0.2
+
+env:
+  variables:
+    REGION: ap-southeast-1
+    FUNCTION_NAME: sf7-prod-crm
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - cd services/api && npm ci --no-audit
+  build:
+    commands:
+      - cd services/api && npm run build
+  post_build:
+    commands:
+      - cd services/api/dist && zip -j /tmp/lambda.zip lambda.js
+      - aws lambda update-function-code --function-name $FUNCTION_NAME --zip-file fileb:///tmp/lambda.zip --region $REGION
+      - echo "Lambda deployed!"
