@@ -102,7 +102,7 @@ def save_memory_event(session_id, actor_id, role, content):
             memoryId=MEMORY_ID,
             sessionId=session_id,
             actorId=actor_id,
-            payload=[{"conversational":{"content":{"text":content},"role":role.upper()}}]
+            eventTimestamp=__import__("datetime").datetime.now(),payload=[{"conversational":{"content":{"text":content},"role":role.upper()}}]
         )
     except Exception as e:
         print(f"[Memory] Save error: {e}")
