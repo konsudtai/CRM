@@ -32,7 +32,7 @@ leads.get('/', async (c) => {
 
   if (status) { where += ` AND status = $${idx}`; params.push(status); idx++; }
   if (assignedTo) { where += ` AND assigned_to = $${idx}`; params.push(assignedTo); idx++; }
-  if (search) { where += ` AND (name ILIKE $${idx} OR company_name ILIKE $${idx} OR email ILIKE $${idx})`; params.push(`%${search}%`); idx++; }
+  if (search) { where += ` AND (name ILIKE $${idx} OR company_name ILIKE $${idx} OR email ILIKE $${idx} OR phone ILIKE $${idx} OR metadata::text ILIKE $${idx})`; params.push(`%${search}%`); idx++; }
 
   const countR = await query(t, `SELECT count(*) FROM leads WHERE ${where}`, params);
   const dataParams = [...params, limit, (page - 1) * limit];
