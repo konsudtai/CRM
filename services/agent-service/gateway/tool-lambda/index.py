@@ -6,7 +6,7 @@ DEFAULT_TENANT = os.environ.get("DEFAULT_TENANT_ID", "default")
 def req(method, path, body=None, tenant_id=None):
     token = os.environ.get("SERVICE_TOKEN", "")
     url = f"{API_BASE}{path}"
-    hdrs = {"Content-Type": "application/json", "x-tenant-id": tenant_id or DEFAULT_TENANT, "Authorization": f"Bearer {token}"}
+    hdrs = {"Content-Type": "application/json", "x-tenant-id": DEFAULT_TENANT if (not tenant_id or tenant_id == "default") else tenant_id, "Authorization": f"Bearer {token}"}
     data = json.dumps(body).encode() if body else None
     r = urllib.request.Request(url, data=data, headers=hdrs, method=method)
     try:
