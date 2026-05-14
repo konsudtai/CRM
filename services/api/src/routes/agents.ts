@@ -16,6 +16,9 @@ import { query } from '../lib/db.js';
 const agents = new Hono();
 
 const AGENTCORE_ARN = process.env.AGENTCORE_RUNTIME_ARN || '';
+const ADMIN_AI_ARN = process.env.ADMIN_AI_RUNTIME_ARN || '';
+const ANALYTICS_ARN = process.env.ANALYTICS_RUNTIME_ARN || '';
+function getAgentArn(agentType: string) { if (agentType === 'admin-ai') return ADMIN_AI_ARN || AGENTCORE_ARN; if (agentType === 'analytics') return ANALYTICS_ARN || AGENTCORE_ARN; return AGENTCORE_ARN; }
 const AGENTCORE_REGION = process.env.AGENTCORE_REGION || process.env.BEDROCK_REGION || 'ap-southeast-1';
 const DEFAULT_MODEL_ID = process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-sonnet-4-6';
 const DEFAULT_REGION = process.env.BEDROCK_REGION || 'ap-southeast-1';
@@ -83,7 +86,7 @@ async function invokeAgentCore(message: string, agentType: string, tenantId: str
   let response: any;
   try {
     response = await client.send(new InvokeAgentRuntimeCommand({
-      agentRuntimeArn: AGENTCORE_ARN, runtimeSessionId: sid,
+      agentRuntimeArn: getAgentArn(agentType), runtimeSessionId: sid,
       payload: new TextEncoder().encode(payload), qualifier: 'DEFAULT',
     }), { abortSignal: abortController.signal });
   } finally { clearTimeout(timeoutId); }
