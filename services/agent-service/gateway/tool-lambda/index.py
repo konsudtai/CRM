@@ -47,12 +47,12 @@ def search_opportunities(p):
     if p.get("stage"): qs.append(f"stage={p['stage']}")
     if p.get("ownerId"): qs.append(f"ownerId={p['ownerId']}")
     return req("GET", f"/opportunities?{'&'.join(qs)}", tenant_id=p.get("tenantId"))
-def get_kpi_summary(p): return req("GET", f"/dashboard?period={p.get('period','month')}", tenant_id=p.get("tenantId"))
-def get_pipeline_analysis(p): return req("GET", "/dashboard/pipeline", tenant_id=p.get("tenantId"))
+def get_kpi_summary(p): return req("GET", f"/dashboard/kpi?period={p.get('period','month')}", tenant_id=p.get("tenantId"))
+def get_pipeline_analysis(p): return req("GET", "/dashboard/pipeline-stages", tenant_id=p.get("tenantId"))
 def get_revenue_data(p):
     qs = f"?year={p['year']}" if p.get("year") else ""
     return req("GET", f"/dashboard/revenue{qs}", tenant_id=p.get("tenantId"))
-def get_forecast(p): return req("GET", "/dashboard/forecast", tenant_id=p.get("tenantId"))
+def get_forecast(p): return req("GET", "/dashboard/revenue", tenant_id=p.get("tenantId"))
 def get_users(p): return req("GET", "/users", tenant_id=p.get("tenantId"))
 def log_activity(p): return req("POST", "/activities", {"entityType":p["entityType"],"entityId":p["entityId"],"summary":p["summary"],"userId":p.get("userId","system-agent")}, p.get("tenantId"))
 def send_notification(p): return req("POST", "/notifications", {"userId":p["userId"],"channel":p.get("channel","in_app"),"type":p["type"],"title":p["title"],"body":p["body"]}, p.get("tenantId"))
