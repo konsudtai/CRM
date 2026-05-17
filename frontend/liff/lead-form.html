@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>แจ้งความสนใจ | SalesFAST 7</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+body{font-family:'Sarabun',-apple-system,sans-serif;background:#f0f4f8}
+.form-card{max-width:480px;margin:0 auto}
+.field-label{font-size:14px;font-weight:600;color:#334155;margin-bottom:4px}
+.field-input{width:100%;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:15px;transition:border .2s}
+.field-input:focus{outline:none;border-color:#0176D3;box-shadow:0 0 0 3px rgba(1,118,211,.1)}
+.chip{display:inline-flex;align-items:center;padding:8px 14px;border:1.5px solid #e2e8f0;border-radius:20px;font-size:13px;cursor:pointer;transition:all .2s;user-select:none}
+.chip:hover{border-color:#0176D3;background:#f0f7ff}
+.chip.selected{border-color:#0176D3;background:#0176D3;color:#fff}
+.budget-opt{display:flex;align-items:center;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;cursor:pointer;transition:all .2s;font-size:14px}
+.budget-opt:hover{border-color:#0176D3;background:#f0f7ff}
+.budget-opt.selected{border-color:#0176D3;background:#EBF5FF;font-weight:600}
+.btn-submit{width:100%;padding:14px;background:#0176D3;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-submit:hover{background:#015baa}
+.btn-submit:disabled{background:#94a3b8;cursor:not-allowed}
+.success-card{text-align:center;padding:40px 20px}
+@keyframes checkmark{0%{transform:scale(0)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+.check-anim{animation:checkmark .4s ease-out}
+</style>
+</head>
+<body class="min-h-screen p-4 pb-8">
+
+<!-- Form -->
+<div id="form-view" class="form-card">
+  <div class="bg-white rounded-2xl shadow-sm p-6 mb-4">
+    <div class="text-center mb-6">
+      <div class="text-3xl mb-2">📋</div>
+      <h1 class="text-xl font-bold text-slate-800">แจ้งความสนใจ</h1>
+      <p class="text-sm text-slate-500 mt-1">กรอกข้อมูลเพื่อให้ทีมงานติดต่อกลับ</p>
+    </div>
+
+    <!-- ชื่อ -->
+    <div class="mb-4">
+      <label class="field-label">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>
+      <input type="text" id="f-name" class="field-input" placeholder="เช่น สมชาย ใจดี">
+    </div>
+
+    <!-- บริษัท -->
+    <div class="mb-4">
+      <label class="field-label">บริษัท / องค์กร</label>
+      <input type="text" id="f-company" class="field-input" placeholder="เช่น บริษัท ABC จำกัด">
+    </div>
+
+    <!-- เบอร์โทร -->
+    <div class="mb-4">
+      <label class="field-label">เบอร์โทร <span class="text-red-500">*</span></label>
+      <input type="tel" id="f-phone" class="field-input" placeholder="08x-xxx-xxxx">
+    </div>
+
+    <!-- Email -->
+    <div class="mb-4">
+      <label class="field-label">Email</label>
+      <input type="email" id="f-email" class="field-input" placeholder="email@company.com">
+    </div>
+
+    <!-- สนใจสินค้า -->
+    <div class="mb-4">
+      <label class="field-label">สนใจสินค้า/บริการ <span class="text-red-500">*</span></label>
+      <div class="flex flex-wrap gap-2 mt-2" id="f-products">
+        <span class="chip" data-val="Cloud Migration">☁️ Cloud Migration</span>
+        <span class="chip" data-val="Managed Cloud">☁️ Managed Cloud</span>
+        <span class="chip" data-val="Microsoft 365">💻 Microsoft 365</span>
+        <span class="chip" data-val="Web/Mobile App">💻 Web/Mobile App</span>
+        <span class="chip" data-val="IT Support">🔧 IT Support</span>
+        <span class="chip" data-val="Security Audit">🔒 Security Audit</span>
+        <span class="chip" data-val="Network/Firewall">🌐 Network</span>
+        <span class="chip" data-val="อื่นๆ">📦 อื่นๆ</span>
+      </div>
+    </div>
+
+    <!-- งบประมาณ -->
+    <div class="mb-4">
+      <label class="field-label">งบประมาณโดยประมาณ</label>
+      <div class="grid gap-2 mt-2" id="f-budget">
+        <div class="budget-opt" data-val="< 50,000">ต่ำกว่า 50,000 บาท</div>
+        <div class="budget-opt" data-val="50,000 - 200,000">50,000 - 200,000 บาท</div>
+        <div class="budget-opt" data-val="200,000 - 500,000">200,000 - 500,000 บาท</div>
+        <div class="budget-opt" data-val="500,000 - 1,000,000">500,000 - 1,000,000 บาท</div>
+        <div class="budget-opt" data-val="> 1,000,000">มากกว่า 1,000,000 บาท</div>
+      </div>
+    </div>
+
+    <!-- รายละเอียด -->
+    <div class="mb-6">
+      <label class="field-label">รายละเอียดเพิ่มเติม</label>
+      <textarea id="f-notes" class="field-input" rows="3" placeholder="เช่น ต้องการใช้ภายในเดือนหน้า..."></textarea>
+    </div>
+
+    <!-- Submit -->
+    <button id="btn-submit" class="btn-submit" onclick="submitForm()">✅ ส่งข้อมูล</button>
+    <p class="text-xs text-slate-400 text-center mt-3">ข้อมูลจะถูกส่งให้ทีมขายเพื่อติดต่อกลับ</p>
+  </div>
+</div>
+
+<!-- Success -->
+<div id="success-view" class="form-card hidden">
+  <div class="bg-white rounded-2xl shadow-sm success-card">
+    <div class="text-5xl check-anim mb-4">✅</div>
+    <h2 class="text-xl font-bold text-slate-800 mb-2">ส่งข้อมูลเรียบร้อยแล้ว!</h2>
+    <p class="text-slate-500 mb-6">ทีมงานจะติดต่อกลับภายใน 24 ชั่วโมงค่ะ</p>
+    <div class="bg-blue-50 rounded-xl p-4 text-left text-sm text-slate-600">
+      <p class="font-semibold text-blue-700 mb-1">สิ่งที่จะเกิดขึ้นต่อไป:</p>
+      <p>1. ทีมขายจะโทรกลับเพื่อสอบถามรายละเอียด</p>
+      <p>2. จัดทำใบเสนอราคาตามความต้องการ</p>
+      <p>3. นัดหมาย Demo หรือประชุมออนไลน์</p>
+    </div>
+    <button class="btn-submit mt-6" onclick="closeLiff()">ปิดหน้านี้</button>
+  </div>
+</div>
+
+<script>
+// LIFF Init
+var liffId = ''; // Set your LIFF ID here
+var lineUserId = '';
+var lineProfile = null;
+
+async function initLiff() {
+  try {
+    if (liffId) {
+      await liff.init({ liffId: liffId });
+      if (liff.isLoggedIn()) {
+        lineProfile = await liff.getProfile();
+        lineUserId = lineProfile.userId || '';
+        // Pre-fill name from LINE profile
+        if (lineProfile.displayName && !document.getElementById('f-name').value) {
+          document.getElementById('f-name').value = lineProfile.displayName;
+        }
+      }
+    }
+  } catch (e) { console.log('LIFF init skip:', e.message); }
+}
+
+// Get category from URL params
+var params = new URLSearchParams(window.location.search);
+var preselect = params.get('product') || params.get('category') || '';
+if (preselect) {
+  setTimeout(function() {
+    document.querySelectorAll('#f-products .chip').forEach(function(el) {
+      if (el.dataset.val.toLowerCase().includes(preselect.toLowerCase())) {
+        el.classList.add('selected');
+      }
+    });
+  }, 100);
+}
+
+// Chip selection (multi-select)
+document.querySelectorAll('#f-products .chip').forEach(function(el) {
+  el.addEventListener('click', function() { this.classList.toggle('selected'); });
+});
+
+// Budget selection (single)
+document.querySelectorAll('#f-budget .budget-opt').forEach(function(el) {
+  el.addEventListener('click', function() {
+    document.querySelectorAll('#f-budget .budget-opt').forEach(function(b) { b.classList.remove('selected'); });
+    this.classList.add('selected');
+  });
+});
+
+// Submit
+async function submitForm() {
+  var name = document.getElementById('f-name').value.trim();
+  var phone = document.getElementById('f-phone').value.trim();
+  var company = document.getElementById('f-company').value.trim();
+  var email = document.getElementById('f-email').value.trim();
+  var notes = document.getElementById('f-notes').value.trim();
+
+  // Validation
+  if (!name) { alert('กรุณากรอกชื่อ-นามสกุล'); return; }
+  if (!phone) { alert('กรุณากรอกเบอร์โทร'); return; }
+
+  var products = [];
+  document.querySelectorAll('#f-products .chip.selected').forEach(function(el) { products.push(el.dataset.val); });
+  if (products.length === 0) { alert('กรุณาเลือกสินค้า/บริการที่สนใจ'); return; }
+
+  var budget = '';
+  var budgetEl = document.querySelector('#f-budget .budget-opt.selected');
+  if (budgetEl) budget = budgetEl.dataset.val;
+
+  // Disable button
+  var btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังส่ง...';
+
+  // Build lead data
+  var leadData = {
+    name: name,
+    companyName: company || null,
+    phone: phone,
+    email: email || null,
+    source: 'line',
+    notes: 'สนใจ: ' + products.join(', ') + (budget ? ' | งบ: ' + budget : '') + (notes ? ' | ' + notes : ''),
+    lineUserId: lineUserId || null,
+  };
+
+  try {
+    var apiBase = window.location.origin;
+    // If running in LIFF, use the CRM API URL
+    if (apiBase.includes('line-scdn') || apiBase.includes('liff')) {
+      apiBase = 'https://d8fvblqbvfcc.cloudfront.net';
+    }
+    var res = await fetch(apiBase + '/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-tenant-id': '00000000-0000-0000-0000-000000000001' },
+      body: JSON.stringify(leadData),
+    });
+
+    if (res.ok) {
+      document.getElementById('form-view').classList.add('hidden');
+      document.getElementById('success-view').classList.remove('hidden');
+      // Send confirmation message in LINE chat
+      if (liffId && liff.isInClient()) {
+        liff.sendMessages([{ type: 'text', text: '✅ ส่งข้อมูลเรียบร้อยแล้วค่ะ ทีมงานจะติดต่อกลับภายใน 24 ชม.' }]).catch(function(){});
+      }
+    } else {
+      throw new Error('HTTP ' + res.status);
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '✅ ส่งข้อมูล';
+    alert('เกิดข้อผิดพลาด กรุณาลองใหม่: ' + (err.message || ''));
+  }
+}
+
+function closeLiff() {
+  if (liffId && liff.isInClient()) { liff.closeWindow(); }
+  else { window.close(); }
+}
+
+// Init
+initLiff();
+</script>
+</body>
+</html>

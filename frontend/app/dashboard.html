@@ -103,6 +103,15 @@
     <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Customers & Revenue</span><a href="accounts.html" style="font-size:11px;color:var(--sf-blue)">View All</a></div><div id="customers"></div></div>
     <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Tasks Overview</span><a href="tasks.html" style="font-size:11px;color:var(--sf-blue)">View All</a></div><div id="tasks-ov"></div></div>
   </div>
+
+  <!-- Row 5: Revenue Trend + Conversion Funnel -->
+  <div class="dk-g2">
+    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Revenue Trend (Monthly)</span><span class="dk-card-badge" id="rev-trend-badge"></span></div><div id="revenue-trend"></div></div>
+    <div class="dk-card"><div class="dk-card-hd"><span class="dk-card-title">Conversion Funnel</span></div><div id="conversion-funnel"></div></div>
+  </div>
+
+  <!-- Row 6: Lead Source Performance -->
+  <div class="dk-card" style="margin-bottom:14px"><div class="dk-card-hd"><span class="dk-card-title">Lead Source Performance</span></div><div id="lead-source"></div></div>
 </div>
 <script src="../js/motion.js"></script><script src="../js/helpers.js"></script><script src="../js/i18n.js"></script><script src="../js/nav.js"></script><script src="../js/data.js"></script>
 <script>
@@ -342,7 +351,7 @@ function renderStageBreakdown(){
   if(slices.length===0){document.getElementById('stage-breakdown').innerHTML='<div class="dk-empty">No data</div>';return}
 
   // Large interactive SVG Donut Chart with labels inside
-  var size=280,cx=size/2,cy=size/2,outerR=120,innerR=65;
+  var size=560,cx=size/2,cy=size/2,outerR=240,innerR=130;
   var svg='<svg viewBox="0 0 '+size+' '+size+'" style="width:100%;max-width:'+size+'px;height:auto;margin:0 auto;display:block;cursor:pointer" id="pie-svg">';
 
   // Gradient defs for modern look
@@ -384,8 +393,8 @@ function renderStageBreakdown(){
 
   // Center circle with total
   svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+innerR+'" fill="var(--surface)" style="filter:drop-shadow(0 2px 8px rgba(0,0,0,.06))"/>';
-  svg+='<text x="'+cx+'" y="'+(cy-4)+'" text-anchor="middle" font-size="28" font-weight="900" fill="var(--text)" id="pie-center-num">'+total+'</text>';
-  svg+='<text x="'+cx+'" y="'+(cy+14)+'" text-anchor="middle" font-size="10" font-weight="600" fill="var(--text3)" id="pie-center-label">Total Deals</text>';
+  svg+='<text x="'+cx+'" y="'+(cy-4)+'" text-anchor="middle" font-size="48" font-weight="900" fill="var(--text)" id="pie-center-num">'+total+'</text>';
+  svg+='<text x="'+cx+'" y="'+(cy+20)+'" text-anchor="middle" font-size="16" font-weight="600" fill="var(--text3)" id="pie-center-label">Total Deals</text>';
   svg+='</svg>';
 
   // Tooltip
@@ -523,7 +532,154 @@ function renderKanban(){
   }).join('')+'</div>';
 }
 
-function renderAll(){renderQA();renderKPIs();renderWonChart();renderPipeline();renderKanban();renderTopOpen();renderStageBreakdown();renderAgentsCompare();renderPipeAgents();renderCustomers();renderTasks();initAnalyticsAgent()}
+/* ── Revenue Trend (Monthly Bar Chart — 6 months) ── */
+function renderRevenueTrend(){
+  var won=allLeadsRaw.filter(function(l){return l.status==='Won'});
+  var months={};
+  won.forEach(function(l){
+    var d=l.createdAt?l.createdAt.substring(0,7):'';
+    if(!d) return;
+    if(!months[d])months[d]={month:d,amount:0,count:0};
+    months[d].amount+=l.value;months[d].count++;
+  });
+  var data=Object.values(months).sort(function(a,b){return a.month.localeCompare(b.month)}).slice(-6);
+  if(data.length===0){document.getElementById('revenue-trend').innerHTML='<div class="dk-empty">No revenue data yet</div>';return}
+
+  var maxAmt=Math.max.apply(null,data.map(function(d){return d.amount}).concat([1]));
+  var totalRev=data.reduce(function(s,d){return s+d.amount},0);
+  document.getElementById('rev-trend-badge').textContent=fmt(totalRev)+' (6 mo)';
+  var monthNames={'01':'ม.ค.','02':'ก.พ.','03':'มี.ค.','04':'เม.ย.','05':'พ.ค.','06':'มิ.ย.','07':'ก.ค.','08':'ส.ค.','09':'ก.ย.','10':'ต.ค.','11':'พ.ย.','12':'ธ.ค.'};
+
+  var W=500,H=220,padL=55,padR=15,padT=20,padB=40;
+  var chartW=W-padL-padR,chartH=H-padT-padB;
+  var n=data.length,barW=Math.min(chartW/n*0.55,50),gap=(chartW-barW*n)/(n+1);
+
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;font-family:inherit">';
+  svg+='<defs><linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2E844A"/><stop offset="100%" stop-color="#0B827C"/></linearGradient></defs>';
+
+  // Grid
+  for(var g=0;g<=4;g++){var gy=padT+chartH*(1-g/4);svg+='<line x1="'+padL+'" y1="'+gy+'" x2="'+(W-padR)+'" y2="'+gy+'" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/>';svg+='<text x="'+(padL-6)+'" y="'+(gy+3)+'" text-anchor="end" font-size="8" fill="var(--text3)">'+fmt(maxAmt*g/4)+'</text>';}
+
+  // Bars with rounded tops
+  data.forEach(function(d,i){
+    var x=padL+gap+(barW+gap)*i;
+    var h=d.amount>0?(d.amount/maxAmt)*chartH:2;
+    var y=padT+chartH-h;
+    svg+='<rect x="'+x+'" y="'+y+'" width="'+barW+'" height="'+h+'" rx="5" fill="url(#revGrad)" opacity="0.9"/>';
+    svg+='<text x="'+(x+barW/2)+'" y="'+(y-6)+'" text-anchor="middle" font-size="9" font-weight="700" fill="#2E844A">'+fmt(d.amount)+'</text>';
+    var mm=d.month.split('-')[1]||'';
+    svg+='<text x="'+(x+barW/2)+'" y="'+(H-10)+'" text-anchor="middle" font-size="9" fill="var(--text2)">'+(monthNames[mm]||mm)+'</text>';
+  });
+
+  // Trend line connecting bar tops
+  if(data.length>1){
+    var pts=data.map(function(d,i){var x=padL+gap+(barW+gap)*i+barW/2;var h=d.amount>0?(d.amount/maxAmt)*chartH:2;return x+','+(padT+chartH-h)});
+    svg+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="#D97706" stroke-width="2" stroke-dasharray="4,3" stroke-linecap="round"/>';
+    pts.forEach(function(p){svg+='<circle cx="'+p.split(',')[0]+'" cy="'+p.split(',')[1]+'" r="3" fill="#D97706" stroke="#fff" stroke-width="1.5"/>'});
+  }
+  svg+='</svg>';
+  document.getElementById('revenue-trend').innerHTML=svg;
+}
+
+/* ── Conversion Funnel ── */
+function renderConversionFunnel(){
+  var stages=['New','Contacted','Qualified','Proposal','Negotiation','Won'];
+  var simpleCounts={};
+  allLeadsRaw.forEach(function(l){if(l.status!=='Lost')simpleCounts[l.status]=(simpleCounts[l.status]||0)+1});
+
+  var total=allLeadsRaw.filter(function(l){return l.status!=='Lost'}).length||1;
+  var cumulData=stages.map(function(s,i){
+    var remaining=allLeadsRaw.filter(function(l){return stages.indexOf(l.status)>=i && l.status!=='Lost'}).length;
+    return {name:s,count:remaining,pct:Math.round(remaining/total*100)};
+  });
+
+  var colors=['#64748B','#0176D3','#0B827C','#D97706','#DC2626','#2E844A'];
+
+  // Use horizontal bars instead of trapezoid — clearer and text always readable
+  var html='<div style="display:flex;flex-direction:column;gap:6px">';
+  cumulData.forEach(function(d,i){
+    var widthPct=Math.max(d.pct, 20);
+    var color=colors[i];
+    html+='<div style="display:flex;align-items:center;gap:10px">';
+    html+='<div style="width:80px;font-size:11px;font-weight:600;color:var(--text);text-align:right">'+esc(d.name)+'</div>';
+    html+='<div style="flex:1;position:relative">';
+    html+='<div style="height:32px;background:var(--surface3);border-radius:6px;overflow:hidden;position:relative">';
+    html+='<div style="height:100%;width:'+widthPct+'%;background:'+color+';border-radius:6px;display:flex;align-items:center;padding-left:12px;transition:width .8s ease">';
+    html+='<span style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap">'+d.count+' leads ('+d.pct+'%)</span>';
+    html+='</div></div></div>';
+    // Drop-off indicator
+    if(i>0){
+      var dropOff=cumulData[i-1].count>0?Math.round((1-d.count/cumulData[i-1].count)*100):0;
+      html+='<div style="width:50px;font-size:10px;color:#DC2626;font-weight:600;text-align:center">-'+dropOff+'%</div>';
+    } else {
+      html+='<div style="width:50px"></div>';
+    }
+    html+='</div>';
+  });
+  html+='</div>';
+
+  document.getElementById('conversion-funnel').innerHTML=html;
+}
+
+/* ── Lead Source Performance ── */
+function renderLeadSource(){
+  var sources={};
+  allLeadsRaw.forEach(function(l){
+    var src=l.source||'Unknown';
+    if(!sources[src])sources[src]={name:src,total:0,won:0,lost:0,value:0,wonVal:0};
+    sources[src].total++;sources[src].value+=l.value;
+    if(l.status==='Won'){sources[src].won++;sources[src].wonVal+=l.value}
+    else if(l.status==='Lost')sources[src].lost++;
+  });
+  var arr=Object.values(sources).sort(function(a,b){return b.total-a.total});
+  if(arr.length===0){document.getElementById('lead-source').innerHTML='<div class="dk-empty">No data</div>';return}
+
+  var maxTotal=Math.max.apply(null,arr.map(function(s){return s.total}));
+  var srcColors={'line':'#06C755','web':'#3B82F6','referral':'#8B5CF6','facebook':'#1877F2','google':'#EA4335','ai_chat':'#0176D3','Unknown':'#94A3B8','email':'#D97706','phone':'#0B827C','event':'#EC4899'};
+
+  var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+
+  // Left: Stacked bar chart
+  html+='<div>';
+  arr.forEach(function(s){
+    var winRate=s.total>0?Math.round(s.won/s.total*100):0;
+    var color=srcColors[s.name.toLowerCase()]||'#64748B';
+    var wonW=s.total>0?(s.won/maxTotal*100):0;
+    var lostW=s.total>0?(s.lost/maxTotal*100):0;
+    var openW=s.total>0?((s.total-s.won-s.lost)/maxTotal*100):0;
+    html+='<div style="margin-bottom:10px">';
+    html+='<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;font-weight:600;color:var(--text);text-transform:capitalize">'+esc(s.name)+'</span><span style="font-size:10px;color:var(--text3)">'+s.total+' leads / Win '+winRate+'%</span></div>';
+    html+='<div style="display:flex;height:18px;background:var(--surface3);border-radius:4px;overflow:hidden">';
+    if(wonW>0) html+='<div style="width:'+wonW+'%;background:#2E844A;transition:width .8s" title="Won: '+s.won+'"></div>';
+    if(openW>0) html+='<div style="width:'+openW+'%;background:'+color+';opacity:0.6;transition:width .8s" title="Open: '+(s.total-s.won-s.lost)+'"></div>';
+    if(lostW>0) html+='<div style="width:'+lostW+'%;background:#DC2626;opacity:0.5;transition:width .8s" title="Lost: '+s.lost+'"></div>';
+    html+='</div></div>';
+  });
+  html+='</div>';
+
+  // Right: Summary table
+  html+='<div><table class="dk-tbl"><thead><tr><th>Source</th><th>Total</th><th>Won</th><th>Win Rate</th><th>Revenue</th></tr></thead><tbody>';
+  arr.forEach(function(s){
+    var winRate=s.total>0?Math.round(s.won/s.total*100):0;
+    var color=srcColors[s.name.toLowerCase()]||'#64748B';
+    html+='<tr><td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:'+color+'"></span><span class="dk-tbl-name" style="text-transform:capitalize">'+esc(s.name)+'</span></span></td>';
+    html+='<td>'+s.total+'</td><td style="color:#2E844A;font-weight:700">'+s.won+'</td>';
+    html+='<td><span class="dk-badge" style="background:'+(winRate>=20?'rgba(46,132,74,.1);color:#2E844A':winRate>=10?'rgba(217,119,6,.1);color:#D97706':'rgba(220,38,38,.1);color:#DC2626')+'">'+winRate+'%</span></td>';
+    html+='<td style="font-weight:700;color:var(--sf-blue)">'+fmt(s.wonVal)+'</td></tr>';
+  });
+  html+='</tbody></table></div></div>';
+
+  // Legend
+  html+='<div style="display:flex;gap:16px;margin-top:12px;font-size:10px;color:var(--text3)">';
+  html+='<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#2E844A"></span>Won</span>';
+  html+='<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#64748B;opacity:.6"></span>Open</span>';
+  html+='<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#DC2626;opacity:.5"></span>Lost</span>';
+  html+='</div>';
+
+  document.getElementById('lead-source').innerHTML=html;
+}
+
+function renderAll(){renderQA();renderKPIs();renderWonChart();renderPipeline();renderKanban();renderTopOpen();renderStageBreakdown();renderAgentsCompare();renderPipeAgents();renderCustomers();renderTasks();renderRevenueTrend();renderConversionFunnel();renderLeadSource();initAnalyticsAgent()}
 </script>
 <script>
 /* ── Analytics Agent (น้องวิ) ── */
@@ -533,7 +689,7 @@ function initAnalyticsAgent(){
   s.textContent='.aa-fab{position:fixed;bottom:96px;right:24px;z-index:900;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#7F56D9,#0B827C);box-shadow:0 4px 20px rgba(127,86,217,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;border:3px solid #fff;padding:0}.aa-fab:hover{transform:scale(1.08)}.aa-fab:active{transform:scale(.95)}.aa-badge{position:absolute;top:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:#DD7A01;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff}.aa-panel{position:fixed;bottom:168px;right:24px;z-index:901;width:400px;max-height:520px;background:var(--surface,#fff);border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.18);border:1px solid var(--border);display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateY(12px) scale(.95);transition:all .25s cubic-bezier(.4,0,.2,1);overflow:hidden}.aa-panel.open{opacity:1;visibility:visible;transform:translateY(0) scale(1)}.aa-panel.expanded{width:calc(100vw - 48px);max-width:720px;max-height:calc(100vh - 120px);bottom:60px;right:24px}.aa-panel.expanded .aa-msgs{max-height:none;min-height:400px}.aa-header{background:linear-gradient(135deg,#7F56D9,#0B827C);padding:14px 16px;display:flex;align-items:center;gap:10px}.aa-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid rgba(255,255,255,.2)}.aa-hname{font-size:14px;font-weight:700;color:#fff}.aa-hstatus{font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:4px}.aa-hstatus span{width:6px;height:6px;border-radius:50%;background:#4BCA81}.aa-hactions{display:flex;gap:4px;margin-left:auto}.aa-close{width:26px;height:26px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px}.aa-close:hover{background:rgba(255,255,255,.2);color:#fff}.aa-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:180px;max-height:320px}.aa-msg{max-width:88%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.55}.aa-msg.bot{background:var(--surface2);align-self:flex-start;border-bottom-left-radius:4px}.aa-msg.usr{background:#7F56D9;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}.aa-quick{display:flex;gap:5px;flex-wrap:wrap;padding:0 14px 8px}.aa-qbtn{padding:4px 10px;border-radius:18px;border:1px solid var(--border);background:var(--surface);font-size:11px;font-weight:500;color:#7F56D9;cursor:pointer;font-family:inherit}.aa-qbtn:hover{background:rgba(127,86,217,.06);border-color:#7F56D9}.aa-input-wrap{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px}.aa-input{flex:1;padding:9px 14px;border-radius:24px;border:1.5px solid var(--border);background:var(--surface2);font-size:13px;font-family:inherit;outline:none}.aa-input:focus{border-color:#7F56D9}.aa-send{width:34px;height:34px;border-radius:50%;border:none;background:#7F56D9;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}.aa-send:hover{background:#6842C2}@media(max-width:480px){.aa-panel{width:calc(100vw - 24px);left:12px;bottom:156px}.aa-panel.expanded{width:calc(100vw - 24px);max-height:calc(100vh - 100px);bottom:12px;left:12px}.aa-fab{bottom:80px;right:16px;width:48px;height:48px}}';
   document.head.appendChild(s);
   var h=document.createElement('div');
-  h.innerHTML='<button class="aa-fab" onclick="toggleAA()" style="padding:0;overflow:hidden"><img src="../img/analytics-avatar.svg" style="width:100%;height:100%;border-radius:50%" alt="น้องวิ"/><span class="aa-badge">AI</span></button><div class="aa-panel" id="aa-panel"><div class="aa-header"><div class="aa-avatar" style="padding:0;overflow:hidden"><img src="../img/analytics-avatar.svg" style="width:100%;height:100%;border-radius:50%" alt="น้องวิ"/></div><div><div class="aa-hname">น้องวิ — Analytics</div><div class="aa-hstatus"><span></span> Online</div></div><div class="aa-hactions"><button class="aa-close" onclick="toggleAAExpand()" title="ขยาย/ย่อ"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button><button class="aa-close" onclick="toggleAA()">&times;</button></div></div><div class="aa-msgs" id="aa-msgs"></div><div class="aa-quick" id="aa-quick"></div><div class="aa-input-wrap"><input class="aa-input" id="aa-input" placeholder="ถามข้อมูลการขาย..." onkeydown="if(event.key===\'Enter\')askAA()"/><button class="aa-send" onclick="askAA()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div></div>';
+  h.innerHTML='<button class="aa-fab" onclick="toggleAA()" style="padding:0;overflow:hidden"><img src="../img/agent-analytics.png" style="width:100%;height:100%;border-radius:50%" alt="น้องวิ"/><span class="aa-badge">AI</span></button><div class="aa-panel" id="aa-panel"><div class="aa-header"><div class="aa-avatar" style="padding:0;overflow:hidden"><img src="../img/agent-analytics.png" style="width:100%;height:100%;border-radius:50%" alt="น้องวิ"/></div><div><div class="aa-hname">น้องวิ — Analytics</div><div class="aa-hstatus"><span></span> Online</div></div><div class="aa-hactions"><button class="aa-close" onclick="toggleAAExpand()" title="ขยาย/ย่อ"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button><button class="aa-close" onclick="toggleAA()">&times;</button></div></div><div class="aa-msgs" id="aa-msgs"></div><div class="aa-quick" id="aa-quick"></div><div class="aa-input-wrap"><input class="aa-input" id="aa-input" placeholder="ถามข้อมูลการขาย..." onkeydown="if(event.key===\'Enter\')askAA()"/><button class="aa-send" onclick="askAA()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div></div>';
   while(h.firstChild)document.body.appendChild(h.firstChild);
   addAA('bot','สวัสดีค่ะ! น้องวิพร้อมวิเคราะห์ข้อมูลการขายให้ค่ะ ถามได้เลยนะคะ 📊');
   document.getElementById('aa-quick').innerHTML=['Forecast เดือนหน้า','Churn Risk','Win Rate','เปรียบเทียบทีม'].map(function(t){return '<button class="aa-qbtn" onclick="document.getElementById(\'aa-input\').value=\''+t+'\';askAA()">'+t+'</button>'}).join('');
@@ -541,15 +697,38 @@ function initAnalyticsAgent(){
 var aaOpen=false,aaExpanded=false;
 function toggleAA(){aaOpen=!aaOpen;document.getElementById('aa-panel').classList.toggle('open',aaOpen)}
 function toggleAAExpand(){aaExpanded=!aaExpanded;document.getElementById('aa-panel').classList.toggle('expanded',aaExpanded);var m=document.getElementById('aa-msgs');m.scrollTop=m.scrollHeight}
-function addAA(type,text){var m=document.getElementById('aa-msgs'),d=document.createElement('div');d.className='aa-msg '+type;d.innerHTML=text;m.appendChild(d);m.scrollTop=m.scrollHeight}
+function addAA(type,text){
+  var m=document.getElementById('aa-msgs'),d=document.createElement('div');d.className='aa-msg '+type;
+  if(type==='bot'&&text.length>20){
+    d.innerHTML='';m.appendChild(d);
+    var words=text.split(/( )/);var i=0;
+    var typeInterval=setInterval(function(){
+      if(i<words.length){d.innerHTML+=words[i];i++;if(i%8===0)m.scrollTop=m.scrollHeight;}
+      else{clearInterval(typeInterval);m.scrollTop=m.scrollHeight;}
+    },30);
+  }else{d.innerHTML=text;m.appendChild(d);m.scrollTop=m.scrollHeight;}
+}
 function askAA(){
   var inp=document.getElementById('aa-input'),q=inp.value.trim();if(!q)return;inp.value='';addAA('usr',esc(q));
   var ty=document.createElement('div');ty.id='aa-ty';ty.style.cssText='padding:8px;align-self:flex-start;display:flex;gap:4px';
   ty.innerHTML='<span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:co-dot .6s ease infinite"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:co-dot .6s ease infinite;animation-delay:.1s"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:co-dot .6s ease infinite;animation-delay:.2s"></span>';
   document.getElementById('aa-msgs').appendChild(ty);
   var user=getUserProfile();
-  fetch('/agents/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,agentType:'analytics',tenantId:user.tenantId||'default'})}).then(function(res){return res.json().then(function(d){return{ok:res.ok,data:d}})})
+  fetch('/agents/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,agentType:'analytics',tenantId:user.tenantId||'default',sessionId:(getUserProfile().id||'anon')+'-vi-session'})}).then(function(res){return res.json().then(function(d){return{ok:res.ok,data:d}})})
   .then(function(r){
+    if(r.data&&r.data.taskId){
+      // Async mode — poll for result
+      var tid=r.data.taskId;var pc=0;
+      var el=document.getElementById('aa-ty');if(el)el.innerHTML='🔍 กำลังวิเคราะห์...';
+      var poll=setInterval(function(){pc++;
+        if(pc>3){var el2=document.getElementById('aa-ty');if(el2){var msgs=['📊 กำลังดึงข้อมูล...','🧮 กำลังประมวลผล...','✍️ กำลังเรียบเรียง...','⏳ อีกสักครู่...'];el2.innerHTML=msgs[Math.min(pc-4,msgs.length-1)]||'⏳ รอสักครู่...';}}
+        if(pc>30){clearInterval(poll);var el3=document.getElementById('aa-ty');if(el3)el3.remove();addAA('bot','ขออภัยค่ะ ใช้เวลานานเกินไป');return;}
+        fetch('/agents/task/'+tid).then(function(r2){return r2.json()}).then(function(s){
+          if(s.status==='done'||s.status==='error'){clearInterval(poll);var el3=document.getElementById('aa-ty');if(el3)el3.remove();addAA('bot',(s.reply||'เสร็จแล้วค่ะ').replace(/\n/g,'<br>'));}
+        }).catch(function(){});
+      },3000);
+      return;
+    }
     var e=document.getElementById('aa-ty');if(e)e.remove();
     var reply=(r.data&&(r.data.reply||r.data.error||r.data.message))||'ขออภัยค่ะ ไม่ได้รับข้อมูลจาก AI';
     addAA('bot',reply.replace(/\n/g,'<br>'));

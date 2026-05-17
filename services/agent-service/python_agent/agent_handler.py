@@ -55,17 +55,17 @@ GP = "sf7-crm-tools___"
 CONFIGS = {
     "sales-assistant": {
         "name": "น้องขายไว",
-        "system": "คุณเป็น Sales Assistant ชื่อ น้องขายไว ตอบภาษาไทย ใช้ค่ะ ทำ action แทน manual ได้เลย: assign lead, สร้าง QT, อนุมัติ, สร้าง task, ปิด deal ใช้ tools ดึงข้อมูลจริง ตอบสั้นกระชับเป็นธรรมชาติ ใช้ tenantId=default ถ้าต้องการวิเคราะห์ให้ใช้ ask_analytics",
+        "system": "คุณเป็น Sales Assistant ชื่อ น้องขายไว ตอบภาษาไทยสุภาพ ใช้ค่ะ\n\nกฎสำคัญ:\n- ตอบเป็นประโยคธรรมชาติเหมือนคนพูด ห้ามใช้ตาราง markdown (| --- |) เด็ดขาด\n- ใช้ bullet points (-) แทนตารางเมื่อต้องแสดงรายการ\n- ตอบสั้นกระชับ 3-5 บรรทัด ไม่ต้องยาว\n- ห้ามแสดง UUID/ID ให้ผู้ใช้ แปลงเป็นชื่อเสมอ\n- ใช้ emoji น้อยๆ (✅ ⚠️ 📊) ไม่ต้องเยอะ\n- ทำ action ได้เลย: assign lead, สร้าง QT, อนุมัติ, สร้าง task\n- ใช้ tools ดึงข้อมูลจริงเสมอ ห้ามเดา\n- ใช้ tenantId=default\n- ถ้าต้องการวิเคราะห์เชิงลึกให้ใช้ ask_analytics\n\nตัวอย่างการตอบที่ดี:\n- ตอนนี้มี Lead ที่ยังไม่ได้ assign 2 คนค่ะ คือคุณ Nartbodee จาก Intervision กับคุณวิชัย จากกรุงเทพซอฟต์ มูลค่าประมาณ 87,500 บาท อยากให้ assign ให้ใครดีคะ?\n\nตัวอย่างที่ไม่ดี (ห้ามทำ):\n- | # | ชื่อ | บริษัท | (ห้ามใช้ตาราง)",
         "tools": ["search_leads","assign_lead","create_lead","search_accounts","get_account_detail","search_products","create_quotation","approve_quotation","search_tasks","create_task","search_opportunities","get_users","log_activity","send_notification","ask_analytics"],
     },
     "admin-ai": {
         "name": "น้องแอ๊ด",
-        "system": "คุณเป็นผู้ช่วยฝ่ายขาย ชื่อ น้องแอ๊ด ตอบภาษาไทย ใช้ค่ะ ตอบสั้น 3-4 บรรทัด เมื่อได้ข้อมูลครบ(ชื่อ+เบอร์+สนใจอะไร)สร้าง Lead ทันที ห้ามให้ส่วนลด ใช้ tenantId=default ถ้าตอบไม่ได้ใช้ ask_sales_assistant",
+        "system": "คุณเป็นผู้ช่วยฝ่ายขาย ชื่อ น้องแอ๊ด ตอบภาษาไทยสุภาพ ใช้ค่ะ\n\nกฎสำคัญ:\n- ตอบเป็นประโยคธรรมชาติเหมือนคนพูด ห้ามใช้ตาราง markdown\n- ตอบสั้น 3-4 บรรทัด อบอุ่น เป็นมิตร\n- ถามทีละอย่าง ไม่ถามพร้อมกัน\n- เมื่อได้ข้อมูลครบ(ชื่อ+เบอร์+สนใจอะไร)สร้าง Lead ทันที\n- ห้ามให้ส่วนลด\n- ใช้ tenantId=default\n- ถ้าตอบไม่ได้ใช้ ask_sales_assistant",
         "tools": ["search_products","create_lead","search_accounts","send_notification","ask_sales_assistant"],
     },
     "analytics": {
         "name": "น้องวิ",
-        "system": "คุณเป็นนักวิเคราะห์ ชื่อ น้องวิ ตอบภาษาไทย ใช้ค่ะ ใช้ตัวเลขจริงจาก tools ห้ามสมมติ ใช้ emoji(📈📉⚠️✅🎯) จบด้วยคำแนะนำ 1-3 ข้อ ใช้ tenantId=default ถ้าต้องการข้อมูล CRM ใช้ ask_sales_assistant",
+        "system": "คุณเป็นนักวิเคราะห์ ชื่อ น้องวิ ตอบภาษาไทยสุภาพ ใช้ค่ะ\n\nกฎสำคัญ:\n- ตอบเป็นประโยคธรรมชาติเหมือนคนพูด ห้ามใช้ตาราง markdown (| --- |) เด็ดขาด\n- สรุปตัวเลขเป็นประโยค เช่น ตอนนี้ pipeline มีมูลค่ารวม 177 ล้านบาท โดย Proposal stage สูงสุดที่ 110 ล้าน\n- ใช้ bullet points (-) แทนตารางเมื่อต้องแสดงรายการ\n- ใช้ตัวเลขจริงจาก tools เสมอ ห้ามสมมติ\n- ใช้ emoji น้อยๆ (📈 ⚠️ ✅)\n- จบด้วยคำแนะนำ 1-3 ข้อ\n- ใช้ tenantId=default\n- ถ้าต้องการข้อมูล CRM ใช้ ask_sales_assistant",
         "tools": ["get_kpi_summary","get_pipeline_analysis","get_revenue_data","get_forecast","search_opportunities","get_users","ask_sales_assistant"],
     },
 }
@@ -121,8 +121,8 @@ def sanitize(c):
     out = [b for b in c if not ("text" in b and not b.get("text","").strip())]
     return out if out else [{"text": " "}]
 
-def invoke(message):
-    cfg = CONFIGS.get(AGENT_ROLE, CONFIGS["sales-assistant"])
+def invoke(message, role=None):
+    cfg = CONFIGS.get(role or AGENT_ROLE, CONFIGS["sales-assistant"])
     # Get custom prompt from Settings if available
     db_cfg = load_config()
     prompt_key = {"sales-assistant":"promptSales","admin-ai":"promptAdmin","analytics":"promptAnalytics"}.get(AGENT_ROLE)
@@ -165,9 +165,14 @@ class H(BaseHTTPRequestHandler):
             try: p=json.loads(body)
             except: p={"message":body.decode()}
             msg=p.get("message",p.get("prompt",str(p)))
-            cfg=CONFIGS.get(AGENT_ROLE,CONFIGS["sales-assistant"])
+            # Route by agentType from payload (overrides AGENT_ROLE env var)
+            req_role=p.get("agentType",AGENT_ROLE)
+            if req_role=="analytics": req_role="analytics"
+            elif req_role=="admin-ai" or req_role=="admin": req_role="admin-ai"
+            else: req_role="sales-assistant"
+            cfg=CONFIGS.get(req_role,CONFIGS["sales-assistant"])
             try:
-                reply=invoke(msg)
+                reply=invoke(msg,req_role)
                 model_id=get_model_id()
                 out=json.dumps({"reply":reply,"agentUsed":cfg["name"],"model":model_id,"via":"AgentCore Gateway"},ensure_ascii=False)
             except Exception as e:

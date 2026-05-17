@@ -58,11 +58,16 @@ leads.post('/', async (c) => {
 
   const assignedTo = b.assignedTo || userId;
 
+  // Generate lead_code (L-0001, L-0002, ...)
+  await query(t, `INSERT INTO lead_sequences (tenant_id, current_value) VALUES ($1, 0) ON CONFLICT (tenant_id) DO NOTHING`, [t]);
+  const seqRes = await query(t, `UPDATE lead_sequences SET current_value = current_value + 1 WHERE tenant_id = $1 RETURNING current_value`, [t]);
+  const leadCode = 'L-' + String(seqRes.rows[0].current_value).padStart(4, '0');
+
   const r = await query(t,
-    `INSERT INTO leads (tenant_id, name, company_name, email, phone, line_id, source, status, assigned_to, metadata)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,'New',$8,$9) RETURNING *`,
+    `INSERT INTO leads (tenant_id, name, company_name, email, phone, line_id, source, status, assigned_to, metadata, lead_code)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,'New',$8,$9,$10) RETURNING *`,
     [t, b.name, b.companyName||null, b.email||null, b.phone||null, b.lineId||null,
-     b.source||'manual', assignedTo, JSON.stringify(b.metadata||{statusHistory:[{status:'New',timestamp:new Date().toISOString()}],createdBy:userId,accountId:b.accountId||null})]
+     b.source||'manual', assignedTo, JSON.stringify(b.metadata||{statusHistory:[{status:'New',timestamp:new Date().toISOString()}],createdBy:userId,accountId:b.accountId||null}), leadCode]
   );
   return c.json(r.rows[0], 201);
 });
@@ -96,8 +101,23 @@ leads.patch('/:id', async (c) => {
   fields.push('updated_at = NOW()');
   values.push(id);
 
+  // Get old values for history tracking
+  const oldLead = await query(t, `SELECT status, assigned_to FROM leads WHERE id = $1`, [id]);
+
   const r = await query(t, `UPDATE leads SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`, values);
   if (r.rows.length === 0) return c.json({ message: 'Lead not found' }, 404);
+
+  // Record changes in lead_histories
+  if (oldLead.rows[0]) {
+    const old = oldLead.rows[0];
+    if (b.status && b.status !== old.status) {
+      await query(t, `INSERT INTO lead_histories (lead_id, field_name, old_value, new_value) VALUES ($1, 'status', $2, $3)`, [id, old.status, b.status]).catch(() => {});
+    }
+    if (b.assignedTo && b.assignedTo !== old.assigned_to) {
+      await query(t, `INSERT INTO lead_histories (lead_id, field_name, old_value, new_value) VALUES ($1, 'assigned_to', $2, $3)`, [id, old.assigned_to, b.assignedTo]).catch(() => {});
+    }
+  }
+
   return c.json(r.rows[0]);
 });
 
@@ -106,6 +126,20 @@ leads.delete('/:id', async (c) => {
   const t = c.get('tenantId');
   await query(t, 'DELETE FROM leads WHERE id = $1', [c.req.param('id')]);
   return c.json({ message: 'Deleted' });
+});
+
+// ── GET /leads/:id/history ──
+leads.get('/:id/history', async (c) => {
+  const t = c.get('tenantId');
+  const id = c.req.param('id');
+  const r = await query(t,
+    `SELECT lh.*, u.first_name || ' ' || u.last_name as changed_by_name
+     FROM lead_histories lh
+     LEFT JOIN users u ON u.id = lh.changed_by
+     WHERE lh.lead_id = $1
+     ORDER BY lh.changed_at ASC`,
+    [id]);
+  return c.json(r.rows);
 });
 
 // ── Pipeline Stages ──

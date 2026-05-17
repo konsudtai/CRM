@@ -100,10 +100,10 @@ a:hover { color: var(--ln-primary-dark); }
 }
 .ln-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
 .ln-logo-img {
-  width: 40px; height: 40px; border-radius: 10px;
-  object-fit: contain; background: var(--ln-white);
-  box-shadow: 0 4px 12px rgba(14,165,233,.15);
-  padding: 4px;
+  height: 132px; width: auto; border-radius: 0;
+  object-fit: contain; background: transparent;
+  box-shadow: none;
+  padding: 0;
 }
 .ln-logo-img[style*="display: none"] + .ln-logo-text,
 .ln-logo-img[style*="display:none"] + .ln-logo-text { margin-left: -12px; }

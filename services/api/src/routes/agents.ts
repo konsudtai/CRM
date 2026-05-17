@@ -23,8 +23,9 @@ const AGENTCORE_REGION = process.env.AGENTCORE_REGION || process.env.BEDROCK_REG
 const DEFAULT_MODEL_ID = process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-sonnet-4-6';
 const DEFAULT_REGION = process.env.BEDROCK_REGION || 'ap-southeast-1';
 const USE_AGENTCORE = process.env.USE_AGENTCORE !== 'false' && !!AGENTCORE_ARN;
-const MAX_ITERATIONS = 8;
-const TIME_BUDGET_MS = 25000;
+const AGENTCORE_TIMEOUT_MS = parseInt(process.env.AGENTCORE_TIMEOUT_MS || '15000'); // 15s — leaves 14s for Bedrock Converse fallback before API Gateway 30s limit
+const MAX_ITERATIONS = 5;
+const TIME_BUDGET_MS = 12000; // Bedrock Converse budget per iteration check (total must finish in ~14s)
 const AI_STATE_TABLE = process.env.AI_STATE_TABLE || 'sf7-prod-ai-state';
 
 // DynamoDB client for reading AI config
@@ -82,7 +83,7 @@ async function invokeAgentCore(message: string, agentType: string, tenantId: str
   const payload = JSON.stringify({ message, agentType, tenantId, sessionId: sid });
   const client = new BedrockAgentCoreClient({ region: AGENTCORE_REGION });
   const abortController = new AbortController();
-  const timeoutId = setTimeout(() => abortController.abort(), 28000);
+  const timeoutId = setTimeout(() => abortController.abort(), AGENTCORE_TIMEOUT_MS);
   let response: any;
   try {
     response = await client.send(new InvokeAgentRuntimeCommand({
@@ -187,7 +188,7 @@ const TOOLS: Tool[] = [
     handler: async (i, tid) => { const meta:any={}; if(i.notes)meta.notes=i.notes; if(i.estimated_value)meta.estimatedValue=i.estimated_value; const r=await query(tid,`INSERT INTO leads(tenant_id,name,company_name,email,phone,source,status,metadata) VALUES($1,$2,$3,$4,$5,$6,'New',$7) RETURNING id,name,status,company_name`,[tid,i.name,i.company_name||null,i.email||null,i.phone||null,i.source||'ai_chat',JSON.stringify(meta)]); return `✅ สร้าง Lead สำเร็จ: ${JSON.stringify(r.rows[0])}`; } },
 
   { name: 'update_lead', description: 'อัพเดท Lead — เปลี่ยน status หรือ assign Sales Rep', inputSchema: { json: { type: 'object', properties: { lead_id: { type: 'string', description: 'Lead ID (required)' }, status: { type: 'string', description: 'New,Contacted,Qualified,Proposal,Negotiation,Won,Lost' }, assigned_to: { type: 'string', description: 'User ID ของ Sales Rep' } }, required: ['lead_id'] } },
-    handler: async (i, tid) => { const s:string[]=[],v:any[]=[]; let x=1; if(i.status){s.push(`status=$${x}`);v.push(i.status);x++;} if(i.assigned_to){s.push(`assigned_to=$${x}`);v.push(i.assigned_to);x++;} if(!s.length) return 'ไม่มีข้อมูลที่จะอัพเดท กรุณาระบุ status หรือ assigned_to'; s.push('updated_at=NOW()'); v.push(i.lead_id); const r=await query(tid,`UPDATE leads SET ${s.join(',')} WHERE id=$${x} AND tenant_id='${tid}' RETURNING id,name,status,assigned_to`,v); return r.rows[0]?`✅ อัพเดท Lead สำเร็จ: ${JSON.stringify(r.rows[0])}`:'❌ ไม่พบ Lead'; } },
+    handler: async (i, tid) => { const s:string[]=[],v:any[]=[]; let x=1; if(i.status){s.push(`status=$${x}`);v.push(i.status);x++;} if(i.assigned_to){s.push(`assigned_to=$${x}`);v.push(i.assigned_to);x++;} if(!s.length) return 'ไม่มีข้อมูลที่จะอัพเดท กรุณาระบุ status หรือ assigned_to'; s.push('updated_at=NOW()'); v.push(i.lead_id); const old=await query(tid,`SELECT status,assigned_to FROM leads WHERE id=$1 AND tenant_id='${tid}'`,[i.lead_id]); const r=await query(tid,`UPDATE leads SET ${s.join(',')} WHERE id=$${x} AND tenant_id='${tid}' RETURNING id,name,status,assigned_to`,v); if(r.rows[0]&&old.rows[0]){ if(i.status&&i.status!==old.rows[0].status){await query(tid,`INSERT INTO lead_histories(lead_id,field_name,old_value,new_value) VALUES($1,'status',$2,$3)`,[i.lead_id,old.rows[0].status,i.status]);} if(i.assigned_to&&i.assigned_to!==old.rows[0].assigned_to){await query(tid,`INSERT INTO lead_histories(lead_id,field_name,old_value,new_value) VALUES($1,'assigned_to',$2,$3)`,[i.lead_id,old.rows[0].assigned_to,i.assigned_to]);} } return r.rows[0]?`✅ อัพเดท Lead สำเร็จ: ${JSON.stringify(r.rows[0])}`:'❌ ไม่พบ Lead'; } },
 
   { name: 'create_task', description: 'สร้าง Task ใหม่ — ต้องมี title, due_date, assigned_to', inputSchema: { json: { type: 'object', properties: { title: { type: 'string', description: 'ชื่องาน (required)' }, due_date: { type: 'string', description: 'วันครบกำหนด YYYY-MM-DD (required)' }, assigned_to: { type: 'string', description: 'User ID ที่รับผิดชอบ (required)' }, priority: { type: 'string', description: 'High,Medium,Low (default: Medium)' }, description: { type: 'string' } }, required: ['title','due_date','assigned_to'] } },
     handler: async (i, tid) => { const r=await query(tid,`INSERT INTO tasks(tenant_id,title,description,due_date,priority,status,assigned_to) VALUES($1,$2,$3,$4,$5,'Open',$6) RETURNING id,title,status,due_date,priority`,[tid,i.title,i.description||null,i.due_date,i.priority||'Medium',i.assigned_to]); return `✅ สร้าง Task สำเร็จ: ${JSON.stringify(r.rows[0])}`; } },
@@ -197,52 +198,91 @@ const TOOLS: Tool[] = [
 // System Prompt — Conversational + Action-oriented
 // ══════════════════════════════════════════════════════════════
 
-const SYSTEM_PROMPT = `คุณคือ "น้องขายไว" — Sales Personal Assistant ที่ทำงานจริงได้
+const SYSTEM_PROMPT = `คุณคือ "น้องขายไว" Sales Personal Assistant ตอบภาษาไทยสุภาพ ใช้ค่ะ
+
+กฎการตอบ:
+- ตอบเป็นประโยคธรรมชาติเหมือนคนพูดคุยกัน เว้นบรรทัดแบ่งย่อหน้าให้อ่านง่าย
+- ห้ามใช้ emoji เด็ดขาด
+- ห้ามใช้ heading markdown (##, ###) เด็ดขาด
+- ห้ามใช้ตาราง markdown (| --- |) เด็ดขาด
+- ห้ามใช้ bold (**text**) เด็ดขาด
+- ห้ามใช้ bullet points ที่ขึ้นต้นด้วย - หรือ * ให้เขียนเป็นประโยคต่อเนื่องแทน
+- ตอบสั้นกระชับ ไม่เกิน 6-8 บรรทัด
+- ห้ามแสดง UUID/ID แปลงเป็นชื่อเสมอ
+
+หลักการทำงาน:
+- ใช้ tools ดึงข้อมูลจริงเสมอ ห้ามเดา
+- ทำ action ได้เลย เช่น สร้าง Lead, สร้าง Task, Assign Lead
+- ถ้าข้อมูลไม่ครบ ให้ถามกลับ
+- จบด้วยคำแนะนำ next action เมื่อเหมาะสม
+
+ตัวอย่างการตอบที่ดี:
+"ตอนนี้มี Lead ที่ยังไม่ได้ assign 2 คนค่ะ คือคุณ Nartbodee จาก Intervision กับคุณวิชัย จากกรุงเทพซอฟต์ มูลค่าประมาณ 87,500 บาท
+
+อยากให้ assign ให้ใครดีคะ ตอนนี้คุณสมชายกับคุณศิริพร workload น้อยสุดค่ะ"`;
+
+// ══════════════════════════════════════════════════════════════
+// System Prompts per Agent Type (for Bedrock Converse fallback)
+// ══════════════════════════════════════════════════════════════
+
+const ANALYTICS_SYSTEM_PROMPT = `คุณคือ "น้องวิ" นักวิเคราะห์ข้อมูลการขาย ตอบภาษาไทยสุภาพ ใช้ค่ะ
+
+กฎการตอบ:
+- ตอบเป็นประโยคธรรมชาติเหมือนคนพูดคุยกัน เว้นบรรทัดแบ่งย่อหน้าให้อ่านง่าย
+- ห้ามใช้ emoji เด็ดขาด
+- ห้ามใช้ heading markdown (##, ###) เด็ดขาด
+- ห้ามใช้ตาราง markdown (| --- |) เด็ดขาด
+- ห้ามใช้ bold (**text**) เด็ดขาด
+- ห้ามใช้ bullet points ที่ขึ้นต้นด้วย - หรือ * ให้เขียนเป็นประโยคต่อเนื่องแทน
+- ตอบสั้นกระชับ ไม่เกิน 6-8 บรรทัด
+- ห้ามแสดง UUID/ID
+- ใช้ tools ดึงข้อมูลจริงเสมอ ห้ามสมมติ
+
+วิธีตอบ:
+- เริ่มด้วยสรุปภาพรวม 1-2 ประโยค
+- ตามด้วยรายละเอียดตัวเลขสำคัญเป็นย่อหน้าสั้นๆ
+- จบด้วยคำแนะนำ 1-2 ข้อ
+
+ตัวอย่างการตอบที่ดี:
+"ภาพรวม KPI เดือนนี้ค่ะ Win Rate อยู่ที่ 14.4% จาก Lead ทั้งหมด 215 ราย ปิดได้ 31 ราย
+
+ลูกค้า Active มี 89 ราย Pipeline มูลค่ารวม 177 ล้านบาท โดย Proposal stage สูงสุดที่ 110 ล้าน ส่วน Task เกินกำหนดมี 23 งาน ซึ่งอาจกระทบการ follow-up ค่ะ
+
+แนะนำให้โฟกัส Deal ใน Proposal stage ก่อนค่ะ เพราะมูลค่าสูงและใกล้ปิดที่สุด"`;
+
+const ADMIN_SYSTEM_PROMPT = `คุณคือ "น้องแอ๊ด" — AI Sales Assistant ต้อนรับลูกค้า
 
 ## บุคลิก
-- พูดภาษาไทย สุภาพ ใช้ค่ะ เป็นกันเอง
-- ตอบสั้น กระชับ ใช้ bullet points
-- ใช้ emoji เล็กน้อย (✅ 📊 📈 ⚠️ 💡)
-- **ห้ามแสดง UUID, ID, หรือ technical data ให้ผู้ใช้เด็ดขาด** — แปลงเป็นชื่อ/ข้อมูลที่อ่านง่ายเสมอ
+- พูดภาษาไทยสุภาพ ใช้ค่ะ/นะคะ เป็นมิตร อบอุ่น
+- ถามเชิงรุกทีละอย่าง ไม่ถามพร้อมกันทั้งหมด
+- **ห้ามแสดง UUID, ID, หรือ technical data ให้ผู้ใช้เด็ดขาด**
 
-## หลักการทำงาน
-1. **ใช้ tools ดึงข้อมูลจริงเสมอ** — ห้ามเดาหรือสมมติ
-2. **ทำ action จริงได้** — สร้าง Lead, สร้าง Task, อัพเดท status
-3. **ถ้าข้อมูลไม่ครบ ให้ถามกลับ** — อย่าเดาข้อมูลที่ขาด
-4. **คิดก่อนตอบ** — วิเคราะห์ข้อมูลที่ได้จาก tools แล้วสรุปเป็นภาษาคนที่เข้าใจง่าย
+## หน้าที่หลัก
+1. ต้อนรับลูกค้า ทำความเข้าใจความต้องการ
+2. แนะนำสินค้า/บริการ (ใช้ get_products)
+3. เก็บข้อมูล Lead แล้วใช้ create_lead สร้างในระบบ
 
-## การแสดงผลข้อมูล
-- ห้ามแสดง UUID หรือ database ID (เช่น "abc-123-def") ให้ผู้ใช้
-- แสดงชื่อ, ตัวเลข, สถานะ แทน ID เสมอ
-- ถ้ามีหลายรายการ → สรุปเป็นตาราง/bullet ที่อ่านง่าย
-- ใส่ context เช่น "จากทั้งหมด X รายการ" หรือ "เทียบกับเดือนที่แล้ว"
-- ตอบแบบ insight ไม่ใช่แค่ dump ข้อมูล
+## สินค้าหลัก
+- Cloud Solutions: AWS Migration (เริ่ม ฿150K), Managed Cloud (฿25K/เดือน)
+- Software Development: Web App (เริ่ม ฿300K), Mobile App (เริ่ม ฿500K)
+- IT Consulting: Digital Transformation (฿80K), Security Audit (฿120K)
+- Support Plans: Basic (฿5K/เดือน), Premium (฿15K/เดือน), Enterprise (฿35K/เดือน)
 
-## การสร้าง Lead
-- ต้องมีอย่างน้อย: ชื่อ + (เบอร์โทร หรือ email)
-- ถ้าผู้ใช้บอกแค่ชื่อ → ถามเบอร์โทรหรือ email ก่อนสร้าง
-- ถ้าได้ข้อมูลครบ → ใช้ create_lead สร้างทันที
-- หลังสร้าง → สรุปให้ผู้ใช้ทราบ + แนะนำ next action
+## กฎสำคัญ
+- ห้ามให้ส่วนลดหรือสัญญาราคาตายตัว
+- ถ้าตอบไม่ได้ บอกว่าจะให้ผู้เชี่ยวชาญติดต่อกลับ`;
 
-## การสร้าง Task
-- ต้องมี: title + due_date + assigned_to
-- ถ้าไม่รู้ assigned_to → ใช้ get_users ดูรายชื่อก่อน แล้วถามผู้ใช้
-- ถ้าไม่รู้ due_date → ถามว่าต้องการให้เสร็จเมื่อไหร่
+function getSystemPromptForAgent(agentType: string): string {
+  if (agentType === 'analytics') return ANALYTICS_SYSTEM_PROMPT;
+  if (agentType === 'admin-ai' || agentType === 'admin') return ADMIN_SYSTEM_PROMPT;
+  return SYSTEM_PROMPT;
+}
 
-## การอัพเดท Lead
-- ต้องรู้ lead_id → ถ้าไม่รู้ ให้ get_leads ค้นหาก่อน
-- ยืนยันกับผู้ใช้ก่อนเปลี่ยน status สำคัญ (Won/Lost)
-
-## วิธีตอบ
-- ดึงข้อมูลจาก tools ก่อนตอบเสมอ
-- ถ้าถูกถามข้อมูล → ดึงจาก DB แล้วสรุปให้เป็นภาษาคน พร้อม insight
-- ถ้าถูกสั่งให้ทำ → ตรวจสอบข้อมูลครบไหม → ถ้าครบทำเลย → ถ้าไม่ครบถามก่อน
-- จบด้วยคำแนะนำ next action เมื่อเหมาะสม
-- ตอบเหมือนเพื่อนร่วมงานที่เก่ง ไม่ใช่ robot`;
-
-// ══════════════════════════════════════════════════════════════
-// Agent Runner (Bedrock Converse + tool_use loop)
-// ══════════════════════════════════════════════════════════════
+function getAgentDisplayName(agentType: string): string {
+  if (agentType === 'analytics') return 'น้องวิ';
+  if (agentType === 'admin-ai' || agentType === 'admin') return 'น้องแอ๊ด';
+  return 'น้องขายไว';
+}
 
 async function runAgent(message: string, agentType: string, tenantId: string, history?: any[]): Promise<{ reply: string; toolsUsed: string[] }> {
   const start = Date.now();
@@ -251,6 +291,9 @@ async function runAgent(message: string, agentType: string, tenantId: string, hi
 
   // Load AI config from DynamoDB (cached 60s)
   const aiConfig = await getAIConfig(tenantId);
+
+  // Use correct system prompt for agent type
+  const systemPrompt = getSystemPromptForAgent(agentType);
 
   // Build messages with conversation history
   const messages: any[] = [];
@@ -272,9 +315,9 @@ async function runAgent(message: string, agentType: string, tenantId: string, hi
     const client = new BedrockRuntimeClient({ region: aiConfig.region });
     const res = await client.send(new ConverseCommand({
       modelId: aiConfig.modelId,
-      system: [{ text: SYSTEM_PROMPT + `\n\n[Context: tenantId=${tenantId}]` + (overBudget ? '\n\n[URGENT: ตอบทันทีไม่ต้องเรียก tool เพิ่ม]' : '') }],
+      system: [{ text: systemPrompt + `\n\n[Context: tenantId=${tenantId}]` + (overBudget ? '\n\n[URGENT: ตอบทันทีไม่ต้องเรียก tool เพิ่ม]' : '') }],
       messages,
-      toolConfig: !overBudget ? toolConfig : undefined,
+      toolConfig,
       inferenceConfig: { maxTokens: aiConfig.maxTokens, temperature: aiConfig.temperature },
     }));
     resOutput = { message: res.output?.message, stopReason: res.stopReason };
@@ -321,15 +364,29 @@ async function runAgent(message: string, agentType: string, tenantId: string, hi
 // ══════════════════════════════════════════════════════════════
 
 export async function handleAgentEvent(event: { eventType: string; tenantId: string; entityId: string; data: any }) {
-  const prompts: Record<string, string> = {
-    'lead.created': `[SYSTEM] Lead ใหม่เข้ามา ID=${event.entityId} ข้อมูล: ${JSON.stringify(event.data).slice(0,500)}\nกรุณา: 1) ดูรายละเอียด Lead 2) สรุปให้ Manager`,
-    'task.overdue': `[SYSTEM] Task เกินกำหนด ID=${event.entityId} ข้อมูล: ${JSON.stringify(event.data).slice(0,300)}`,
-    'lead.assigned': `[SYSTEM] Lead ถูก assign แล้ว ID=${event.entityId} ให้: ${event.data?.assignedTo}`,
-  };
-  const prompt = prompts[event.eventType];
-  if (!prompt) return;
-  await runAgent(prompt, 'sales-assistant', event.tenantId);
+  const tid = event.tenantId || '00000000-0000-0000-0000-000000000001';
+
+  if (event.eventType === 'lead.created') {
+    const d = event.data || {};
+    const title = '🔔 Lead ใหม่จาก LINE';
+    const body = `${d.name || 'ไม่ระบุชื่อ'}${d.company ? ' (' + d.company + ')' : ''} สนใจ ${d.product || '-'} งบ ${d.budget || '-'}`;
+    try {
+      const managers = await query(tid, `SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id WHERE u.tenant_id = $1 AND u.is_active = true AND r.name IN ('Admin', 'Sales Manager')`, [tid]);
+      for (const mgr of managers.rows) {
+        await query(tid, `INSERT INTO notifications (tenant_id, user_id, channel, type, title, body, metadata, status) VALUES ($1, $2, 'in_app', 'lead_new', $3, $4, $5, 'pending')`, [tid, mgr.id, title, body, JSON.stringify({ leadId: event.entityId, source: d.source || 'line', ...d })]);
+      }
+      console.log(`[Event] lead.created: notified ${managers.rows.length} managers`);
+    } catch (err: any) { console.error('[Event] Notification failed:', err.message); }
+  }
+
+  if (event.eventType === 'task.overdue') {
+    try {
+      const d = event.data || {};
+      await query(tid, `INSERT INTO notifications (tenant_id, user_id, channel, type, title, body, metadata, status) VALUES ($1, $2, 'in_app', 'task_overdue', $3, $4, $5, 'pending')`, [tid, d.assignedTo || '', '⚠️ Task เกินกำหนด', d.title || '', JSON.stringify(d)]);
+    } catch {}
+  }
 }
+
 
 // ══════════════════════════════════════════════════════════════
 // Routes
@@ -341,36 +398,41 @@ agents.post('/chat', async (c) => {
   if (!message) return c.json({ error: 'message required' }, 400);
 
   const tid = (!tenantId || tenantId === 'default') ? '00000000-0000-0000-0000-000000000001' : tenantId;
-  const agent = agentType || 'sales-assistant';
+  // Auto-detect agent type if frontend sends default 'sales-assistant'
+  // This mirrors the keyword routing in AgentCore runtime
+  const agent = (agentType && agentType !== 'sales-assistant') ? agentType : detectAgentType(message);
 
-  // Try AgentCore first (if warm)
-  if (USE_AGENTCORE) {
-    try {
-      const result = await invokeAgentCore(message, agent, tid, sessionId);
-      return c.json({ reply: result.reply, agentUsed: result.agentUsed, sessionId: result.sessionId, backend: 'agentcore' });
-    } catch (acErr: any) {
-      // AgentCore failed — return error immediately (no Bedrock fallback in VPC)
-      return c.json({ reply: 'ขออภัยค่ะ AgentCore ไม่ตอบสนอง กรุณาลองใหม่อีกครั้งค่ะ (' + String(acErr.message || '').slice(0, 80) + ')', error: true, backend: 'agentcore-failed' }, 200);
-    }
-  }
+  // Always-async: save task + invoke self as Lambda Event (60s timeout)
+  const taskId = `task-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-  // Bedrock Converse fallback (only when AgentCore is disabled)
+  await taskDdb.send(new PutItem2({
+    TableName: TASK_TABLE,
+    Item: { PK: { S: `TASK#${taskId}` }, SK: { S: 'STATUS' }, status: { S: 'processing' }, message: { S: message }, agentType: { S: agent }, tenantId: { S: tid }, createdAt: { S: new Date().toISOString() } },
+  }));
+
+  // Invoke self async (Lambda Event invocation - runs in separate execution with 60s timeout)
   try {
-    const out = await runAgent(message, agent, tid, conversationHistory);
-    return c.json({ reply: out.reply, toolsUsed: out.toolsUsed, backend: 'bedrock-converse', agentUsed: 'น้องขายไว' });
-  } catch (err: any) {
-    return c.json({ reply: 'ขออภัยค่ะ เกิดข้อผิดพลาด: ' + String(err.message).slice(0, 150), error: true }, 200);
-  }
+    const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
+    const lc = new LambdaClient({ region: process.env.AWS_REGION || 'ap-southeast-1' });
+    await lc.send(new InvokeCommand({
+      FunctionName: process.env.AWS_LAMBDA_FUNCTION_NAME || 'sf7-prod-crm',
+      InvocationType: 'Event',
+      Payload: new TextEncoder().encode(JSON.stringify({ _agentTask: true, taskId, message, agentType: agent, tenantId: tid, sessionId: sessionId || 'default' })),
+    }));
+  } catch (e: any) { console.error('[AsyncInvoke]', e.message); }
+
+  return c.json({ reply: null, taskId, status: 'processing', message: 'กำลังประมวลผลค่ะ รอสักครู่...', agentUsed: getAgentDisplayName(agent), backend: 'async' });
 });
 
 agents.post('/stream', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const { message, agentType, tenantId, conversationHistory } = body as any;
   if (!message) return c.json({ message: 'message required' }, 400);
+  const agent = agentType || 'sales-assistant';
   try {
-    const out = await runAgent(message, agentType || 'sales-assistant', (!tenantId || tenantId === 'default') ? '00000000-0000-0000-0000-000000000001' : tenantId, conversationHistory);
+    const out = await runAgent(message, agent, (!tenantId || tenantId === 'default') ? '00000000-0000-0000-0000-000000000001' : tenantId, conversationHistory);
     return new Response(
-      `data: ${JSON.stringify({ type: 'text', content: out.reply, toolsUsed: out.toolsUsed })}\n\ndata: [DONE]\n\n`,
+      `data: ${JSON.stringify({ type: 'text', content: out.reply, toolsUsed: out.toolsUsed, agentUsed: getAgentDisplayName(agent) })}\n\ndata: [DONE]\n\n`,
       { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' } },
     );
   } catch (err: any) {
@@ -380,6 +442,26 @@ agents.post('/stream', async (c) => {
 });
 
 agents.get('/health', (c) => c.json({ ok: true, service: 'agents', backend: USE_AGENTCORE ? 'agentcore+fallback' : 'bedrock-converse', tools: TOOLS.length, agents: ['admin','sales-assistant','analytics'], ts: Date.now() }));
+
+// ══════════════════════════════════════════════════════════════
+// Auto-detect agent type from message (mirrors AgentCore factory logic)
+// ══════════════════════════════════════════════════════════════
+
+function detectAgentType(message: string): string {
+  const lower = message.toLowerCase();
+  const analyticsKeywords = [
+    'forecast', 'พยากรณ์', 'churn', 'เสี่ยงหาย', 'win rate', 'conversion',
+    'เปรียบเทียบ', 'performance', 'ผลงาน', 'revenue', 'trend',
+    'kpi', 'สรุปยอด', 'วิเคราะห์', 'avg deal', 'pipeline',
+  ];
+  const adminKeywords = [
+    'สนใจสินค้า', 'ขอใบเสนอราคา', 'ติดต่อกลับ', 'สอบถามราคา',
+    'บริการอะไร', 'ราคาเท่าไหร่', 'แพ็คเกจ',
+  ];
+  if (analyticsKeywords.some(k => lower.includes(k))) return 'analytics';
+  if (adminKeywords.some(k => lower.includes(k))) return 'admin';
+  return 'sales-assistant';
+}
 
 // ══════════════════════════════════════════════════════════════
 // Async Task Pattern — for long-running agent actions
@@ -466,5 +548,38 @@ agents.get('/task/:id', async (c) => {
     completedAt: res.Item.completedAt?.S || null,
   });
 });
+
+export async function runAgentTask(message: string, agentType: string, tenantId: string, sessionId?: string): Promise<string> {
+  const { DynamoDBClient, GetItemCommand, PutItemCommand } = await import('@aws-sdk/client-dynamodb');
+  const ddb = new DynamoDBClient({ region: process.env.AWS_REGION || 'ap-southeast-1' });
+  const table = process.env.AI_STATE_TABLE || 'sf7-prod-ai-state';
+  const sid = sessionId || 'default';
+
+  // Load conversation history
+  let history: any[] = [];
+  try {
+    const res = await ddb.send(new GetItemCommand({ TableName: table, Key: { PK: { S: `CHAT#${sid}` }, SK: { S: 'HISTORY' } } }));
+    if (res.Item?.data?.S) {
+      history = JSON.parse(res.Item.data.S);
+      if (history.length > 12) history = history.slice(-12); // keep last 6 turns
+    }
+  } catch {}
+
+  // Run agent with history
+  const out = await runAgent(message, agentType, tenantId, history);
+
+  // Save updated history
+  try {
+    history.push({ role: 'user', content: message });
+    history.push({ role: 'assistant', content: out.reply });
+    if (history.length > 12) history = history.slice(-12);
+    await ddb.send(new PutItemCommand({
+      TableName: table,
+      Item: { PK: { S: `CHAT#${sid}` }, SK: { S: 'HISTORY' }, data: { S: JSON.stringify(history) }, ttl: { N: String(Math.floor(Date.now()/1000) + 3600) } },
+    }));
+  } catch {}
+
+  return out.reply;
+}
 
 export default agents;

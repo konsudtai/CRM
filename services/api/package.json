@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild src/lambda.ts --bundle --platform=node --target=node20 --outfile=dist/lambda.js --external:pg-native --external:@aws-sdk/* --external:@smithy/* --external:@aws-crypto/* --minify",
+    "build": "esbuild src/lambda.ts --bundle --platform=node --target=node20 --outfile=dist/lambda.js --external:pg-native --external:@aws-sdk/* --external:@smithy/* --external:@aws-crypto/* --external:@strands-agents/* --external:zod --minify",
     "dev": "node --loader tsx src/dev.ts"
   },
   "dependencies": {
@@ -16,14 +16,16 @@
     "@aws-sdk/client-sqs": "^3.800.0",
     "@aws-sdk/credential-provider-node": "^3.972.39",
     "@hono/node-server": "^1.13.0",
+    "@opentelemetry/api": "^1.9.1",
     "@smithy/protocol-http": "^4.1.8",
     "@smithy/signature-v4": "^4.2.4",
+    "@strands-agents/sdk": "^1.2.0",
     "bcryptjs": "^2.4.3",
     "hono": "^4.7.0",
     "jose": "^6.0.0",
     "pg": "^8.16.0",
     "uuid": "^11.1.0",
-    "zod": "^3.24.0"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

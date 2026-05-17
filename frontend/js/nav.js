@@ -90,7 +90,7 @@ function renderNav(activePage) {
       <button class="sf7-hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <a href="dashboard.html" class="sf7-brand">SalesFAST <span style="color:#4BCA81">7</span> <span style="font-size:11px;font-weight:500;color:rgba(255,255,255,.55);margin-left:4px">IT Solutions</span></a>
+      <a href="dashboard.html" class="sf7-brand" style="display:flex;align-items:center"><img src="/img/logo-nav.png" alt="SalesFAST 7" style="height:100px;object-fit:contain"/></a>
       <div class="sf7-nav-items">${menuHtml}</div>
     </div>
     <div class="sf7-nav-right">
@@ -242,12 +242,12 @@ function initCoAgent(){
   // Inject HTML
   var html=`
 <button class="co-fab" id="co-fab" onclick="toggleCoAgent()">
-  <img src="${location.pathname.includes('/app/')?'../img/co-agent-avatar.svg':'img/co-agent-avatar.svg'}" alt="น้องขายไว"/>
+  <img src="${location.pathname.includes('/app/')?'../img/agent-sales.png':'img/agent-sales.png'}" alt="น้องขายไว"/>
   <span class="co-badge" id="co-badge">2</span>
 </button>
 <div class="co-panel" id="co-panel">
   <div class="co-header">
-    <div class="co-avatar"><img src="${location.pathname.includes('/app/')?'../img/co-agent-avatar.svg':'img/co-agent-avatar.svg'}" alt="SC" style="width:100%;height:100%;border-radius:50%"/></div>
+    <div class="co-avatar"><img src="${location.pathname.includes('/app/')?'../img/agent-sales.png':'img/agent-sales.png'}" alt="SC" style="width:100%;height:100%;border-radius:50%"/></div>
     <div class="co-header-info">
       <div class="co-header-name">น้องขายไว</div>
       <div class="co-header-status"><span class="co-header-dot"></span> Online — Sales Assistant</div>
@@ -304,12 +304,29 @@ function initCoMessages(){
     }
   },500);
   if(isM) setTimeout(function(){addCoMsg('notif','<strong>📄 QT รออนุมัติ</strong><br>QT-2569-0004 ศรีสมบูรณ์ ฿3.3M<br>โดย: สมชาย<br><br>พิมพ์ "<strong>approve</strong>" หรือ "<strong>reject</strong>"')},1000);
-  var qi=isM?['Assign Lead','Approve QT','สรุปทีม','Lead ใหม่','งานเกินกำหนด','QT Status']:['Lead ของฉัน','งานวันนี้','สร้าง QT','Deal โฟกัส','เขียน Email','สรุปลูกค้า'];
+  var qi=isM?['งานคงค้าง','Assign Lead','Approve QT','สรุปทีม','Lead ใหม่','QT Status']:['งานคงค้าง','Lead ของฉัน','งานวันนี้','สร้าง QT','Deal โฟกัส','สรุปลูกค้า'];
   document.getElementById('co-quick').innerHTML=qi.map(function(t){return '<button class="co-quick-btn" onclick="sendCoQuick(this.textContent)">'+t+'</button>'}).join('');
   document.getElementById('co-badge').textContent=isM?'4':'2';
 }
 function notifySalesRep(r,l,i,b,t){var a=JSON.parse(localStorage.getItem('sf7-assigned-leads')||'[]');a.push({assignedTo:r,leadName:l,interest:i,budget:b,task:t||'ติดต่อลูกค้าภายในวันนี้',assignedAt:new Date().toISOString()});localStorage.setItem('sf7-assigned-leads',JSON.stringify(a))}
-function addCoMsg(type,text){var m=document.getElementById('co-messages'),d=document.createElement('div');d.className='co-msg '+type;d.innerHTML=text;m.appendChild(d);m.scrollTop=m.scrollHeight}
+function addCoMsg(type,text,agent){
+  var m=document.getElementById('co-messages'),d=document.createElement('div');d.className='co-msg '+type;
+  if(type==='agent'){
+    var imgPath=location.pathname.includes('/app/')?'../img/':'img/';
+    var avatarSrc=imgPath+'agent-sales.png';
+    if(agent==='น้องวิ')avatarSrc=imgPath+'agent-analytics.png';
+    else if(agent==='น้องแอ๊ด')avatarSrc=imgPath+'agent-admin.png';
+    var textDiv=document.createElement('div');
+    d.innerHTML='<div style="display:flex;gap:8px;align-items:flex-start"><img src="'+avatarSrc+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-top:2px"/></div>';
+    d.querySelector('div').appendChild(textDiv);
+    m.appendChild(d);
+    // Typing animation (word by word)
+    if(text.length>20){
+      var words=text.split(/( )/);var i=0;
+      var ti=setInterval(function(){if(i<words.length){textDiv.innerHTML+=words[i];i++;if(i%8===0)m.scrollTop=m.scrollHeight;}else{clearInterval(ti);m.scrollTop=m.scrollHeight;}},30);
+    }else{textDiv.innerHTML=text;m.scrollTop=m.scrollHeight;}
+  }else{d.innerHTML=text;m.appendChild(d);m.scrollTop=m.scrollHeight;}
+}
 
 function sendCoMsg(){
   var inp=document.getElementById('co-input'),t=inp.value.trim();
@@ -328,12 +345,12 @@ function sendCoMsg(){
   fetch(agentApi,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({message:t,agentType:'sales-assistant',tenantId:user.tenantId||'default'})
+    body:JSON.stringify({message:t,agentType:'sales-assistant',tenantId:user.tenantId||'default',sessionId:(getUserProfile().id||'anon')+'-session'})
   }).then(function(res){
     if(res.status===504||res.status===503){
       // Timeout — switch to async mode
       var e=document.getElementById('co-typing');if(e)e.textContent='กำลังดำเนินการ...';
-      return fetch('/agents/task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,agentType:'sales-assistant',tenantId:user.tenantId||'default'})}).then(function(r){return r.json()}).then(function(task){
+      return fetch('/agents/task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,agentType:'sales-assistant',tenantId:user.tenantId||'default',sessionId:(getUserProfile().id||'anon')+'-session'})}).then(function(r){return r.json()}).then(function(task){
         if(!task.taskId){throw new Error('task failed')}
         // Poll every 3s
         var pollCount=0;
@@ -344,7 +361,7 @@ function sendCoMsg(){
             if(s.status==='done'||s.status==='error'){
               clearInterval(poll);
               var e3=document.getElementById('co-typing');if(e3)e3.remove();
-              addCoMsg('agent',(s.reply||'เสร็จแล้วค่ะ').replace(/\n/g,'<br>'));
+              addCoMsg('agent',(s.reply||'เสร็จแล้วค่ะ').replace(/\n/g,'<br>'),s.agentUsed||'น้องขายไว');
             }
           });
         },3000);
@@ -354,10 +371,24 @@ function sendCoMsg(){
     return res.json().then(function(d){return{ok:res.ok,data:d}});
   })
   .then(function(r){
-    if(!r||!r.data||r.data.reply===null)return; // async mode handled above
+    if(!r||!r.data)return;
+    if(r.data.taskId){
+      // Async mode — poll for result
+      var tid=r.data.taskId;var pc2=0;
+      var el=document.getElementById('co-typing');if(el)el.innerHTML='🔍 กำลังประมวลผล...';
+      var poll2=setInterval(function(){pc2++;
+        if(pc2>3){var el2=document.getElementById('co-typing');if(el2){var msgs=['📊 กำลังดึงข้อมูล...','🧮 กำลังวิเคราะห์...','✍️ กำลังเรียบเรียง...','⏳ อีกสักครู่...'];el2.innerHTML=msgs[Math.min(pc2-4,msgs.length-1)]||'⏳ อีกสักครู่...';}}
+        if(pc2>30){clearInterval(poll2);var el3=document.getElementById('co-typing');if(el3)el3.remove();addCoMsg('agent','ขออภัยค่ะ ใช้เวลานานเกินไป');return;}
+        fetch('/agents/task/'+tid).then(function(r2){return r2.json()}).then(function(s){
+          if(s.status==='done'||s.status==='error'){clearInterval(poll2);var el3=document.getElementById('co-typing');if(el3)el3.remove();addCoMsg('agent',(s.reply||'เสร็จแล้วค่ะ').replace(/\n/g,'<br>'),s.agentUsed||r.data.agentUsed||'น้องขายไว');}
+        }).catch(function(){});
+      },3000);
+      return;
+    }
+    if(!r.data.reply)return;
     var e=document.getElementById('co-typing');if(e)e.remove();
     var reply=(r.data&&(r.data.reply||r.data.error||r.data.message))||'ขออภัยค่ะ ไม่ได้รับข้อมูลจาก AI';
-    addCoMsg('agent',reply.replace(/\n/g,'<br>'));
+    addCoMsg('agent',reply.replace(/\n/g,'<br>'),r.data.agentUsed||'น้องขายไว');
   }).catch(function(err){
     var e=document.getElementById('co-typing');if(e)e.remove();
     addCoMsg('agent','ขออภัยค่ะ ไม่สามารถเชื่อมต่อได้: '+(err&&err.message?err.message:'network error'));
@@ -365,3 +396,17 @@ function sendCoMsg(){
 }
 function sendCoQuick(t){document.getElementById('co-input').value=t;sendCoMsg()}
 // getCoReply removed — now handled by Agent Service API via sendCoMsg()
+
+// Notification polling (every 30s)
+function pollNotifications(){
+  var token=localStorage.getItem('sf7_token');if(!token)return;
+  fetch('/notifications?limit=5',{headers:{'Authorization':'Bearer '+token}})
+  .then(function(r){return r.json()})
+  .then(function(notifs){
+    if(!notifs||!Array.isArray(notifs))return;
+    var pending=notifs.filter(function(n){return n.status==='pending'}).length;
+    var badge=document.getElementById('co-badge');
+    if(badge){if(pending>0){badge.textContent=pending;badge.style.display='flex';}else{badge.style.display='none';}}
+  }).catch(function(){});
+}
+setInterval(pollNotifications,60000);setTimeout(pollNotifications,5000);

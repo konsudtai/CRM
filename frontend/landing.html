@@ -4,450 +4,471 @@
 <meta charset="UTF-8"/>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>SalesFAST 7 — IT Solutions & Services Partner</title>
-<meta name="description" content="ผู้เชี่ยวชาญด้าน IT Solutions ครบวงจรสำหรับองค์กรไทย — Server, Network, Cloud, Cybersecurity"/>
+<title>SalesFAST 7 — AI-Powered CRM Platform สำหรับคนไทย</title>
+<meta name="description" content="CRM Platform สำหรับธุรกิจไทย ขับเคลื่อนด้วย AI บน Amazon Bedrock"/>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="css/landing.css"/>
+<style>
+:root{--primary:#0176D3;--primary-dark:#014486;--accent:#4BCA81;--navy:#032D60;--bg:#F8FAFC;--text:#0F172A;--text2:#475569;--text3:#94A3B8;--border:#E2E8F0;--surface:#FFFFFF;--shadow:0 4px 24px rgba(1,118,211,.08)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:'Plus Jakarta Sans',-apple-system,sans-serif;color:var(--text);background:var(--bg);font-size:15px;line-height:1.7;overflow-x:hidden}
+a{color:var(--primary);text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:10px;font-weight:600;font-size:14px;transition:all .25s;cursor:pointer;border:none;font-family:inherit}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 14px rgba(1,118,211,.3)}
+.btn-primary:hover{background:var(--primary-dark);transform:translateY(-2px);box-shadow:0 8px 24px rgba(1,118,211,.4)}
+.btn-outline{background:transparent;color:var(--primary);border:2px solid var(--primary)}
+.btn-outline:hover{background:var(--primary);color:#fff}
+
+/* Nav */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.4);backdrop-filter:blur(8px);border-bottom:1px solid transparent;transition:all .3s}
+.nav.scrolled{border-bottom-color:var(--border);box-shadow:0 2px 20px rgba(0,0,0,.06)}
+.nav-wrap{max-width:1200px;margin:0 auto;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo img{height:120px;object-fit:contain}
+.nav-links{display:flex;gap:20px;align-items:center}
+.nav-links a{font-size:15px;font-weight:500;color:var(--text2);transition:color .2s}
+.nav-links a:hover{color:var(--primary)}
+
+/* Hero */
+.hero{padding:160px 0 100px;text-align:center;position:relative;overflow:hidden;background:linear-gradient(180deg,#EFF8FF 0%,var(--bg) 100%)}
+.hero::before{content:'';position:absolute;top:-300px;left:50%;transform:translateX(-50%);width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(1,118,211,.07),transparent 70%)}
+
+.hero h1{font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.15;color:var(--navy);margin-bottom:20px;letter-spacing:-.5px}
+.hero h1 span{background:linear-gradient(135deg,var(--primary),#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:17px;color:var(--text2);max-width:600px;margin:0 auto 36px}
+.hero-cta{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+
+/* Scroll Animations */
+.reveal{opacity:0;transform:translateY(40px);transition:all .7s cubic-bezier(.4,0,.2,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-left{opacity:0;transform:translateX(-60px);transition:all .7s cubic-bezier(.4,0,.2,1)}
+.reveal-left.visible{opacity:1;transform:translateX(0)}
+.reveal-right{opacity:0;transform:translateX(60px);transition:all .7s cubic-bezier(.4,0,.2,1)}
+.reveal-right.visible{opacity:1;transform:translateX(0)}
+
+/* Section */
+.section{padding:100px 0}
+.section-title{font-size:32px;font-weight:800;text-align:center;margin-bottom:12px;color:var(--navy)}
+.section-sub{font-size:16px;color:var(--text2);text-align:center;max-width:600px;margin:0 auto 56px}
+
+/* Feature Showcase */
+.showcase{display:flex;align-items:center;gap:60px;margin-bottom:100px}
+.showcase:nth-child(even){flex-direction:row-reverse}
+.showcase-content{flex:1}
+.showcase-content h3{font-size:24px;font-weight:700;color:var(--navy);margin-bottom:12px}
+.showcase-content p{font-size:15px;color:var(--text2);margin-bottom:20px;line-height:1.7}
+.showcase-content ul{list-style:none;padding:0}
+.showcase-content li{padding:6px 0;font-size:14px;color:var(--text2);padding-left:20px;position:relative}
+.showcase-content li::before{content:'';position:absolute;left:0;top:12px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.showcase-img{flex:1;position:relative}
+.showcase-img img{width:100%;border-radius:16px;box-shadow:0 20px 60px rgba(3,45,96,.12);border:1px solid var(--border);transition:transform .4s}
+.showcase-img:hover img{transform:scale(1.02)}
+.showcase-img::after{content:'';position:absolute;inset:-8px;border-radius:20px;background:linear-gradient(135deg,rgba(1,118,211,.1),rgba(75,202,129,.1));z-index:-1}
+
+/* AI Agents */
+.agents-section{background:linear-gradient(135deg,var(--navy) 0%,#0A4A8A 100%);color:#fff;padding:100px 0;position:relative;overflow:hidden}
+.agents-section::after{content:'';position:absolute;bottom:-150px;right:-150px;width:500px;height:500px;border-radius:50%;background:rgba(75,202,129,.08)}
+.agents-section .section-title{color:#fff}
+.agents-section .section-sub{color:rgba(255,255,255,.7)}
+.agent-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:32px;max-width:1100px;margin:0 auto}
+.agent-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:36px;backdrop-filter:blur(10px);transition:all .4s;display:flex;flex-direction:column}
+.agent-card:hover{background:rgba(255,255,255,.1);transform:translateY(-6px);box-shadow:0 20px 40px rgba(0,0,0,.2)}
+.agent-card .chat-demo{margin-top:auto;height:380px;overflow:hidden}
+.agent-avatar{width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:16px;border:3px solid rgba(255,255,255,.2)}
+.agent-card h3{font-size:22px;font-weight:700;margin-bottom:4px}
+.agent-card .role{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px}
+.agent-card li{font-size:14px;color:rgba(255,255,255,.85);padding:6px 0;padding-left:20px;position:relative;list-style:none}
+.agent-card li::before{content:'';position:absolute;left:0;top:13px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+
+/* Architecture */
+.arch-section{padding:100px 0;background:var(--surface)}
+.arch-img{max-width:960px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(3,45,96,.1);border:1px solid var(--border)}
+.arch-img img{width:100%;display:block}
+.arch-badges{display:flex;gap:12px;justify-content:center;margin-top:32px;flex-wrap:wrap}
+.arch-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:rgba(1,118,211,.06);font-size:12px;font-weight:600;color:var(--primary)}
+
+/* Pricing */
+.pricing-card{max-width:480px;margin:0 auto;background:var(--surface);border:2px solid var(--primary);border-radius:24px;padding:48px;text-align:center;box-shadow:0 20px 60px rgba(1,118,211,.1)}
+.pricing-amount{font-size:52px;font-weight:800;color:var(--navy);margin:16px 0 8px}
+.pricing-amount span{font-size:18px;font-weight:500;color:var(--text2)}
+.pricing-list{text-align:left;margin:28px 0;padding:0;list-style:none}
+.pricing-list li{padding:10px 0;font-size:14px;color:var(--text2);padding-left:24px;position:relative;border-bottom:1px solid var(--border)}
+.pricing-list li:last-child{border:none}
+.pricing-list li::before{content:'';position:absolute;left:0;top:16px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+
+/* Footer */
+.footer{background:var(--navy);color:rgba(255,255,255,.7);padding:48px 0;text-align:center;font-size:13px}
+.footer-logo{height:48px;margin-bottom:16px;object-fit:contain;filter:brightness(2)}
+
+.chat-demo{margin-top:16px;display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:hidden}
+.chat-bubble{padding:10px 14px;border-radius:12px;font-size:12px;line-height:1.5;max-width:90%;transition:all .4s ease}
+.chat-bubble.show{opacity:1!important}
+.chat-demo{margin-top:20px;display:flex;flex-direction:column;gap:10px;max-height:380px;overflow:hidden;background:rgba(255,255,255,.95);border-radius:16px;padding:16px;border:1px solid rgba(0,0,0,.08);box-shadow:inset 0 2px 8px rgba(0,0,0,.04)}
+.chat-demo .chat-bubble.user{background:linear-gradient(135deg,#0176D3,#3B82F6);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;box-shadow:0 2px 8px rgba(1,118,211,.2)}
+.chat-demo .chat-bubble.bot{background:#F1F5F9;color:#1e293b;align-self:flex-start;border-bottom-left-radius:4px;border:1px solid #E2E8F0;padding-left:42px;position:relative}
+.chat-demo .chat-bubble.bot::before{content:"";position:absolute;left:8px;top:8px;width:28px;height:28px;border-radius:50%;background-size:cover;background-position:center;border:2px solid #E2E8F0}
+.chat-demo-line{background:#1a1a1a!important;border:1px solid rgba(255,255,255,.1)!important}
+.chat-demo-line .chat-bubble.user{background:#06C755!important;color:#fff;box-shadow:0 2px 8px rgba(6,199,85,.3)}
+.chat-demo-line .chat-bubble.bot{background:#303030!important;color:#f0f0f0!important;border:1px solid rgba(255,255,255,.08)!important}
+.chat-demo-line .chat-bubble.bot::before{border-color:rgba(255,255,255,.15)!important}
+.flow-section{padding:40px 0}
+.flow-steps{display:flex;align-items:center;justify-content:center;gap:0;max-width:1100px;margin:0 auto;position:relative}
+.flow-step{display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 12px;min-width:140px;opacity:0;transform:scale(.8);transition:all .5s cubic-bezier(.4,0,.2,1);position:relative;z-index:2}
+.flow-step.show{opacity:1;transform:scale(1)}
+.flow-step.active .flow-icon{box-shadow:0 0 20px rgba(75,202,129,.4);border-color:rgba(75,202,129,.6)}
+.flow-icon{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .4s}
+.flow-title{font-size:12px;font-weight:700;color:#fff;text-align:center;margin-top:4px}
+.flow-desc{font-size:10px;color:rgba(255,255,255,.5);text-align:center;line-height:1.4;max-width:120px}
+.flow-arrow{width:40px;height:2px;background:rgba(255,255,255,.1);position:relative;opacity:0;transition:all .4s}
+.flow-arrow.show{opacity:1}
+.flow-arrow::after{content:'';position:absolute;right:-1px;top:-4px;width:0;height:0;border-left:8px solid rgba(255,255,255,.3);border-top:5px solid transparent;border-bottom:5px solid transparent}
+.flow-arrow.active{background:linear-gradient(90deg,rgba(75,202,129,.6),rgba(1,118,211,.6));height:3px;box-shadow:0 0 8px rgba(75,202,129,.3)}
+.flow-arrow.active::after{border-left-color:rgba(1,118,211,.8)}
+@keyframes flowPulse{0%{box-shadow:0 0 0 0 rgba(75,202,129,.4)}70%{box-shadow:0 0 0 12px rgba(75,202,129,0)}100%{box-shadow:0 0 0 0 rgba(75,202,129,0)}}
+#chat-demo-sales .chat-bubble.bot::before{background-image:url(img/agent-sales.png)}
+#chat-demo-vi .chat-bubble.bot::before{background-image:url(img/agent-analytics.png)}
+#chat-demo-ad .chat-bubble.bot::before{background-image:url(img/agent-admin.png)}
+@media(max-width:768px){.nav-links{display:none}.showcase{flex-direction:column!important;gap:32px}.agent-cards{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 
-<!-- ── Navigation ── -->
-<nav class="ln-nav" id="ln-nav">
-  <div class="ln-nav-wrap">
-    <a href="#" class="ln-logo">
-      <img src="" alt="" class="ln-logo-img" data-brand-logo style="display:none"/>
-      <div class="ln-logo-text">
-        <span class="ln-logo-name" id="company-name">SalesFAST <span style="color:#4BCA81">7</span></span>
-        <span class="ln-logo-tag" id="company-tag">IT Solutions Partner</span>
-      </div>
-    </a>
-    <div class="ln-nav-links">
-      <a href="#solutions">โซลูชัน</a>
-      <a href="#products">สินค้า</a>
-      <a href="#industries">อุตสาหกรรม</a>
-      <a href="#why">ทำไมเรา</a>
-      <a href="#testimonials">ลูกค้า</a>
-      <a href="#contact">ติดต่อ</a>
+<!-- Nav -->
+<nav class="nav" id="nav">
+  <div class="nav-wrap">
+    <a href="#" class="nav-logo"><img src="img/logo-landing.png" alt="SalesFAST 7"/></a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#agents">AI Agents</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#pricing">Pricing</a>
+      <a href="login.html" class="btn btn-primary" style="padding:8px 20px;font-size:13px;font-weight:600;color:#fff">เข้าสู่ระบบ</a>
     </div>
-    <div class="ln-nav-actions">
-      <a href="login.html" class="ln-btn ln-btn-ghost">เข้าสู่ระบบ</a>
-      <a href="#contact" class="ln-btn ln-btn-cta">ติดต่อฝ่ายขาย</a>
-    </div>
-    <button class="ln-nav-burger" id="ln-burger" aria-label="Menu">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-  <div class="ln-nav-mobile" id="ln-nav-mobile">
-    <a href="#solutions">โซลูชัน</a>
-    <a href="#products">สินค้า</a>
-    <a href="#industries">อุตสาหกรรม</a>
-    <a href="#why">ทำไมเรา</a>
-    <a href="#testimonials">ลูกค้า</a>
-    <a href="#contact">ติดต่อ</a>
-    <a href="login.html" class="ln-btn ln-btn-ghost" style="margin-top:12px">เข้าสู่ระบบ</a>
-    <a href="#contact" class="ln-btn ln-btn-cta">ติดต่อฝ่ายขาย</a>
   </div>
 </nav>
 
-<!-- ── Hero ── -->
-<section class="ln-hero">
-  <div class="ln-hero-bg"></div>
-  <div class="ln-hero-wrap">
-    <div class="ln-hero-content">
-      <div class="ln-hero-badge reveal">
-        <span class="ln-hero-badge-dot"></span>
-        <span id="hero-badge">ผู้นำด้าน IT Solutions สำหรับองค์กรไทย</span>
+<!-- Hero -->
+<section class="hero">
+  <div class="wrap">
+    
+    <h1>CRM สำหรับ SMB ไทย ขนาดเล็กถึงกลาง<br/>ขับเคลื่อนด้วย <span>AI</span></h1>
+    <p>จัดการ Lead, Pipeline, Quotation ครบจบในที่เดียว พร้อม AI Assistant ที่ช่วยวิเคราะห์และทำงานแทนคุณได้จริง</p>
+    <div class="hero-cta">
+      <a href="login.html" class="btn btn-primary">เริ่มใช้งานฟรี</a>
+      <a href="#features" class="btn btn-outline">ดู Features</a>
+    </div>
+  </div>
+</section>
+
+<!-- Feature Showcase -->
+<section class="section" id="features">
+  <div class="wrap">
+    <h2 class="section-title reveal">ทุก Feature ที่ทีมขายต้องการ</h2>
+    <p class="section-sub reveal">ดูภาพจริงจากระบบ — ไม่ใช่แค่ Mockup</p>
+
+    <div class="showcase">
+      <div class="showcase-content reveal-left">
+        <h3>Dashboard แบบ Real-time</h3>
+        <p>เห็นภาพรวมทั้งหมดในหน้าเดียว Pipeline, KPI, Revenue, Team Performance พร้อม AI วิเคราะห์ให้</p>
+        <ul>
+          <li>Pipeline Value แต่ละ Stage</li>
+          <li>Win Rate และ Conversion Trend</li>
+          <li>Task ที่เกินกำหนดแจ้งเตือนทันที</li>
+          <li>น้องวิ AI วิเคราะห์ตัวเลขให้อัตโนมัติ</li>
+        </ul>
       </div>
-      <h1 class="ln-hero-title reveal" id="hero-title">
-        โซลูชัน IT ครบวงจร<br/><span class="ln-gradient">สำหรับองค์กรไทย</span>
-      </h1>
-      <p class="ln-hero-sub reveal" id="hero-subtitle">
-        จากอุปกรณ์ Network, Server, Notebook ไปจนถึง Cloud Migration และ Cybersecurity
-      </p>
-      <div class="ln-hero-actions reveal">
-        <a href="#contact" class="ln-btn ln-btn-cta ln-btn-lg" id="hero-cta-primary">ติดต่อฝ่ายขาย</a>
-        <a href="#products" class="ln-btn ln-btn-outline ln-btn-lg" id="hero-cta-secondary">ดูสินค้าและบริการ</a>
-      </div>
-      <div class="ln-hero-trust reveal">
-        <div class="ln-trust-item">
-          <div class="ln-trust-icon" id="icon-award"></div>
-          <span>Certified Partners</span>
-        </div>
-        <div class="ln-trust-item">
-          <div class="ln-trust-icon" id="icon-clock"></div>
-          <span>SLA 4 ชั่วโมง</span>
-        </div>
-        <div class="ln-trust-item">
-          <div class="ln-trust-icon" id="icon-shield"></div>
-          <span>รับประกันเต็มรูปแบบ</span>
-        </div>
+      <div class="showcase-img reveal-right">
+        <img src="img/screenshot-dashboard.png" alt="Dashboard" style="width:100%;border-radius:12px"/>
       </div>
     </div>
-  </div>
-</section>
 
-<!-- ── Stats ── -->
-<section class="ln-stats">
-  <div class="ln-wrap">
-    <div class="ln-stats-grid" id="stats-grid">
-      <!-- Rendered by JS -->
+    <div class="showcase">
+      <div class="showcase-content reveal-right">
+        <h3>Lead Management อัจฉริยะ</h3>
+        <p>เก็บ Lead จาก LINE OA อัตโนมัติ ติดตามทุก Stage ตั้งแต่ New จนถึง Won พร้อม AI ช่วย Assign</p>
+        <ul>
+          <li>LINE Chatbot เก็บ Lead อัตโนมัติ</li>
+          <li>Kanban View ลาก Drop เปลี่ยน Stage</li>
+          <li>น้องขายไว Assign Lead ด้วยคำสั่งเดียว</li>
+          <li>แจ้งเตือน Sales Rep ทันทีเมื่อมี Lead ใหม่</li>
+        </ul>
+      </div>
+      <div class="showcase-img reveal-left">
+        <img src="img/screenshot-leads.png" alt="Lead Management" style="width:100%;border-radius:12px"/>
+      </div>
     </div>
-  </div>
-</section>
 
-<!-- ── Clients ── -->
-<section class="ln-clients">
-  <div class="ln-wrap">
-    <p class="ln-clients-label">ลูกค้าองค์กรที่ไว้วางใจเรา</p>
-    <div class="ln-clients-track" id="clients-track">
-      <!-- Rendered by JS -->
-    </div>
-  </div>
-</section>
-
-<!-- ── Solutions ── -->
-<section class="ln-section" id="solutions">
-  <div class="ln-wrap">
-    <div class="ln-section-head reveal">
-      <span class="ln-eyebrow">โซลูชันของเรา</span>
-      <h2 class="ln-section-title">โซลูชัน IT ครบวงจรในที่เดียว</h2>
-      <p class="ln-section-sub">จากอุปกรณ์ไปจนถึงบริการ เราเป็น one-stop partner ที่ครอบคลุมทุกความต้องการด้าน IT ขององค์กรคุณ</p>
-    </div>
-    <div class="ln-solutions-grid" id="solutions-grid">
-      <!-- Rendered by JS -->
-    </div>
-  </div>
-</section>
-
-<!-- ── Products ── -->
-<section class="ln-section ln-section-alt" id="products">
-  <div class="ln-wrap">
-    <div class="ln-section-head reveal">
-      <span class="ln-eyebrow">สินค้าและบริการแนะนำ</span>
-      <h2 class="ln-section-title">สินค้าขายดี</h2>
-      <p class="ln-section-sub">คัดสรรสินค้าคุณภาพจากแบรนด์ชั้นนำระดับโลก พร้อมการันตีของแท้และบริการหลังการขาย</p>
-    </div>
-    <div class="ln-product-filters" id="product-filters">
-      <button class="ln-pf-btn active" data-cat="all">ทั้งหมด</button>
-      <!-- Category buttons rendered by JS -->
-    </div>
-    <div class="ln-products-grid" id="products-grid">
-      <!-- Rendered by JS -->
-    </div>
-    <div class="ln-products-cta reveal">
-      <a href="#contact" class="ln-btn ln-btn-cta ln-btn-lg">สอบถามราคาพิเศษ</a>
+    <div class="showcase">
+      <div class="showcase-content reveal-left">
+        <h3>Quotation ออกได้ในคลิกเดียว</h3>
+        <p>สร้างใบเสนอราคา อนุมัติผ่านระบบ ส่งลูกค้าทาง LINE ได้ทันที พร้อม PDF Export</p>
+        <ul>
+          <li>สร้าง QT จาก Product Catalog</li>
+          <li>อนุมัติผ่าน Chat "approve" ได้เลย</li>
+          <li>ส่ง PDF ให้ลูกค้าอัตโนมัติ</li>
+          <li>Track สถานะ Sent → Accepted → Won</li>
+        </ul>
+      </div>
+      <div class="showcase-img reveal-right">
+        <img src="img/screenshot-quotations.png" alt="Quotation" style="width:100%;border-radius:12px"/>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ── Industries ── -->
-<section class="ln-section" id="industries">
-  <div class="ln-wrap">
-    <div class="ln-section-head reveal">
-      <span class="ln-eyebrow">อุตสาหกรรมที่เราดูแล</span>
-      <h2 class="ln-section-title">โซลูชันเฉพาะสำหรับแต่ละอุตสาหกรรม</h2>
-      <p class="ln-section-sub">เข้าใจความต้องการเฉพาะของแต่ละอุตสาหกรรม ออกแบบโซลูชันที่เหมาะสมกับธุรกิจคุณ</p>
-    </div>
-    <div class="ln-industries-grid" id="industries-grid">
-      <!-- Rendered by JS -->
-    </div>
-  </div>
-</section>
-
-<!-- ── Why Us ── -->
-<section class="ln-section ln-section-alt" id="why">
-  <div class="ln-wrap">
-    <div class="ln-section-head reveal">
-      <span class="ln-eyebrow">ทำไมต้องเลือกเรา</span>
-      <h2 class="ln-section-title">ข้อได้เปรียบของ SalesFAST 7</h2>
-    </div>
-    <div class="ln-features-grid" id="features-grid">
-      <!-- Rendered by JS -->
-    </div>
-  </div>
-</section>
-
-<!-- ── Testimonials ── -->
-<section class="ln-section" id="testimonials">
-  <div class="ln-wrap">
-    <div class="ln-section-head reveal">
-      <span class="ln-eyebrow">เสียงจากลูกค้า</span>
-      <h2 class="ln-section-title">องค์กรชั้นนำเลือกใช้เรา</h2>
-    </div>
-    <div class="ln-testimonials-grid" id="testimonials-grid">
-      <!-- Rendered by JS -->
-    </div>
-  </div>
-</section>
-
-<!-- ── CTA / Contact ── -->
-<section class="ln-cta" id="contact">
-  <div class="ln-wrap">
-    <div class="ln-cta-box reveal">
-      <div class="ln-cta-content">
-        <h2 class="ln-cta-title">พร้อมเริ่มต้น<br/>ยกระดับระบบ IT แล้วหรือยัง?</h2>
-        <p class="ln-cta-sub">ปรึกษาฟรีกับทีมผู้เชี่ยวชาญของเรา เราจะช่วยออกแบบโซลูชันที่เหมาะสมกับธุรกิจคุณ</p>
-        <div class="ln-cta-contact">
-          <div class="ln-cta-item">
-            <div class="ln-cta-icon" id="icon-phone"></div>
-            <div>
-              <span class="ln-cta-label">โทรศัพท์</span>
-              <a class="ln-cta-val" id="contact-phone" href="tel:0212345670">02-123-4567</a>
-            </div>
-          </div>
-          <div class="ln-cta-item">
-            <div class="ln-cta-icon" id="icon-mail"></div>
-            <div>
-              <span class="ln-cta-label">อีเมล</span>
-              <a class="ln-cta-val" id="contact-email" href="mailto:sales@salesfast7.com">sales@salesfast7.com</a>
-            </div>
-          </div>
-          <div class="ln-cta-item">
-            <div class="ln-cta-icon" id="icon-map"></div>
-            <div>
-              <span class="ln-cta-label">ที่อยู่</span>
-              <span class="ln-cta-val" id="contact-address">กรุงเทพมหานคร ประเทศไทย</span>
-            </div>
-          </div>
+<!-- AI Agents -->
+<section class="agents-section" id="agents">
+  <div class="wrap">
+    <h2 class="section-title reveal">AI Agents ที่ทำงานแทนคุณได้จริง</h2>
+    <p class="section-sub reveal">Powered by Amazon Bedrock (Claude Sonnet 4.6) + LINE OA Chatbot — เข้าถึงข้อมูลจริง ทำ Action ได้ ไม่ใช่แค่ Chatbot</p>
+    
+    <div class="agent-cards">
+      <!-- น้องขายไว -->
+      <div class="agent-card reveal-left">
+        <img src="img/agent-sales.png" class="agent-avatar" alt="น้องขายไว"/>
+        <h3>น้องขายไว</h3>
+        <div class="role">Sales Personal Assistant</div>
+        <ul>
+          <li>ค้นหา Lead, Account, Deal ด้วยภาษาธรรมชาติ</li>
+          <li>Assign Lead, สร้าง Task ได้ทันที</li>
+          <li>สร้างและอนุมัติ Quotation ผ่าน Chat</li>
+          <li>แจ้ง "งานคงค้าง" สรุปงานที่ต้องทำ</li>
+          <li>จำบทสนทนาและ Context ต่อเนื่อง</li>
+        </ul>
+        <div class="chat-demo" id="chat-demo-sales">
+          <div class="chat-bubble user" style="opacity:0">ดู Lead ที่ยังไม่ assign</div>
+          <div class="chat-bubble bot" style="opacity:0">ตอนนี้มี Lead ที่ยังไม่ได้ assign 2 คนค่ะ คือคุณ Nartbodee จาก Intervision กับคุณวิชัย จากกรุงเทพซอฟต์ มูลค่าประมาณ 87,500 บาท อยากให้ assign ให้ใครดีคะ</div>
+          <div class="chat-bubble user" style="opacity:0">assign ให้สมชายทั้งคู่</div>
+          <div class="chat-bubble bot" style="opacity:0">Assign เรียบร้อยแล้วค่ะ ทั้ง 2 Lead ให้คุณสมชาย วงศ์ดี แล้ว สร้าง Task follow-up ภายในวันนี้ให้ด้วยนะคะ</div>
+          <div class="chat-bubble user" style="opacity:0">งานคงค้างของทีมมีอะไรบ้าง</div>
+          <div class="chat-bubble bot" style="opacity:0">ทีมมี Task เกินกำหนด 23 งานค่ะ ส่วนใหญ่เป็นของคุณธนวัฒน์ 5 งาน และคุณอรุณ 4 งาน แนะนำให้ติดตามด่วนค่ะ</div>
+          <div class="chat-bubble user" style="opacity:0">สร้าง QT ให้ Intervision หน่อย</div>
+          <div class="chat-bubble bot" style="opacity:0">สร้าง QT-2026-0048 ให้ Intervision เรียบร้อยค่ะ มูลค่า 150,000 บาท ส่งให้ Manager อนุมัติแล้วนะคะ</div>
         </div>
       </div>
-      <form class="ln-cta-form" onsubmit="return submitContactForm(event)">
-        <h3 class="ln-form-title">ฝากข้อมูลให้เราติดต่อกลับ</h3>
-        <div class="ln-form-field">
-          <label>ชื่อ-นามสกุล *</label>
-          <input type="text" name="name" required placeholder="ชื่อของคุณ"/>
+      
+      <!-- น้องวิ -->
+      <div class="agent-card reveal-right">
+        <img src="img/agent-analytics.png" class="agent-avatar" alt="น้องวิ"/>
+        <h3>น้องวิ</h3>
+        <div class="role">Analytics Specialist</div>
+        <ul>
+          <li>วิเคราะห์ KPI, Win Rate แบบ Real-time</li>
+          <li>Forecast Revenue ล่วงหน้า</li>
+          <li>เปรียบเทียบผลงาน Sales Rep</li>
+          <li>วิเคราะห์ Pipeline Bottleneck</li>
+          <li>ให้คำแนะนำ Action ที่ทำได้จริง</li>
+        </ul>
+        <div class="chat-demo" id="chat-demo-vi">
+          <div class="chat-bubble user" style="opacity:0">Forecast เดือนหน้า</div>
+          <div class="chat-bubble bot" style="opacity:0">Pipeline ที่ใกล้ปิดได้มากที่สุดคือ Negotiation 26 ราย มูลค่ารวม 12.6 ล้านบาท คาดว่าเดือนหน้าจะปิดได้ประมาณ 23.5 ล้านบาทค่ะ</div>
+          <div class="chat-bubble user" style="opacity:0">ทีมใครทำได้ดีสุด</div>
+          <div class="chat-bubble bot" style="opacity:0">คุณ Chareef มี Win Rate สูงสุดที่ 20% ส่วนทีมเฉลี่ย 15-17% แนะนำให้ศึกษา approach ของ Chareef แล้วแชร์ให้ทีมค่ะ</div>
+          <div class="chat-bubble user" style="opacity:0">Pipeline ติดที่ Stage ไหน</div>
+          <div class="chat-bubble bot" style="opacity:0">Proposal stage มี 36 deals มูลค่ารวม 111 ล้านบาท แต่ค้างนานเฉลี่ย 18 วัน แนะนำให้เร่ง follow-up Deal ที่ค้างเกิน 14 วันค่ะ</div>
+          <div class="chat-bubble user" style="opacity:0">Revenue เดือนนี้เท่าไหร่</div>
+          <div class="chat-bubble bot" style="opacity:0">Revenue เดือนนี้อยู่ที่ 8.2 ล้านบาท จาก 12 Deals ที่ปิดได้ เทียบเดือนก่อน +18% เป้าเดือนนี้ 10 ล้าน เหลืออีก 1.8 ล้านค่ะ</div>
         </div>
-        <div class="ln-form-field">
-          <label>บริษัท *</label>
-          <input type="text" name="company" required placeholder="ชื่อบริษัท"/>
-        </div>
-        <div class="ln-form-row">
-          <div class="ln-form-field">
-            <label>อีเมล *</label>
-            <input type="email" name="email" required placeholder="you@company.com"/>
-          </div>
-          <div class="ln-form-field">
-            <label>โทรศัพท์ *</label>
-            <input type="tel" name="phone" required placeholder="08X-XXX-XXXX"/>
-          </div>
-        </div>
-        <div class="ln-form-field">
-          <label>สนใจบริการ</label>
-          <select name="interest">
-            <option value="">-- เลือก --</option>
-            <option>Hardware & Devices</option>
-            <option>Network & Wi-Fi</option>
-            <option>Cloud Services</option>
-            <option>Cybersecurity</option>
-            <option>IT Support</option>
-            <option>อื่นๆ</option>
-          </select>
-        </div>
-        <div class="ln-form-field">
-          <label>ข้อความ</label>
-          <textarea name="message" rows="3" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
-        </div>
-        <button type="submit" class="ln-btn ln-btn-cta ln-btn-lg ln-btn-block">ส่งข้อความ</button>
-        <p class="ln-form-note">เราจะติดต่อกลับภายใน 24 ชั่วโมงในวันทำการ</p>
-      </form>
-    </div>
-  </div>
-</section>
-
-<!-- ── Footer ── -->
-<footer class="ln-footer">
-  <div class="ln-wrap">
-    <div class="ln-footer-top">
-      <div class="ln-footer-brand">
-        <div class="ln-logo">
-          <img src="" alt="" class="ln-logo-img" data-brand-logo style="display:none"/>
-          <div class="ln-logo-text">
-            <span class="ln-logo-name">SalesFAST <span style="color:#4BCA81">7</span></span>
-          </div>
-        </div>
-        <p class="ln-footer-desc" id="company-desc">ผู้เชี่ยวชาญด้านโซลูชัน IT ครบวงจรสำหรับองค์กรไทย</p>
       </div>
-      <div class="ln-footer-cols">
-        <div class="ln-footer-col">
-          <h4>โซลูชัน</h4>
-          <a href="#solutions">Hardware & Devices</a>
-          <a href="#solutions">Network & Wi-Fi</a>
-          <a href="#solutions">Cloud Services</a>
-          <a href="#solutions">Cybersecurity</a>
-        </div>
-        <div class="ln-footer-col">
-          <h4>บริษัท</h4>
-          <a href="#why">เกี่ยวกับเรา</a>
-          <a href="#testimonials">ลูกค้าของเรา</a>
-          <a href="#contact">ร่วมงานกับเรา</a>
-          <a href="#contact">ติดต่อ</a>
-        </div>
-        <div class="ln-footer-col">
-          <h4>สำหรับลูกค้า</h4>
-          <a href="login.html">เข้าสู่ระบบ CRM</a>
-          <a href="#contact">ขอใบเสนอราคา</a>
-          <a href="#">Support</a>
-          <a href="#">Knowledge Base</a>
+
+      <!-- น้องแอ๊ด -->
+      <div class="agent-card reveal-left">
+        <img src="img/agent-admin.png" class="agent-avatar" alt="น้องแอ๊ด"/>
+        <h3>น้องแอ๊ด</h3>
+        <div class="role">LINE OA Assistant</div>
+        <ul>
+          <li>เก็บ Lead อัตโนมัติผ่าน LINE Chatbot</li>
+          <li>แสดง Product Catalog จากระบบจริง</li>
+          <li>ลูกค้าเช็คสถานะ Lead ได้เอง</li>
+          <li>แจ้งเตือน Sales Manager ทันที</li>
+          <li>Rich Menu เลือกบริการได้สะดวก</li>
+        </ul>
+        <div class="chat-demo chat-demo-line" id="chat-demo-ad">
+          <div class="chat-bubble user" style="opacity:0">สนใจสินค้า</div>
+          <div class="chat-bubble bot" style="opacity:0">สนใจสินค้า/บริการอะไรดีคะ เลือกจากด้านล่าง หรือพิมพ์ได้เลยค่ะ</div>
+          <div class="chat-bubble user" style="opacity:0">Cloud Migration</div>
+          <div class="chat-bubble bot" style="opacity:0">สนใจ Cloud Migration นะคะ ขอทราบชื่อ-นามสกุลค่ะ</div>
+          <div class="chat-bubble user" style="opacity:0">สมศักดิ์ รักดี</div>
+          <div class="chat-bubble bot" style="opacity:0">คุณสมศักดิ์ นะคะ ขอทราบชื่อบริษัท/องค์กรค่ะ</div>
+          <div class="chat-bubble user" style="opacity:0">บริษัท ABC จำกัด</div>
+          <div class="chat-bubble bot" style="opacity:0">ส่งข้อมูลเรียบร้อยแล้วค่ะ ทีมงานจะติดต่อกลับภายใน 24 ชม. ค่ะ</div>
+          <div class="chat-bubble user" style="opacity:0">เช็คสถานะ</div>
+          <div class="chat-bubble bot" style="opacity:0">สวัสดีค่ะคุณสมศักดิ์ สถานะ: กำลังจัดทำใบเสนอราคา ผู้ดูแล: คุณสมชาย วงศ์ดี (081-234-5678) ค่ะ</div>
         </div>
       </div>
     </div>
-    <div class="ln-footer-bot">
-      <div>&copy; <span id="footer-year"></span> <span class="ln-footer-name">SalesFAST 7</span>. All rights reserved.</div>
-      <div class="ln-footer-links">
-        <a href="#">นโยบายความเป็นส่วนตัว</a>
-        <a href="#">เงื่อนไขการใช้งาน</a>
+
+    <!-- AI Flow Journeys -->
+    <div class="flow-section" style="margin-top:80px">
+      <!-- น้องขายไว Flow -->
+      <h3 style="text-align:center;font-size:20px;font-weight:700;color:#fff;margin-bottom:12px">น้องขายไว — Sales Workflow</h3>
+      <p style="text-align:center;font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px">จัดการงานขายแทนคุณตั้งแต่ Lead เข้ามาจนปิด Deal</p>
+      <div class="flow-steps" id="flow-sales">
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4BCA81" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div><div class="flow-text"><div class="flow-title">Lead เข้าจาก LINE</div><div class="flow-desc">Chatbot เก็บข้อมูลอัตโนมัติ สร้าง Lead ใน CRM</div></div></div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div><div class="flow-text"><div class="flow-title">แจ้ง Manager</div><div class="flow-desc">Notification แจ้ง Admin + Sales Manager ทันที</div></div></div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0176D3" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="flow-text"><div class="flow-title">Assign Rep</div><div class="flow-desc">สั่ง Assign ผ่าน Chat น้องขายไวทำให้ทันที</div></div></div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="flow-text"><div class="flow-title">สร้าง QT</div><div class="flow-desc">สร้าง Quotation + อนุมัติ + ส่งลูกค้า</div></div></div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div class="flow-text"><div class="flow-title">ปิด Deal</div><div class="flow-desc">Won! อัปเดท Pipeline แจ้งทีม</div></div></div>
+      </div>
+
+      <!-- น้องวิ Flow -->
+      <h3 style="text-align:center;font-size:20px;font-weight:700;color:#fff;margin-bottom:12px;margin-top:60px">น้องวิ — Analytics Workflow</h3>
+      <p style="text-align:center;font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px">วิเคราะห์ข้อมูลจริงจากระบบ ให้ insight ที่ทำได้จริง</p>
+      <div class="flow-steps" id="flow-vi">
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="flow-text"><div class="flow-title">ดึง KPI</div><div class="flow-desc">Win Rate, Revenue, Conversion จากข้อมูลจริง</div></div></div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></div><div class="flow-text"><div class="flow-title">วิเคราะห์ Pipeline</div><div class="flow-desc">หา Bottleneck แต่ละ Stage มูลค่าและจำนวน</div></div></div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div><div class="flow-text"><div class="flow-title">เทียบทีม</div><div class="flow-desc">ผลงาน Sales Rep แต่ละคน Win Rate เฉลี่ย</div></div></div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EC4899" stroke-width="2"><path d="M2 20h20"/><path d="M5 20V10"/><path d="M9 20V4"/><path d="M13 20v-8"/><path d="M17 20V8"/><path d="M21 20v-4"/></svg></div><div class="flow-text"><div class="flow-title">Forecast</div><div class="flow-desc">พยากรณ์ Revenue เดือนหน้า Best/Expected/Worst</div></div></div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div><div class="flow-text"><div class="flow-title">แนะนำ Action</div><div class="flow-desc">บอกว่าควรโฟกัสอะไร ทำอะไรก่อน-หลัง</div></div></div>
+      </div>
+
+      <!-- น้องแอ๊ด Flow -->
+      <h3 style="text-align:center;font-size:20px;font-weight:700;color:#fff;margin-bottom:12px;margin-top:60px">น้องแอ๊ด — LINE OA Workflow</h3>
+      <p style="text-align:center;font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px">เก็บ Lead อัตโนมัติจาก LINE OA พร้อม Product Catalog และเช็คสถานะ</p>
+      <div class="flow-steps" id="flow-ad">
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#06D6A0" stroke-width="2"><path d="M12 2C6.48 2 2 5.82 2 10.5c0 2.95 1.91 5.5 4.72 7.03L6 22l3.5-2.1c.8.14 1.64.1 2.5.1 5.52 0 10-3.82 10-8.5S17.52 2 12 2z"/></svg></div><div class="flow-text"><div class="flow-title">ลูกค้าทัก LINE</div><div class="flow-desc">Rich Menu แสดง 3 ตัวเลือกให้กดได้ทันที</div></div></div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></div><div class="flow-text"><div class="flow-title">ดู Catalog</div><div class="flow-desc">แสดงสินค้าจาก DB เป็น Flex Carousel</div></div></div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg></div><div class="flow-text"><div class="flow-title">เก็บข้อมูล</div><div class="flow-desc">ชื่อ บริษัท เบอร์ งบ ทีละ step</div></div></div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div><div class="flow-text"><div class="flow-title">แจ้ง Manager</div><div class="flow-desc">สร้าง Lead + Notification อัตโนมัติ</div></div></div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><div class="flow-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div class="flow-text"><div class="flow-title">เช็คสถานะ</div><div class="flow-desc">ลูกค้าเช็คเองได้ ว่าใครดูแล สถานะอะไร</div></div></div>
       </div>
     </div>
+  </div>
+</section>
+
+
+
+<!-- Architecture -->
+<section class="arch-section" id="architecture">
+  <div class="wrap">
+    <h2 class="section-title reveal">AWS Well-Architected Design</h2>
+    <p class="section-sub reveal">ออกแบบตามหลัก Security, Reliability, Performance, Cost Optimization</p>
+    <div class="arch-img reveal">
+      <img src="img/architecture.png" alt="AWS Architecture"/>
+    </div>
+    <div class="arch-badges reveal">
+      <span class="arch-badge">Security Pillar</span>
+      <span class="arch-badge">Performance Efficiency</span>
+      <span class="arch-badge">Reliability</span>
+      <span class="arch-badge">Cost Optimized</span>
+      <span class="arch-badge">Operational Excellence</span>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="section" id="pricing" style="background:var(--bg)">
+  <div class="wrap">
+    <h2 class="section-title reveal">จ่ายตามการใช้งานจริง</h2>
+    <p class="section-sub reveal">ไม่มีค่า License จ่ายเฉพาะ AWS Infrastructure ที่ใช้จริง</p>
+    <div class="pricing-card reveal">
+      <div style="font-size:13px;font-weight:600;color:var(--primary);letter-spacing:1px">PRODUCTION READY</div>
+      <div class="pricing-amount">~$150<span> /เดือน</span></div>
+      <div style="font-size:13px;color:var(--text3)">AWS Infrastructure Cost</div>
+      <ul class="pricing-list">
+        <li>RDS PostgreSQL (db.t4g.medium, 100GB) — $56</li>
+        <li>VPC Endpoints (6 Interface) — $45</li>
+        <li>CloudFront Pro (CDN + WAF + DDoS) — $15</li>
+        <li>Bedrock AI (Claude Sonnet 4.6, ~500 chats) — $15-30</li>
+        <li>Lambda + API Gateway + DynamoDB + SQS — $7</li>
+        <li>S3, Secrets Manager, CloudWatch — $4</li>
+      </ul>
+      <a href="login.html" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:24px">เริ่มใช้งาน</a>
+      <p style="font-size:11px;color:var(--text3);margin-top:12px">ไม่จำกัด Users / ไม่มีค่า License / Deploy บน AWS Account ของคุณ</p>
+      <a href="https://calculator.aws/#/estimate?id=3ce4ed364d89f8213856c431177899306a143c20" target="_blank" style="font-size:12px;margin-top:8px;display:inline-block">ดู AWS Pricing Calculator</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="wrap">
+    <img src="img/logo-landing.png" class="footer-logo" alt="SalesFAST 7"/>
+    <p>SalesFAST 7 — AI-Powered CRM Platform สำหรับธุรกิจไทย</p>
+    <p style="margin-top:4px;font-size:11px;opacity:.6">AWS Well-Architected | AI Powered by Amazon Bedrock (Claude Sonnet 4.6)</p>
+    <p style="margin-top:16px;opacity:.4">© 2026 SalesFAST 7. All rights reserved.</p>
   </div>
 </footer>
 
-<!-- Success toast -->
-<div class="ln-toast" id="ln-toast">
-  <span class="ln-toast-icon">✓</span>
-  <span class="ln-toast-msg">ส่งข้อความเรียบร้อย ทีมงานจะติดต่อกลับภายใน 24 ชั่วโมง</span>
-</div>
-
-<script src="js/icons.js"></script>
-<script src="js/logo-manager.js"></script>
-<script src="js/landing-data.js"></script>
-<script src="js/landing.js"></script>
-
-<!-- ══════════════════════════════════════════════════════════
-     น้องแอ๊ด — Floating Chat Widget (landing page)
-     ══════════════════════════════════════════════════════════ -->
-<style>
-.aad-fab{position:fixed;bottom:24px;right:24px;z-index:900;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#0176D3,#032D60);box-shadow:0 4px 20px rgba(1,118,211,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;border:3px solid #fff;padding:0;overflow:hidden}
-.aad-fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(1,118,211,.5)}
-.aad-fab:active{transform:scale(.95)}
-.aad-fab img{width:100%;height:100%;border-radius:50%;object-fit:cover}
-.aad-badge{position:absolute;top:-2px;right:-2px;width:20px;height:20px;border-radius:50%;background:#C23934;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;animation:aad-pulse 2s ease infinite}
-@keyframes aad-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
-.aad-panel{position:fixed;bottom:92px;right:24px;z-index:901;width:380px;max-height:520px;background:#fff;border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.18);border:1px solid #D4DAE3;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateY(12px) scale(.95);transition:all .25s cubic-bezier(.4,0,.2,1);overflow:hidden;font-family:'Inter','Plus Jakarta Sans',sans-serif}
-.aad-panel.open{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
-.aad-panel.expanded{width:calc(100vw - 48px);max-width:720px;max-height:calc(100vh - 120px);bottom:60px;right:24px}
-.aad-panel.expanded .aad-messages{max-height:none;min-height:400px}
-.aad-header{background:linear-gradient(135deg,#032D60,#0176D3);padding:16px;display:flex;align-items:center;gap:12px}
-.aad-avatar{width:40px;height:40px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;border:2px solid rgba(255,255,255,.2)}
-.aad-avatar img{width:100%;height:100%;object-fit:cover}
-.aad-header-info{flex:1}
-.aad-header-name{font-size:14px;font-weight:700;color:#fff}
-.aad-header-status{font-size:11px;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:4px}
-.aad-header-dot{width:6px;height:6px;border-radius:50%;background:#4BCA81}
-.aad-header-actions{display:flex;gap:4px}
-.aad-expand,.aad-close{width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.aad-expand:hover,.aad-close:hover{background:rgba(255,255,255,.25)}
-.aad-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:220px;max-height:320px}
-.aad-msg{max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;animation:aad-fade .3s ease;word-wrap:break-word}
-@keyframes aad-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.aad-msg.agent{background:#F7F9FB;color:#16171A;align-self:flex-start;border-bottom-left-radius:4px}
-.aad-msg.user{background:#0176D3;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
-.aad-typing{display:flex;gap:4px;padding:8px 14px;align-self:flex-start}
-.aad-typing span{width:6px;height:6px;border-radius:50%;background:#8E9BAE;animation:aad-dot .6s ease infinite}
-.aad-typing span:nth-child(2){animation-delay:.1s}
-.aad-typing span:nth-child(3){animation-delay:.2s}
-@keyframes aad-dot{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-.aad-quick{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 8px}
-.aad-quick-btn{padding:5px 12px;border-radius:20px;border:1px solid #D4DAE3;background:#fff;font-size:11px;font-weight:500;color:#0176D3;cursor:pointer;font-family:inherit;transition:all .15s}
-.aad-quick-btn:hover{background:rgba(1,118,211,.06);border-color:#0176D3}
-.aad-input-wrap{padding:12px 16px;border-top:1px solid #D4DAE3;display:flex;gap:8px}
-.aad-input{flex:1;padding:10px 14px;border-radius:24px;border:1.5px solid #D4DAE3;background:#F7F9FB;font-size:13px;font-family:inherit;color:#16171A;outline:none;transition:border-color .2s}
-.aad-input:focus{border-color:#0176D3}
-.aad-input::placeholder{color:#8E9BAE}
-.aad-send{width:36px;height:36px;border-radius:50%;border:none;background:#0176D3;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
-.aad-send:hover{background:#014486}
-@media(max-width:480px){.aad-panel{width:calc(100vw - 24px);right:12px;bottom:80px;max-height:70vh}.aad-panel.expanded{width:calc(100vw - 24px);max-height:calc(100vh - 100px);bottom:12px;right:12px}.aad-fab{bottom:16px;right:16px;width:50px;height:50px}}
-</style>
-
-<button class="aad-fab" id="aad-fab" onclick="toggleAad()" aria-label="เปิดแชทน้องแอ๊ด">
-  <img src="img/admin-ai-avatar.svg" alt="น้องแอ๊ด"/>
-  <span class="aad-badge" id="aad-badge">1</span>
-</button>
-<div class="aad-panel" id="aad-panel" role="dialog" aria-label="แชทน้องแอ๊ด">
-  <div class="aad-header">
-    <div class="aad-avatar"><img src="img/admin-ai-avatar.svg" alt="AD"/></div>
-    <div class="aad-header-info">
-      <div class="aad-header-name">น้องแอ๊ด</div>
-      <div class="aad-header-status"><span class="aad-header-dot"></span> Online — ผู้ช่วย AI</div>
-    </div>
-    <div class="aad-header-actions">
-      <button class="aad-expand" onclick="toggleAadExpand()" aria-label="ขยาย" title="ขยาย/ย่อ"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
-      <button class="aad-close" onclick="toggleAad()" aria-label="ปิด">&times;</button>
-    </div>
-  </div>
-  <div class="aad-messages" id="aad-messages"></div>
-  <div class="aad-quick" id="aad-quick"></div>
-  <div class="aad-input-wrap">
-    <input class="aad-input" id="aad-input" placeholder="ถามน้องแอ๊ดได้เลยค่ะ..." onkeydown="if(event.key==='Enter')sendAadMsg()"/>
-    <button class="aad-send" onclick="sendAadMsg()" aria-label="ส่ง"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
-  </div>
-</div>
-
 <script>
-(function(){
-  var aadOpen=false,aadExpanded=false;
-  window.toggleAad=function(){
-    aadOpen=!aadOpen;
-    document.getElementById('aad-panel').classList.toggle('open',aadOpen);
-    if(aadOpen){
-      document.getElementById('aad-badge').style.display='none';
-      var m=document.getElementById('aad-messages');m.scrollTop=m.scrollHeight;
-      setTimeout(function(){document.getElementById('aad-input').focus()},200);
-    }
-  };
-  window.toggleAadExpand=function(){
-    aadExpanded=!aadExpanded;
-    document.getElementById('aad-panel').classList.toggle('expanded',aadExpanded);
-    var m=document.getElementById('aad-messages');m.scrollTop=m.scrollHeight;
-  };
-  function addAadMsg(type,text){
-    var m=document.getElementById('aad-messages');
-    var d=document.createElement('div');d.className='aad-msg '+type;d.innerHTML=text;
-    m.appendChild(d);m.scrollTop=m.scrollHeight;
-  }
-  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-  window.sendAadMsg=function(){
-    var inp=document.getElementById('aad-input'),t=inp.value.trim();
-    if(!t)return;
-    inp.value='';
-    addAadMsg('user',esc(t));
-    var ty=document.createElement('div');ty.className='aad-typing';ty.id='aad-typing';
-    ty.innerHTML='<span></span><span></span><span></span>';
-    document.getElementById('aad-messages').appendChild(ty);
-    var msgs=document.getElementById('aad-messages');msgs.scrollTop=msgs.scrollHeight;
-    var api=(window.__SF7_API_BASE__||'')+'/agents/chat';
-    fetch(api,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({message:t,agentType:'admin-ai',tenantId:'default'})
-    }).then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
-    .then(function(r){
-      var e=document.getElementById('aad-typing');if(e)e.remove();
-      var reply=(r.data&&(r.data.reply||r.data.error||r.data.message))||'ขออภัยค่ะ ไม่ได้รับข้อมูลจาก AI';
-      addAadMsg('agent',String(reply).replace(/\n/g,'<br>'));
-    }).catch(function(err){
-      var e=document.getElementById('aad-typing');if(e)e.remove();
-      addAadMsg('agent','ขออภัยค่ะ ไม่สามารถเชื่อมต่อได้: '+(err&&err.message?err.message:'network error'));
+// Scroll reveal animations (Framer Motion-style)
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(el => revealObserver.observe(el));
+
+// Nav scroll
+window.addEventListener('scroll', () => document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50));
+
+// Animate chat demos when visible (~10s duration, loop)
+function animateChat(id) {
+  const bubbles = document.querySelectorAll('#' + id + ' .chat-bubble');
+  function runAnimation() {
+    bubbles.forEach(b => { b.classList.remove('show'); b.style.opacity = '0'; });
+    bubbles.forEach((b, i) => {
+      setTimeout(() => { b.classList.add('show'); b.style.opacity = '1'; }, i * 1600);
     });
-  };
-  window.sendAadQuick=function(t){document.getElementById('aad-input').value=t;sendAadMsg()};
+  }
+  runAnimation();
+  // Loop every 14s (10s animation + 4s pause)
+  setInterval(runAnimation, 14000);
+}
+const chatObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting && !e.target.dataset.animated) {
+      e.target.dataset.animated = '1';
+      animateChat(e.target.id);
+    }
+  });
+}, { threshold: 0.3 });
+document.querySelectorAll('.chat-demo').forEach(el => chatObserver.observe(el));
 
-  function initAadMessages(){
-    addAadMsg('agent','สวัสดีค่ะ! น้องแอ๊ดเองนะคะ ผู้ช่วย AI ของ SalesFAST 7 ค่ะ');
-    setTimeout(function(){
-      addAadMsg('agent','สนใจสินค้า/บริการไหน หรืออยากถามเรื่องอะไร บอกน้องได้เลยค่ะ');
-    },400);
-    var quick=['โซลูชัน IT ที่มี','ขอใบเสนอราคา','ติดต่อฝ่ายขาย','บริการหลังการขาย'];
-    document.getElementById('aad-quick').innerHTML=quick.map(function(t){
-      return '<button class="aad-quick-btn" onclick="sendAadQuick(this.textContent)">'+t+'</button>'
-    }).join('');
-  }
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',initAadMessages);
-  } else {
-    initAadMessages();
-  }
-})();
+// Animate flow steps with active progression
+const flowObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting && !e.target.dataset.animated) {
+      e.target.dataset.animated = '1';
+      const steps = e.target.querySelectorAll('.flow-step');
+      const arrows = e.target.querySelectorAll('.flow-arrow');
+      let delay = 0;
+      steps.forEach((s, i) => {
+        setTimeout(() => {
+          s.classList.add('show');
+          // Briefly make active (glow effect)
+          s.classList.add('active');
+          s.querySelector('.flow-icon').style.animation = 'flowPulse 1s ease';
+          setTimeout(() => s.classList.remove('active'), 1200);
+        }, delay);
+        if (arrows[i]) {
+          setTimeout(() => { arrows[i].classList.add('show'); arrows[i].classList.add('active'); }, delay + 400);
+        }
+        delay += 600;
+      });
+      // Loop the active state every 8s
+      setInterval(() => {
+        let d = 0;
+        steps.forEach((s, i) => {
+          setTimeout(() => { s.classList.add('active'); setTimeout(() => s.classList.remove('active'), 800); }, d);
+          if (arrows[i]) setTimeout(() => { arrows[i].classList.add('active'); setTimeout(() => arrows[i].classList.remove('active'), 600); }, d + 200);
+          d += 500;
+        });
+      }, 8000);
+    }
+  });
+}, { threshold: 0.2 });
+document.querySelectorAll('.flow-steps').forEach(el => flowObserver.observe(el));
 </script>
-
 </body>
 </html>

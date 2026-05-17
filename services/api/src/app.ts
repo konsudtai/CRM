@@ -52,8 +52,8 @@ app.route('/activities', activities);
 app.route('/agents', agents);
 app.route('/settings', settings);
 
-// 404
-app.notFound((c) => c.json({ message: 'Not found' }, 404));
+// 404 — return 400 to avoid CloudFront custom error page intercepting
+app.notFound((c) => c.json({ message: 'Endpoint not found', path: c.req.path }, 400));
 
 // Error handler
 app.onError((err, c) => {

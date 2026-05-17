@@ -85,7 +85,7 @@ quotations.post('/:id/submit', async (c) => {
   const r = await query(t,
     `UPDATE quotations SET status = 'pending_approval', updated_at = NOW() WHERE id = $1 AND status = 'draft' RETURNING *`,
     [c.req.param('id')]);
-  if (r.rows.length === 0) return c.json({ message: 'Not found or not in draft status' }, 404);
+  if (r.rows.length === 0) return c.json({ message: 'Not found or not in draft status' }, 400);
   return c.json(r.rows[0]);
 });
 
@@ -96,7 +96,7 @@ quotations.post('/:id/approve', async (c) => {
   const r = await query(t,
     `UPDATE quotations SET status = 'sent', approved_by = $1, updated_at = NOW() WHERE id = $2 AND status = 'pending_approval' RETURNING *`,
     [userId, c.req.param('id')]);
-  if (r.rows.length === 0) return c.json({ message: 'Not found or not pending approval' }, 404);
+  if (r.rows.length === 0) return c.json({ message: 'Not found or not pending approval' }, 400);
   return c.json(r.rows[0]);
 });
 
@@ -106,7 +106,7 @@ quotations.post('/:id/reject', async (c) => {
   const r = await query(t,
     `UPDATE quotations SET status = 'draft', updated_at = NOW() WHERE id = $1 AND status = 'pending_approval' RETURNING *`,
     [c.req.param('id')]);
-  if (r.rows.length === 0) return c.json({ message: 'Not found or not pending approval' }, 404);
+  if (r.rows.length === 0) return c.json({ message: 'Not found or not pending approval' }, 400);
   return c.json(r.rows[0]);
 });
 
@@ -116,7 +116,7 @@ quotations.post('/:id/accept', async (c) => {
   const r = await query(t,
     `UPDATE quotations SET status = 'accepted', updated_at = NOW() WHERE id = $1 AND status = 'sent' RETURNING *`,
     [c.req.param('id')]);
-  if (r.rows.length === 0) return c.json({ message: 'Not found or not in sent status' }, 404);
+  if (r.rows.length === 0) return c.json({ message: 'Not found or not in sent status' }, 400);
   return c.json(r.rows[0]);
 });
 

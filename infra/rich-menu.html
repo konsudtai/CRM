@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 2500px;
+  height: 843px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 32px;
+  background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
+  font-family: 'Noto Sans Thai', sans-serif;
+}
+.card {
+  flex: 1;
+  height: 100%;
+  border-radius: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%);
+  border-radius: 28px 28px 0 0;
+}
+.card-1 { background: linear-gradient(160deg, #2563eb 0%, #1d4ed8 100%); }
+.card-2 { background: linear-gradient(160deg, #7c3aed 0%, #6d28d9 100%); }
+.card-3 { background: linear-gradient(160deg, #059669 0%, #047857 100%); }
+
+.icon {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.1);
+  z-index: 1;
+}
+.icon svg { width: 48px; height: 48px; }
+
+.title {
+  font-size: 72px;
+  font-weight: 700;
+  color: #fff;
+  z-index: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.subtitle {
+  font-size: 36px;
+  font-weight: 400;
+  z-index: 1;
+  opacity: 0.8;
+}
+.card-1 .subtitle { color: #93c5fd; }
+.card-2 .subtitle { color: #c4b5fd; }
+.card-3 .subtitle { color: #6ee7b7; }
+
+.bar {
+  width: 100px;
+  height: 5px;
+  border-radius: 3px;
+  opacity: 0.6;
+  z-index: 1;
+}
+.card-1 .bar { background: #93c5fd; }
+.card-2 .bar { background: #c4b5fd; }
+.card-3 .bar { background: #6ee7b7; }
+</style>
+</head>
+<body>
+  <div class="card card-1">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </div>
+    <div class="title">สนใจสินค้า</div>
+    <div class="subtitle">ลงทะเบียนความสนใจ</div>
+    <div class="bar"></div>
+  </div>
+  <div class="card card-2">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      </svg>
+    </div>
+    <div class="title">ดูสินค้า</div>
+    <div class="subtitle">Product Catalog</div>
+    <div class="bar"></div>
+  </div>
+  <div class="card card-3">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+        <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    </div>
+    <div class="title">เช็คสถานะ</div>
+    <div class="subtitle">ติดตามงานของคุณ</div>
+    <div class="bar"></div>
+  </div>
+</body>
+</html>

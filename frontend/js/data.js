@@ -15,18 +15,24 @@ async function apiFetch(path, options = {}) {
   if (token) headers['Authorization'] = 'Bearer ' + token;
   const res = await fetch(API_BASE + path, { ...options, headers });
   if (res.status === 401) {
-    // Only redirect if we're not already on login page
     if (!window.location.pathname.includes('login')) {
       clearToken();
       window.location.href = '../login.html';
     }
     return null;
   }
+  // Check content-type to avoid parsing HTML as JSON
+  const ct = res.headers.get('content-type') || '';
   if (!res.ok) {
     const errText = await res.text().catch(() => 'Unknown error');
-    throw new Error('API ' + res.status + ': ' + errText.slice(0, 100));
+    throw new Error(errText.slice(0, 200));
   }
-  return res.json();
+  if (ct.includes('text/html')) {
+    throw new Error('Received HTML instead of JSON. Path: ' + path);
+  }
+  const text = await res.text();
+  if (!text) return null;
+  return JSON.parse(text);
 }
 
 // ── KPI defaults (overwritten by API response) ──
@@ -90,10 +96,11 @@ async function loadLeads(status, search) {
       var s = l.status || 'New';
       var meta = (typeof l.metadata === 'string' ? JSON.parse(l.metadata) : l.metadata) || {};
       if (LEADS_DATA[s]) LEADS_DATA[s].push({
-        id: l.id, name: l.name, company: l.company_name, email: l.email, phone: l.phone,
+        id: l.id, leadCode: l.lead_code || '', name: l.name, company: l.company_name, email: l.email, phone: l.phone,
         source: l.source, value: meta.estimatedValue || 0, assignedTo: l.assigned_to, aiScore: l.ai_score,
         projectName: meta.projectName || '', priority: meta.priority || '',
-        accountId: meta.accountId || null, customerCode: meta.customerCode || ''
+        accountId: meta.accountId || null, customerCode: meta.customerCode || '',
+        notes: meta.notes || '', metadata: meta
       });
     });
     return leads;
