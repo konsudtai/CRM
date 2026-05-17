@@ -1,0 +1,690 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SalesFAST 7 — ECS Fargate stack (crm-core, crm-quotation, crm-line)'
+
+# ──────────────────────────────────────────────────────────────
+# Parameters
+# ──────────────────────────────────────────────────────────────
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-08f02903b4dd5816e
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-0846377582c9f307e
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-09dd0a217cfe4de39
+  RdsSecurityGroupId:
+    Type: String
+    Default: sg-0b43ee38e5a8bd645
+    Description: Existing RDS security group (will add ingress from Fargate SG)
+  DbHost:
+    Type: String
+    Default: sf7-prod.c76assi8qjoq.ap-southeast-1.rds.amazonaws.com
+  DbName:
+    Type: String
+    Default: salesfast7
+  DbUser:
+    Type: String
+    Default: salesfast7
+  DbSecretArn:
+    Type: String
+    Default: arn:aws:secretsmanager:ap-southeast-1:364478544994:secret:sf7/prod/db
+    Description: ARN of Secrets Manager secret for DB password
+  JwtSecretArn:
+    Type: String
+    Default: arn:aws:secretsmanager:ap-southeast-1:364478544994:secret:sf7/prod/jwt
+    Description: ARN of Secrets Manager secret for JWT
+  S3Bucket:
+    Type: String
+    Default: sf7-prod-files-364478544994
+  AiStateTable:
+    Type: String
+    Default: sf7-prod-ai-state
+  ChatTable:
+    Type: String
+    Default: sf7-prod-chat-history
+  BedrockModelId:
+    Type: String
+    Default: global.anthropic.claude-sonnet-4-6
+  AgentcoreRuntimeArn:
+    Type: String
+    Default: arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_agents_v2-HGDCxK46cL
+  AnalyticsRuntimeArn:
+    Type: String
+    Default: arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_analytics-AY5sRH2Qtv
+  AdminAiRuntimeArn:
+    Type: String
+    Default: arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_admin_ai-iWwNN6CdL3
+  CertificateArn:
+    Type: String
+    Description: ACM certificate ARN for ALB HTTPS (optional)
+    Default: ''
+  ImageTag:
+    Type: String
+    Default: v0.1.0
+
+# ──────────────────────────────────────────────────────────────
+# Conditions
+# ──────────────────────────────────────────────────────────────
+Conditions:
+  HasCertificate: !Not [!Equals [!Ref CertificateArn, '']]
+
+Resources:
+
+  # ════════════════════════════════════════════════════════════
+  # Security Groups
+  # ════════════════════════════════════════════════════════════
+
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB inbound 443 from internet (CloudFront)
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS from anywhere (CloudFront)
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP from anywhere (redirect to 443)
+      Tags:
+        - Key: Name
+          Value: !Sub sf7-${Environment}-alb-sg
+
+  FargateSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Fargate tasks - inbound only from ALB, outbound any
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3001
+          ToPort: 3003
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+          Description: Inbound from ALB only
+      Tags:
+        - Key: Name
+          Value: !Sub sf7-${Environment}-fargate-sg
+
+  # Allow Fargate to connect to RDS
+  RdsIngressFromFargate:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref RdsSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !Ref FargateSecurityGroup
+      Description: PostgreSQL access from Fargate
+
+  # ════════════════════════════════════════════════════════════
+  # ECS Cluster
+  # ════════════════════════════════════════════════════════════
+
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub sf7-${Environment}-cluster
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+
+  # ════════════════════════════════════════════════════════════
+  # IAM Roles
+  # ════════════════════════════════════════════════════════════
+
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub sf7-${Environment}-fargate-exec-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: SecretsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource: '*'
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub sf7-${Environment}-fargate-task-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AppPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                  - bedrock:Converse
+                  - bedrock:ConverseStream
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:*
+                Resource:
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AiStateTable}
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AiStateTable}/index/*
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - ssm:GetParameter
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:sf7-prod-line-reply
+              - Effect: Allow
+                Action:
+                  - bedrock-agentcore:*
+                Resource: '*'
+
+  # ════════════════════════════════════════════════════════════
+  # CloudWatch Log Groups
+  # ════════════════════════════════════════════════════════════
+
+  LogGroupCore:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/sf7-${Environment}-crm-core
+      RetentionInDays: 14
+
+  LogGroupQuotation:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/sf7-${Environment}-crm-quotation
+      RetentionInDays: 14
+
+  LogGroupLine:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/sf7-${Environment}-crm-line
+      RetentionInDays: 14
+
+  # ════════════════════════════════════════════════════════════
+  # Application Load Balancer
+  # ════════════════════════════════════════════════════════════
+
+  AppLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub sf7-${Environment}-alb
+      Type: application
+      Scheme: internet-facing
+      IpAddressType: ipv4
+      Subnets:
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
+      SecurityGroups:
+        - !Ref AlbSecurityGroup
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '60'
+        - Key: routing.http.drop_invalid_header_fields.enabled
+          Value: 'true'
+
+  # Target Groups
+  TgCore:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub sf7-${Environment}-tg-core
+      Port: 3001
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: ip
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200'
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+
+  TgQuotation:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub sf7-${Environment}-tg-quotation
+      Port: 3002
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: ip
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200'
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+
+  TgLine:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub sf7-${Environment}-tg-line
+      Port: 3003
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: ip
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200'
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+
+  # HTTPS Listener (only if cert provided)
+  HttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: HasCertificate
+    Properties:
+      LoadBalancerArn: !Ref AppLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TgCore
+
+  # HTTP Listener (default — used when no cert, or for testing)
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref AppLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - !If
+          - HasCertificate
+          - Type: redirect
+            RedirectConfig:
+              Protocol: HTTPS
+              Port: '443'
+              StatusCode: HTTP_301
+          - Type: forward
+            TargetGroupArn: !Ref TgCore
+
+  # Listener Rules — path-based routing
+  RuleQuotation:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !If [HasCertificate, !Ref HttpsListener, !Ref HttpListener]
+      Priority: 100
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /quotations*
+            - /products*
+            - /opportunities*
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref TgQuotation
+
+  RuleLine:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !If [HasCertificate, !Ref HttpsListener, !Ref HttpListener]
+      Priority: 110
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /line-webhook
+            - /line/*
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref TgLine
+
+  # All other paths default to crm-core (default action of listener)
+
+  # ════════════════════════════════════════════════════════════
+  # Task Definitions
+  # ════════════════════════════════════════════════════════════
+
+  TaskDefCore:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub sf7-${Environment}-crm-core
+      Cpu: '256'
+      Memory: '1024'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX
+        CpuArchitecture: ARM64
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: crm-core
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/sf7-${Environment}-crm-core:${ImageTag}
+          Essential: true
+          PortMappings:
+            - ContainerPort: 3001
+              Protocol: tcp
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+            - Name: PORT
+              Value: '3001'
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: BEDROCK_REGION
+              Value: !Ref AWS::Region
+            - Name: DB_HOST
+              Value: !Ref DbHost
+            - Name: DB_PORT
+              Value: '5432'
+            - Name: DB_NAME
+              Value: !Ref DbName
+            - Name: DB_USER
+              Value: !Ref DbUser
+            - Name: DB_SSL
+              Value: 'true'
+            - Name: DB_SECRET_ARN
+              Value: !Ref DbSecretArn
+            - Name: JWT_SECRET_ARN
+              Value: !Ref JwtSecretArn
+            - Name: S3_BUCKET
+              Value: !Ref S3Bucket
+            - Name: AI_STATE_TABLE
+              Value: !Ref AiStateTable
+            - Name: CHAT_TABLE
+              Value: !Ref ChatTable
+            - Name: BEDROCK_MODEL_ID
+              Value: !Ref BedrockModelId
+            - Name: AGENTCORE_RUNTIME_ARN
+              Value: !Ref AgentcoreRuntimeArn
+            - Name: ANALYTICS_RUNTIME_ARN
+              Value: !Ref AnalyticsRuntimeArn
+            - Name: ADMIN_AI_RUNTIME_ARN
+              Value: !Ref AdminAiRuntimeArn
+            - Name: USE_AGENTCORE
+              Value: 'true'
+            - Name: CORS_ORIGIN
+              Value: '*'
+          Secrets:
+            - Name: DB_PASS
+              ValueFrom: !Sub '${DbSecretArn}:password::'
+            - Name: JWT_SECRET
+              ValueFrom: !Ref JwtSecretArn
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroupCore
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+
+  TaskDefQuotation:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub sf7-${Environment}-crm-quotation
+      Cpu: '256'
+      Memory: '512'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX
+        CpuArchitecture: ARM64
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: crm-quotation
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/sf7-${Environment}-crm-quotation:${ImageTag}
+          Essential: true
+          PortMappings:
+            - ContainerPort: 3002
+              Protocol: tcp
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+            - Name: PORT
+              Value: '3002'
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: DB_HOST
+              Value: !Ref DbHost
+            - Name: DB_PORT
+              Value: '5432'
+            - Name: DB_NAME
+              Value: !Ref DbName
+            - Name: DB_USER
+              Value: !Ref DbUser
+            - Name: DB_SSL
+              Value: 'true'
+            - Name: DB_SECRET_ARN
+              Value: !Ref DbSecretArn
+            - Name: JWT_SECRET_ARN
+              Value: !Ref JwtSecretArn
+            - Name: S3_BUCKET
+              Value: !Ref S3Bucket
+            - Name: CORS_ORIGIN
+              Value: '*'
+          Secrets:
+            - Name: DB_PASS
+              ValueFrom: !Sub '${DbSecretArn}:password::'
+            - Name: JWT_SECRET
+              ValueFrom: !Ref JwtSecretArn
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroupQuotation
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+
+  TaskDefLine:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub sf7-${Environment}-crm-line
+      Cpu: '256'
+      Memory: '512'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX
+        CpuArchitecture: ARM64
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: crm-line
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/sf7-${Environment}-crm-line:${ImageTag}
+          Essential: true
+          PortMappings:
+            - ContainerPort: 3003
+              Protocol: tcp
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+            - Name: PORT
+              Value: '3003'
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: DB_HOST
+              Value: !Ref DbHost
+            - Name: DB_PORT
+              Value: '5432'
+            - Name: DB_NAME
+              Value: !Ref DbName
+            - Name: DB_USER
+              Value: !Ref DbUser
+            - Name: DB_SSL
+              Value: 'true'
+            - Name: DB_SECRET_ARN
+              Value: !Ref DbSecretArn
+            - Name: AI_STATE_TABLE
+              Value: !Ref AiStateTable
+            - Name: CORS_ORIGIN
+              Value: '*'
+          Secrets:
+            - Name: DB_PASS
+              ValueFrom: !Sub '${DbSecretArn}:password::'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroupLine
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+
+  # ════════════════════════════════════════════════════════════
+  # ECS Services
+  # ════════════════════════════════════════════════════════════
+
+  ServiceCore:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - HttpListener
+    Properties:
+      ServiceName: !Sub sf7-${Environment}-crm-core
+      Cluster: !Ref EcsCluster
+      TaskDefinition: !Ref TaskDefCore
+      DesiredCount: 2
+      LaunchType: FARGATE
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 50
+        MaximumPercent: 200
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref PublicSubnetA
+            - !Ref PublicSubnetB
+          SecurityGroups:
+            - !Ref FargateSecurityGroup
+      LoadBalancers:
+        - ContainerName: crm-core
+          ContainerPort: 3001
+          TargetGroupArn: !Ref TgCore
+      HealthCheckGracePeriodSeconds: 60
+
+  ServiceQuotation:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - HttpListener
+      - RuleQuotation
+    Properties:
+      ServiceName: !Sub sf7-${Environment}-crm-quotation
+      Cluster: !Ref EcsCluster
+      TaskDefinition: !Ref TaskDefQuotation
+      DesiredCount: 1
+      LaunchType: FARGATE
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+        MaximumPercent: 200
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref PublicSubnetA
+            - !Ref PublicSubnetB
+          SecurityGroups:
+            - !Ref FargateSecurityGroup
+      LoadBalancers:
+        - ContainerName: crm-quotation
+          ContainerPort: 3002
+          TargetGroupArn: !Ref TgQuotation
+      HealthCheckGracePeriodSeconds: 60
+
+  ServiceLine:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - HttpListener
+      - RuleLine
+    Properties:
+      ServiceName: !Sub sf7-${Environment}-crm-line
+      Cluster: !Ref EcsCluster
+      TaskDefinition: !Ref TaskDefLine
+      DesiredCount: 1
+      LaunchType: FARGATE
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+        MaximumPercent: 200
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref PublicSubnetA
+            - !Ref PublicSubnetB
+          SecurityGroups:
+            - !Ref FargateSecurityGroup
+      LoadBalancers:
+        - ContainerName: crm-line
+          ContainerPort: 3003
+          TargetGroupArn: !Ref TgLine
+      HealthCheckGracePeriodSeconds: 60
+
+# ──────────────────────────────────────────────────────────────
+# Outputs
+# ──────────────────────────────────────────────────────────────
+Outputs:
+  AlbDnsName:
+    Description: ALB DNS name (use for testing before CloudFront cutover)
+    Value: !GetAtt AppLoadBalancer.DNSName
+  AlbHostedZoneId:
+    Description: ALB Hosted Zone (for Route53 alias)
+    Value: !GetAtt AppLoadBalancer.CanonicalHostedZoneID
+  EcsClusterName:
+    Value: !Ref EcsCluster
+  FargateSecurityGroupId:
+    Value: !Ref FargateSecurityGroup

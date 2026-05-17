@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SalesFAST 7 — ECR repos for Fargate services (deploy first)'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+
+Resources:
+  EcrCore:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub sf7-${Environment}-crm-core
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 10 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": { "type": "expire" }
+              }
+            ]
+          }
+      EncryptionConfiguration:
+        EncryptionType: AES256
+
+  EcrQuotation:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub sf7-${Environment}-crm-quotation
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 10 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": { "type": "expire" }
+              }
+            ]
+          }
+      EncryptionConfiguration:
+        EncryptionType: AES256
+
+  EcrLine:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub sf7-${Environment}-crm-line
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 10 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": { "type": "expire" }
+              }
+            ]
+          }
+      EncryptionConfiguration:
+        EncryptionType: AES256
+
+Outputs:
+  EcrCoreUri:
+    Value: !GetAtt EcrCore.RepositoryUri
+    Export:
+      Name: !Sub sf7-${Environment}-ecr-core-uri
+  EcrQuotationUri:
+    Value: !GetAtt EcrQuotation.RepositoryUri
+    Export:
+      Name: !Sub sf7-${Environment}-ecr-quotation-uri
+  EcrLineUri:
+    Value: !GetAtt EcrLine.RepositoryUri
+    Export:
+      Name: !Sub sf7-${Environment}-ecr-line-uri
