@@ -1,0 +1,21 @@
+{
+  "name": "sf7-sales-strands-ts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/server.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:pg-native --minify",
+    "dev": "node --loader tsx src/server.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-agentcore": "^3.1045.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.800.0",
+    "@strands-agents/sdk": "^1.2.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}

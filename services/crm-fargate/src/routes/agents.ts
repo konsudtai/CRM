@@ -31,7 +31,7 @@ const AGENTCORE_REGION = process.env.AGENTCORE_REGION || process.env.BEDROCK_REG
 const DEFAULT_MODEL_ID = process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-sonnet-4-6';
 const DEFAULT_REGION = process.env.BEDROCK_REGION || 'ap-southeast-1';
 const USE_AGENTCORE = process.env.USE_AGENTCORE !== 'false' && !!AGENTCORE_ARN;
-const AGENTCORE_TIMEOUT_MS = parseInt(process.env.AGENTCORE_TIMEOUT_MS || '15000'); // 15s — leaves 14s for Bedrock Converse fallback before API Gateway 30s limit
+const AGENTCORE_TIMEOUT_MS = parseInt(process.env.AGENTCORE_TIMEOUT_MS || '120000'); // 120s — Fargate has no time limit, AgentCore cold start can take 30-60s
 const MAX_ITERATIONS = 5;
 const TIME_BUDGET_MS = 12000; // Bedrock Converse budget per iteration check (total must finish in ~14s)
 const AI_STATE_TABLE = process.env.AI_STATE_TABLE || 'sf7-prod-ai-state';
@@ -96,53 +96,54 @@ async function invokeAgentCore(message: string, agentType: string, tenantId: str
   try {
     response = await client.send(new InvokeAgentRuntimeCommand({
       agentRuntimeArn: getAgentArn(agentType), runtimeSessionId: sid,
-      payload: new TextEncoder().encode(payload), qualifier: 'DEFAULT',
+      payload: new TextEncoder().encode(payload),
+      contentType: 'application/json',
+      accept: 'application/json',
+      qualifier: 'DEFAULT',
     }), { abortSignal: abortController.signal });
   } finally { clearTimeout(timeoutId); }
 
-  // Debug removed — production
-  console.log('[AgentCore] statusCode:', response.statusCode);
+  console.log('[AgentCore] statusCode:', response.statusCode, 'contentType:', response.contentType);
 
   // Handle response — may be various formats from AgentCore SDK
   let responseBody = '';
   try {
-    const r = response.response;
+    const r = response.response || response.body || response.payload;
     if (!r) {
       responseBody = '';
     } else if (typeof r === 'string') {
       responseBody = r;
+    } else if (r instanceof Uint8Array || Buffer.isBuffer(r)) {
+      responseBody = new TextDecoder().decode(r);
     } else if (typeof r.transformToString === 'function') {
       responseBody = await r.transformToString();
+    } else if (typeof r.transformToByteArray === 'function') {
+      const bytes = await r.transformToByteArray();
+      responseBody = new TextDecoder().decode(bytes);
+    } else if (typeof r[Symbol.asyncIterator] === 'function') {
+      const chunks: Uint8Array[] = [];
+      for await (const chunk of r) {
+        if (chunk instanceof Uint8Array) chunks.push(chunk);
+        else if (typeof chunk === 'string') chunks.push(new TextEncoder().encode(chunk));
+        else if (chunk?.chunk?.bytes) chunks.push(new Uint8Array(chunk.chunk.bytes));
+        else if (chunk?.body) chunks.push(typeof chunk.body === 'string' ? new TextEncoder().encode(chunk.body) : chunk.body);
+      }
+      if (chunks.length > 0) responseBody = new TextDecoder().decode(Buffer.concat(chunks));
     } else if (typeof r.read === 'function') {
-      // Node.js Readable stream
       const chunks: Buffer[] = [];
       for await (const chunk of r) {
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
       }
       responseBody = Buffer.concat(chunks).toString('utf-8');
-    } else if (typeof r[Symbol.asyncIterator] === 'function') {
-      const chunks: Uint8Array[] = [];
-      for await (const chunk of r) {
-        chunks.push(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk));
-      }
-      responseBody = new TextDecoder().decode(Buffer.concat(chunks));
-    } else if (r instanceof Uint8Array || Buffer.isBuffer(r)) {
-      responseBody = new TextDecoder().decode(r);
-    } else if (r.body) {
-      const chunks: Uint8Array[] = [];
-      for await (const chunk of r.body) {
-        if (chunk instanceof Uint8Array) chunks.push(chunk);
-        else if (chunk.chunk?.bytes) chunks.push(new Uint8Array(chunk.chunk.bytes));
-      }
-      if (chunks.length > 0) responseBody = new TextDecoder().decode(Buffer.concat(chunks));
     } else {
-      // Last resort — try to stringify
-      try { responseBody = JSON.stringify(r); } catch { responseBody = ''; }
+      try { responseBody = JSON.stringify(r); } catch { responseBody = String(r); }
     }
   } catch (parseErr: any) {
     console.warn('[AgentCore] parse error:', parseErr.message);
     responseBody = '';
   }
+
+  console.log('[AgentCore] responseBody length:', responseBody.length, 'preview:', responseBody.slice(0, 200));
 
   let data: any = {};
   try { data = responseBody ? JSON.parse(responseBody) : {}; } catch { data = { reply: responseBody }; }

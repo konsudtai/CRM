@@ -97,7 +97,7 @@ def memory_retrieve_context(actor_id: str, query: str, max_results: int = 5):
 
 def _call_gateway(tool_name: str, arguments: dict) -> str:
     if not GATEWAY_URL:
-        return json.dumps({"error": "Gateway URL not configured"})
+        return "Gateway URL not configured"
 
     payload = {
         "jsonrpc": "2.0",
@@ -119,11 +119,12 @@ def _call_gateway(tool_name: str, arguments: dict) -> str:
         with urllib.request.urlopen(req, timeout=25) as r:
             res = json.loads(r.read().decode())
             content = res.get("result", {}).get("content", [{}])
-            return content[0].get("text", "{}") if content else "{}"
+            txt = content[0].get("text", "{}") if content else "{}"
+            return f"Result: {txt}"
     except urllib.error.HTTPError as e:
-        return json.dumps({"error": f"Gateway HTTP {e.code}", "body": e.read().decode()[:300]})
+        return f"Gateway HTTP {e.code}: {e.read().decode()[:300]}"
     except Exception as e:
-        return json.dumps({"error": str(e)})
+        return f"Gateway error: {e}"
 
 
 # ──────────────────────────────────────────────────────────────
@@ -218,22 +219,19 @@ class AnalyticsAgent:
         ]
 
     def run(self, message: str, session_id: str, actor_id: str, tenant_id: str = "default") -> str:
-        history = memory_load_history(session_id, actor_id, max_results=10)
+        # Skip memory load for now — old events may have incompatible format
+        # Memory still saves new events, will use semantic retrieval only
         retrieved_facts = memory_retrieve_context(actor_id, message, max_results=3)
 
         prompt = SYSTEM_PROMPT
         if retrieved_facts:
             prompt += "\n\nข้อมูลที่จำได้จากการสนทนาก่อนหน้า:\n" + "\n".join(f"- {f}" for f in retrieved_facts)
 
-        messages = []
-        for h in history:
-            messages.append({"role": h["role"], "content": h["content"]})
-
+        # Empty messages — fresh context each time (Strands accumulates within agent)
         agent = Agent(
             model=self.model,
             tools=self.tools,
             system_prompt=prompt,
-            messages=messages,
         )
 
         memory_save_event(session_id, actor_id, "USER", message)

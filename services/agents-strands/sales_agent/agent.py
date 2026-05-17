@@ -106,7 +106,7 @@ def memory_retrieve_context(actor_id: str, query: str, max_results: int = 5):
 def _call_gateway(tool_name: str, arguments: dict) -> str:
     """Call a Gateway MCP tool and return text response."""
     if not GATEWAY_URL:
-        return json.dumps({"error": "Gateway URL not configured"})
+        return "Gateway URL not configured"
 
     payload = {
         "jsonrpc": "2.0",
@@ -129,11 +129,12 @@ def _call_gateway(tool_name: str, arguments: dict) -> str:
             res = json.loads(r.read().decode())
             content = res.get("result", {}).get("content", [{}])
             txt = content[0].get("text", "{}") if content else "{}"
-            return txt
+            # Wrap result in a description prefix so Strands doesn't try to parse it as JSON content block
+            return f"Result: {txt}"
     except urllib.error.HTTPError as e:
-        return json.dumps({"error": f"Gateway HTTP {e.code}", "body": e.read().decode()[:300]})
+        return f"Gateway HTTP {e.code}: {e.read().decode()[:300]}"
     except Exception as e:
-        return json.dumps({"error": str(e)})
+        return f"Gateway error: {e}"
 
 
 # ──────────────────────────────────────────────────────────────
@@ -345,8 +346,7 @@ class SalesAgent:
         ]
 
     def run(self, message: str, session_id: str, actor_id: str, tenant_id: str = "default") -> str:
-        # Load conversation history for context
-        history = memory_load_history(session_id, actor_id, max_results=10)
+        # Skip memory load for now — old events may have incompatible format
         retrieved_facts = memory_retrieve_context(actor_id, message, max_results=3)
 
         # Build context-aware system prompt
@@ -354,17 +354,11 @@ class SalesAgent:
         if retrieved_facts:
             prompt += "\n\nข้อมูลที่จำได้จากการสนทนาก่อนหน้า:\n" + "\n".join(f"- {f}" for f in retrieved_facts)
 
-        # Convert history to messages for Strands
-        messages = []
-        for h in history:
-            messages.append({"role": h["role"], "content": h["content"]})
-
-        # Create Strands agent for this turn (lightweight)
+        # Fresh agent context (no replay of historical messages to avoid format issues)
         agent = Agent(
             model=self.model,
             tools=self.tools,
             system_prompt=prompt,
-            messages=messages,
         )
 
         # Save user message to memory
