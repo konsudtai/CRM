@@ -18,7 +18,15 @@ const agents = new Hono();
 const AGENTCORE_ARN = process.env.AGENTCORE_RUNTIME_ARN || '';
 const ADMIN_AI_ARN = process.env.ADMIN_AI_RUNTIME_ARN || '';
 const ANALYTICS_ARN = process.env.ANALYTICS_RUNTIME_ARN || '';
-function getAgentArn(agentType: string) { if (agentType === 'admin-ai') return ADMIN_AI_ARN || AGENTCORE_ARN; if (agentType === 'analytics') return ANALYTICS_ARN || AGENTCORE_ARN; return AGENTCORE_ARN; }
+// Strands Runtimes (Phase 3) — override old runtimes
+const SALES_STRANDS_ARN = process.env.SALES_STRANDS_RUNTIME_ARN || '';
+const ANALYTICS_STRANDS_ARN = process.env.ANALYTICS_STRANDS_RUNTIME_ARN || '';
+function getAgentArn(agentType: string) {
+  // Prefer new Strands runtimes if configured
+  if (agentType === 'analytics') return ANALYTICS_STRANDS_ARN || ANALYTICS_ARN || AGENTCORE_ARN;
+  // Sales + admin-ai → sales strands runtime (น้องแอ๊ดไม่ใช้ AI, but fallback)
+  return SALES_STRANDS_ARN || AGENTCORE_ARN;
+}
 const AGENTCORE_REGION = process.env.AGENTCORE_REGION || process.env.BEDROCK_REGION || 'ap-southeast-1';
 const DEFAULT_MODEL_ID = process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-sonnet-4-6';
 const DEFAULT_REGION = process.env.BEDROCK_REGION || 'ap-southeast-1';
@@ -398,11 +406,7 @@ agents.post('/chat', async (c) => {
   if (!message) return c.json({ error: 'message required' }, 400);
 
   const tid = (!tenantId || tenantId === 'default') ? '00000000-0000-0000-0000-000000000001' : tenantId;
-  // Auto-detect agent type if frontend sends default 'sales-assistant'
-  // This mirrors the keyword routing in AgentCore runtime
   const agent = (agentType && agentType !== 'sales-assistant') ? agentType : detectAgentType(message);
-
-  // Always-async: save task + invoke self as Lambda Event (60s timeout)
   const taskId = `task-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   await taskDdb.send(new PutItem2({
@@ -410,18 +414,31 @@ agents.post('/chat', async (c) => {
     Item: { PK: { S: `TASK#${taskId}` }, SK: { S: 'STATUS' }, status: { S: 'processing' }, message: { S: message }, agentType: { S: agent }, tenantId: { S: tid }, createdAt: { S: new Date().toISOString() } },
   }));
 
-  // Invoke self async (Lambda Event invocation - runs in separate execution with 60s timeout)
-  try {
-    const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
-    const lc = new LambdaClient({ region: process.env.AWS_REGION || 'ap-southeast-1' });
-    await lc.send(new InvokeCommand({
-      FunctionName: process.env.AWS_LAMBDA_FUNCTION_NAME || 'sf7-prod-crm',
-      InvocationType: 'Event',
-      Payload: new TextEncoder().encode(JSON.stringify({ _agentTask: true, taskId, message, agentType: agent, tenantId: tid, sessionId: sessionId || 'default' })),
-    }));
-  } catch (e: any) { console.error('[AsyncInvoke]', e.message); }
+  // Fargate: run agent in background (no Lambda self-invoke needed)
+  (async () => {
+    try {
+      let reply = '';
+      if (USE_AGENTCORE) {
+        const result = await invokeAgentCore(message, agent, tid, sessionId);
+        reply = result.reply;
+      } else {
+        const out = await runAgent(message, agent, tid);
+        reply = out.reply;
+      }
+      await taskDdb.send(new PutItem2({
+        TableName: TASK_TABLE,
+        Item: { PK: { S: `TASK#${taskId}` }, SK: { S: 'STATUS' }, status: { S: 'done' }, reply: { S: reply }, agentUsed: { S: getAgentDisplayName(agent) }, completedAt: { S: new Date().toISOString() } },
+      }));
+    } catch (err: any) {
+      console.error('[AgentTask]', err.message);
+      await taskDdb.send(new PutItem2({
+        TableName: TASK_TABLE,
+        Item: { PK: { S: `TASK#${taskId}` }, SK: { S: 'STATUS' }, status: { S: 'error' }, reply: { S: 'ขออภัยค่ะ: ' + String(err.message || '').slice(0, 200) }, completedAt: { S: new Date().toISOString() } },
+      }));
+    }
+  })();
 
-  return c.json({ reply: null, taskId, status: 'processing', message: 'กำลังประมวลผลค่ะ รอสักครู่...', agentUsed: getAgentDisplayName(agent), backend: 'async' });
+  return c.json({ reply: null, taskId, status: 'processing', message: 'กำลังประมวลผลค่ะ รอสักครู่...', agentUsed: getAgentDisplayName(agent), backend: 'fargate-strands' });
 });
 
 agents.post('/stream', async (c) => {

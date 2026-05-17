@@ -452,6 +452,10 @@ Resources:
               Value: !Ref AdminAiRuntimeArn
             - Name: USE_AGENTCORE
               Value: 'true'
+            - Name: SALES_STRANDS_RUNTIME_ARN
+              Value: arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_sales_strands-pRRo3v48BC
+            - Name: ANALYTICS_STRANDS_RUNTIME_ARN
+              Value: arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_analytics_strands-kRk1Qq22DU
             - Name: CORS_ORIGIN
               Value: '*'
           Secrets:
