@@ -1,0 +1,256 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SalesFAST 7 — ECR + CodeBuild for Strands agents (sales + analytics)'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+
+Resources:
+
+  # ── ECR Repos ──
+  EcrSales:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub sf7-${Environment}-sales-strands
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {"rules":[{"rulePriority":1,"description":"Keep last 10","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":10},"action":{"type":"expire"}}]}
+      EncryptionConfiguration:
+        EncryptionType: AES256
+
+  EcrAnalytics:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub sf7-${Environment}-analytics-strands
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {"rules":[{"rulePriority":1,"description":"Keep last 10","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":10},"action":{"type":"expire"}}]}
+      EncryptionConfiguration:
+        EncryptionType: AES256
+
+  # ── CodeBuild Source Bucket (reuse existing pattern) ──
+  AgentSourceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub sf7-${Environment}-agent-src-${AWS::AccountId}
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOld
+            Status: Enabled
+            ExpirationInDays: 7
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # ── CodeBuild IAM Role ──
+  AgentBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub sf7-${Environment}-agent-build-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: codebuild.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: BuildPerms
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecr:PutImage
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt AgentSourceBucket.Arn
+                  - !Sub ${AgentSourceBucket.Arn}/*
+
+  # ── CodeBuild Project ──
+  BuildAgentSales:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub sf7-${Environment}-build-sales-strands
+      ServiceRole: !GetAtt AgentBuildRole.Arn
+      Artifacts: { Type: NO_ARTIFACTS }
+      Environment:
+        Type: ARM_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-aarch64-standard:3.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - { Name: AWS_DEFAULT_REGION, Value: !Ref AWS::Region }
+          - { Name: AWS_ACCOUNT_ID, Value: !Ref AWS::AccountId }
+          - { Name: ENV, Value: !Ref Environment }
+          - { Name: AGENT_NAME, Value: sales }
+          - { Name: IMAGE_TAG, Value: latest }
+      Source:
+        Type: S3
+        Location: !Sub ${AgentSourceBucket}/source.zip
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+                - cd services/agents-strands/sales_agent
+                - REPO=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/sf7-$ENV-sales-strands
+            build:
+              commands:
+                - docker build --platform linux/arm64 -t sf7-sales-strands:$IMAGE_TAG .
+                - docker tag sf7-sales-strands:$IMAGE_TAG $REPO:$IMAGE_TAG
+                - docker tag sf7-sales-strands:$IMAGE_TAG $REPO:latest
+            post_build:
+              commands:
+                - docker push $REPO:$IMAGE_TAG
+                - docker push $REPO:latest
+                - echo Pushed $REPO:$IMAGE_TAG
+      TimeoutInMinutes: 30
+
+  BuildAgentAnalytics:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub sf7-${Environment}-build-analytics-strands
+      ServiceRole: !GetAtt AgentBuildRole.Arn
+      Artifacts: { Type: NO_ARTIFACTS }
+      Environment:
+        Type: ARM_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-aarch64-standard:3.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - { Name: AWS_DEFAULT_REGION, Value: !Ref AWS::Region }
+          - { Name: AWS_ACCOUNT_ID, Value: !Ref AWS::AccountId }
+          - { Name: ENV, Value: !Ref Environment }
+          - { Name: AGENT_NAME, Value: analytics }
+          - { Name: IMAGE_TAG, Value: latest }
+      Source:
+        Type: S3
+        Location: !Sub ${AgentSourceBucket}/source.zip
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+                - cd services/agents-strands/analytics_agent
+                - REPO=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/sf7-$ENV-analytics-strands
+            build:
+              commands:
+                - docker build --platform linux/arm64 -t sf7-analytics-strands:$IMAGE_TAG .
+                - docker tag sf7-analytics-strands:$IMAGE_TAG $REPO:$IMAGE_TAG
+                - docker tag sf7-analytics-strands:$IMAGE_TAG $REPO:latest
+            post_build:
+              commands:
+                - docker push $REPO:$IMAGE_TAG
+                - docker push $REPO:latest
+                - echo Pushed $REPO:$IMAGE_TAG
+      TimeoutInMinutes: 30
+
+  # ── AgentCore Runtime Execution Role (used by both agents) ──
+  AgentRuntimeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub sf7-${Environment}-agent-runtime-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock-agentcore.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:runtime/*
+      Policies:
+        - PolicyName: AgentPerms
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # Bedrock model invocation
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                  - bedrock:Converse
+                  - bedrock:ConverseStream
+                Resource: '*'
+              # AgentCore Memory access
+              - Effect: Allow
+                Action:
+                  - bedrock-agentcore:CreateEvent
+                  - bedrock-agentcore:ListEvents
+                  - bedrock-agentcore:GetEvent
+                  - bedrock-agentcore:RetrieveMemoryRecords
+                  - bedrock-agentcore:ListMemoryRecords
+                  - bedrock-agentcore:GetMemoryRecord
+                Resource: '*'
+              # AgentCore Runtime invocation (for A2A)
+              - Effect: Allow
+                Action:
+                  - bedrock-agentcore:InvokeAgentRuntime
+                Resource: '*'
+              # ECR pull
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Resource: '*'
+              # CloudWatch Logs
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                Resource: '*'
+              # X-Ray
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource: '*'
+
+Outputs:
+  EcrSalesUri:
+    Value: !GetAtt EcrSales.RepositoryUri
+  EcrAnalyticsUri:
+    Value: !GetAtt EcrAnalytics.RepositoryUri
+  AgentSourceBucketName:
+    Value: !Ref AgentSourceBucket
+  BuildSalesProject:
+    Value: !Ref BuildAgentSales
+  BuildAnalyticsProject:
+    Value: !Ref BuildAgentAnalytics
+  AgentRuntimeRoleArn:
+    Value: !GetAtt AgentRuntimeRole.Arn

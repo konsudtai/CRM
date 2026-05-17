@@ -1,0 +1,7 @@
+{
+  "sales_runtime_arn": "arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_sales_strands-pRRo3v48BC",
+  "analytics_runtime_arn": "arn:aws:bedrock-agentcore:ap-southeast-1:364478544994:runtime/sf7_analytics_strands-kRk1Qq22DU",
+  "sales_memory_id": "sf7_sales_memory-XP3MKp9Eeu",
+  "analytics_memory_id": "sf7_analytics_memory-iHRfaQ2qfc",
+  "gateway_url": "https://sf7-crm-gateway-zd795zpjtz.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp"
+}
