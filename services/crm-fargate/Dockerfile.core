@@ -1,0 +1,37 @@
+# ─── crm-core Dockerfile (multi-stage, ARM64) ───
+FROM --platform=linux/arm64 node:20-alpine AS builder
+WORKDIR /app
+
+# Install all deps for build
+COPY package.json ./
+RUN npm install --no-audit --no-fund
+
+# Build bundle (everything inlined except pg-native which is optional/native)
+COPY tsconfig.json ./
+COPY src ./src
+RUN npx esbuild src/server-core.ts \
+    --bundle --platform=node --target=node20 \
+    --outfile=dist/server-core.js \
+    --external:pg-native \
+    --minify
+
+# ── Runtime stage ──
+FROM --platform=linux/arm64 node:20-alpine AS runtime
+WORKDIR /app
+
+# wget for HEALTHCHECK
+RUN apk add --no-cache wget
+
+# Non-root user
+RUN addgroup -S app && adduser -S app -G app
+COPY --from=builder --chown=app:app /app/dist/server-core.js ./
+
+USER app
+ENV NODE_ENV=production
+ENV PORT=3001
+EXPOSE 3001
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://localhost:3001/health || exit 1
+
+CMD ["node", "server-core.js"]

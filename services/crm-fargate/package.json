@@ -1,0 +1,47 @@
+{
+  "name": "@sf7/crm-fargate",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:core": "esbuild src/server-core.ts --bundle --platform=node --target=node20 --outfile=dist/server-core.js --external:pg-native --minify",
+    "build:quotation": "esbuild src/server-quotation.ts --bundle --platform=node --target=node20 --outfile=dist/server-quotation.js --external:pg-native --minify",
+    "build:line": "esbuild src/server-line.ts --bundle --platform=node --target=node20 --outfile=dist/server-line.js --external:pg-native --minify",
+    "build:all": "npm run build:core && npm run build:quotation && npm run build:line",
+    "dev:core": "PORT=3001 SERVICE=core node --loader tsx src/server-core.ts",
+    "dev:quotation": "PORT=3002 SERVICE=quotation node --loader tsx src/server-quotation.ts",
+    "dev:line": "PORT=3003 SERVICE=line node --loader tsx src/server-line.ts",
+    "docker:core": "docker build -f Dockerfile.core -t sf7-crm-core:latest .",
+    "docker:quotation": "docker build -f Dockerfile.quotation -t sf7-crm-quotation:latest .",
+    "docker:line": "docker build -f Dockerfile.line -t sf7-crm-line:latest ."
+  },
+  "dependencies": {
+    "@aws-crypto/sha256-js": "^5.2.0",
+    "@aws-sdk/client-bedrock-agentcore": "^3.1045.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.800.0",
+    "@aws-sdk/client-dynamodb": "^3.800.0",
+    "@aws-sdk/client-lambda": "^3.800.0",
+    "@aws-sdk/client-s3": "^3.800.0",
+    "@aws-sdk/client-secrets-manager": "^3.800.0",
+    "@aws-sdk/client-sns": "^3.1048.0",
+    "@aws-sdk/client-sqs": "^3.800.0",
+    "@aws-sdk/credential-provider-node": "^3.972.39",
+    "@hono/node-server": "^1.13.0",
+    "@smithy/protocol-http": "^4.1.8",
+    "@smithy/signature-v4": "^4.2.4",
+    "bcryptjs": "^2.4.3",
+    "hono": "^4.7.0",
+    "jose": "^6.0.0",
+    "pg": "^8.16.0",
+    "uuid": "^11.1.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/pg": "^8.11.0",
+    "@types/uuid": "^10.0.0",
+    "esbuild": "^0.25.12",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}

@@ -1,0 +1,84 @@
+# Local testing: run all 3 services + simulate ALB routing
+# Usage: docker-compose up --build
+version: '3.8'
+
+services:
+  crm-core:
+    build:
+      context: .
+      dockerfile: Dockerfile.core
+      platforms:
+        - linux/arm64
+    image: sf7-crm-core:local
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - AWS_REGION=ap-southeast-1
+      - CORS_ORIGIN=*
+      # Pass through AWS credentials for local testing
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+      # DB / Secrets — set these via .env or shell
+      - DB_HOST
+      - DB_NAME
+      - DB_USER
+      - DB_PASSWORD
+      - DB_SECRET_ARN
+      - JWT_SECRET
+      - AI_STATE_TABLE=sf7-prod-ai-state
+    restart: unless-stopped
+
+  crm-quotation:
+    build:
+      context: .
+      dockerfile: Dockerfile.quotation
+      platforms:
+        - linux/arm64
+    image: sf7-crm-quotation:local
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - AWS_REGION=ap-southeast-1
+      - CORS_ORIGIN=*
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+      - DB_HOST
+      - DB_NAME
+      - DB_USER
+      - DB_PASSWORD
+      - DB_SECRET_ARN
+      - JWT_SECRET
+    restart: unless-stopped
+
+  crm-line:
+    build:
+      context: .
+      dockerfile: Dockerfile.line
+      platforms:
+        - linux/arm64
+    image: sf7-crm-line:local
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - AWS_REGION=ap-southeast-1
+      - CORS_ORIGIN=*
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+      - DB_HOST
+      - DB_NAME
+      - DB_USER
+      - DB_PASSWORD
+      - DB_SECRET_ARN
+      - LINE_CHANNEL_SECRET
+      - LINE_CHANNEL_TOKEN
+      - AI_STATE_TABLE=sf7-prod-ai-state
+    restart: unless-stopped
