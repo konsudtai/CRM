@@ -18,8 +18,8 @@ import urllib.error
 # ── Configuration ──
 REGION = os.environ.get("AWS_REGION", "ap-southeast-1")
 MODEL_ID = os.environ.get("MODEL_ID", "global.anthropic.claude-sonnet-4-6")
-MEMORY_ID = os.environ.get("MEMORY_ID", "sf7_sales_memory-XP3MKp9Eeu")
-GATEWAY_URL = os.environ.get("GATEWAY_URL", "")  # AgentCore Gateway MCP endpoint
+MEMORY_ID = os.environ.get("MEMORY_ID", "sf7_agents_memory-Ye8E3AGtiH")
+GATEWAY_URL = os.environ.get("GATEWAY_URL", "https://sf7-crm-gateway-zd795zpjtz.gateway.bedrock-agentcore.ap-southeast-1.amazonaws.com/mcp")  # AgentCore Gateway MCP endpoint
 GATEWAY_TOKEN = os.environ.get("GATEWAY_TOKEN", "")
 ANALYTICS_RUNTIME_ARN = os.environ.get("ANALYTICS_RUNTIME_ARN", "")
 TOOL_PREFIX = os.environ.get("TOOL_PREFIX", "sf7-crm-tools___")
