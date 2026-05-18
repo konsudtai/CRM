@@ -254,19 +254,25 @@ class AnalyticsAgent:
         ]
 
     def run(self, message: str, session_id: str, actor_id: str, tenant_id: str = "default") -> str:
-        # Skip memory load for now — old events may have incompatible format
-        # Memory still saves new events, will use semantic retrieval only
+        # Load conversation history from AgentCore Memory
+        history = memory_load_history(session_id, actor_id, max_results=8)
         retrieved_facts = memory_retrieve_context(actor_id, message, max_results=3)
 
         prompt = SYSTEM_PROMPT
         if retrieved_facts:
             prompt += "\n\nข้อมูลที่จำได้จากการสนทนาก่อนหน้า:\n" + "\n".join(f"- {f}" for f in retrieved_facts)
 
-        # Empty messages — fresh context each time (Strands accumulates within agent)
+        # Build messages with conversation history
+        messages = []
+        if history:
+            for h in history[-6:]:
+                messages.append({"role": h["role"], "content": [{"text": h["content"]}]})
+
         agent = Agent(
             model=self.model,
             tools=self.tools,
             system_prompt=prompt,
+            messages=messages,
         )
 
         memory_save_event(session_id, actor_id, "USER", message)
