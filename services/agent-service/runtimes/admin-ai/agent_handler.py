@@ -173,7 +173,15 @@ def invoke(message, session_id="default", actor_id="anonymous"):
 class H(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path=="/ping":
-            self.send_response(200);self.send_header("Content-Type","application/json");self.end_headers();self.wfile.write(b'{"status":"Healthy"}')
+            try:
+                self.send_response(200)
+                self.send_header("Content-Type","application/json")
+                self.send_header("Content-Length","20")
+                self.end_headers()
+                self.wfile.write(b'{"status":"Healthy"}')
+                self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError):
+                pass
         else: self.send_response(404);self.end_headers()
     def do_POST(self):
         if self.path=="/invocations":
@@ -185,7 +193,16 @@ class H(BaseHTTPRequestHandler):
             actor_id=p.get("lineUserId",p.get("actorId","anonymous"))
             try: reply=invoke(msg, session_id, actor_id);out=json.dumps({"reply":reply,"agentUsed":"น้องแอ๊ด","via":"AgentCore Memory"},ensure_ascii=False)
             except Exception as e: print(f"[ERR]{traceback.format_exc()}");out=json.dumps({"reply":f"ขออภัยค่ะ: {e}","error":str(e)},ensure_ascii=False)
-            self.send_response(200);self.send_header("Content-Type","application/json");self.end_headers();self.wfile.write(out.encode())
+            try:
+                out_bytes=out.encode()
+                self.send_response(200)
+                self.send_header("Content-Type","application/json")
+                self.send_header("Content-Length",str(len(out_bytes)))
+                self.end_headers()
+                self.wfile.write(out_bytes)
+                self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError):
+                pass
         else: self.send_response(404);self.end_headers()
     def log_message(self,*a): pass
 
